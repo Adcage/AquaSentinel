@@ -1,7 +1,7 @@
 -- AI防溺水系统种子数据脚本
 -- 要求：每张表至少20条，数据风格真实，可重复执行
 
-USE ai_drowning;
+USE aqua_sentinel;
 
 SET NAMES utf8mb4;
 

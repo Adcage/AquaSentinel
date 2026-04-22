@@ -21,7 +21,7 @@ class SystemNoticeConfigServiceImplMissingTableTest {
         doThrow(new BadSqlGrammarException(
                 "select",
                 "SELECT * FROM system_notice_config",
-                new SQLSyntaxErrorException("Table 'ai_drowning.system_notice_config' doesn't exist")))
+                new SQLSyntaxErrorException("Table 'aqua_sentinel.system_notice_config' doesn't exist")))
                 .when(service)
                 .getOne(any(QueryWrapper.class));
 

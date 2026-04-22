@@ -1,10 +1,10 @@
 -- AI防溺水系统数据库初始化脚本（DDL + 初始管理员）
 
-CREATE DATABASE IF NOT EXISTS ai_drowning
+CREATE DATABASE IF NOT EXISTS aqua_sentinel
     DEFAULT CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
-USE ai_drowning;
+USE aqua_sentinel;
 
 SET NAMES utf8mb4;
 
