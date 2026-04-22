@@ -1,0 +1,70 @@
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ===== Logs / Temp =====
+*.log
+logs/
+tmp/
+temp/
+
+# ===== Environment (keep examples) =====
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+
+# ===== Node / Frontend =====
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/coverage/
+**/.eslintcache
+**/.vite/
+**/*.tsbuildinfo
+**/test-results/
+**/cypress/videos/
+**/cypress/screenshots/
+**/__screenshots__/
+*.timestamp-*-*.mjs
+
+# ===== Java / Maven / Gradle =====
+**/target/
+**/build/
+**/.gradle/
+**/out/
+
+# ===== Android =====
+**/local.properties
+**/.kotlin/
+**/.externalNativeBuild/
+**/.cxx/
+**/captures/
+
+# ===== Python =====
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.venv/
+**/venv/
+**/instance/
+
+# ===== AI model artifacts =====
+**/model/*.onnx
+**/model/*.engine
+**/model/*.weights
+!yolo-service/model/*.pt
+
+# ===== Archives / binaries =====
+*.zip
+*.tar.gz
+*.rar
+*.7z
