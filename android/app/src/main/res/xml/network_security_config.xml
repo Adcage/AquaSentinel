@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 允许所有 HTTP 流量用于开发环境 -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- 高德地图 API 域名 -->
+        <domain includeSubdomains="true">webapi.amap.com</domain>
+        <domain includeSubdomains="true">restapi.amap.com</domain>
+        <domain includeSubdomains="true">vdata.amap.com</domain>
+    </domain-config>
+</network-security-config>
