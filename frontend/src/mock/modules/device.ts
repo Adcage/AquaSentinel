@@ -1,0 +1,44 @@
+import type { DeviceRecord } from '@/types/business'
+
+export const deviceRecordsMock: DeviceRecord[] = [
+  {
+    id: 'DEV-001',
+    name: 'A馆东北摄像头',
+    location: 'A馆东北角',
+    venue: 'A馆',
+    deviceType: 'fixed',
+    streamUrl: 'mock://camera/a-ne',
+    status: 'online',
+    maintenanceCycleDays: 30,
+  },
+  {
+    id: 'DEV-002',
+    name: 'A馆西南摄像头',
+    location: 'A馆西南角',
+    venue: 'A馆',
+    deviceType: 'ptz',
+    streamUrl: 'mock://camera/a-sw',
+    status: 'offline',
+    maintenanceCycleDays: 15,
+  },
+  {
+    id: 'DEV-003',
+    name: 'B馆跳台摄像头',
+    location: 'B馆跳台区',
+    venue: 'B馆',
+    deviceType: 'fixed',
+    streamUrl: 'mock://camera/b-platform',
+    status: 'error',
+    maintenanceCycleDays: 7,
+  },
+  {
+    id: 'DEV-004',
+    name: 'C馆中央摄像头',
+    location: 'C馆中央',
+    venue: 'C馆',
+    deviceType: 'ptz',
+    streamUrl: 'mock://camera/c-center',
+    status: 'online',
+    maintenanceCycleDays: 30,
+  },
+]
