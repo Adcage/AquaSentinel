@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.SystemAuditLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.SystemAuditLog">
+            <id property="id" column="id" />
+            <result property="trace_id" column="trace_id" />
+            <result property="log_category" column="log_category" />
+            <result property="operator_id" column="operator_id" />
+            <result property="operator_name" column="operator_name" />
+            <result property="client_ip" column="client_ip" />
+            <result property="request_uri" column="request_uri" />
+            <result property="request_method" column="request_method" />
+            <result property="request_body" column="request_body" />
+            <result property="response_code" column="response_code" />
+            <result property="response_message" column="response_message" />
+            <result property="cost_ms" column="cost_ms" />
+            <result property="created_at" column="created_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,trace_id,log_category,operator_id,operator_name,client_ip,
+        request_uri,request_method,request_body,response_code,response_message,
+        cost_ms,created_at
+    </sql>
+</mapper>

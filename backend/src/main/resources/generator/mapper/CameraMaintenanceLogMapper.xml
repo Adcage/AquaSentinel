@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.CameraMaintenanceLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.CameraMaintenanceLog">
+            <id property="id" column="id" />
+            <result property="camera_id" column="camera_id" />
+            <result property="maintenance_type" column="maintenance_type" />
+            <result property="maintenance_content" column="maintenance_content" />
+            <result property="maintained_by" column="maintained_by" />
+            <result property="maintained_at" column="maintained_at" />
+            <result property="next_maintenance_at" column="next_maintenance_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,camera_id,maintenance_type,maintenance_content,maintained_by,maintained_at,
+        next_maintenance_at
+    </sql>
+</mapper>

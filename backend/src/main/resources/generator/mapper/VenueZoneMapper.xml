@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.VenueZoneMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.VenueZone">
+            <id property="id" column="id" />
+            <result property="venue_id" column="venue_id" />
+            <result property="zone_code" column="zone_code" />
+            <result property="zone_name" column="zone_name" />
+            <result property="zone_type" column="zone_type" />
+            <result property="geo_json" column="geo_json" />
+            <result property="risk_level" column="risk_level" />
+            <result property="created_at" column="created_at" />
+            <result property="updated_at" column="updated_at" />
+            <result property="is_delete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,venue_id,zone_code,zone_name,zone_type,geo_json,
+        risk_level,created_at,updated_at,is_delete
+    </sql>
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.AiStreamTaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.AiStreamTask">
+            <id property="id" column="id" />
+            <result property="task_code" column="task_code" />
+            <result property="camera_id" column="camera_id" />
+            <result property="stream_url" column="stream_url" />
+            <result property="model_version" column="model_version" />
+            <result property="frame_interval_ms" column="frame_interval_ms" />
+            <result property="callback_url" column="callback_url" />
+            <result property="task_status" column="task_status" />
+            <result property="started_at" column="started_at" />
+            <result property="stopped_at" column="stopped_at" />
+            <result property="last_frame_at" column="last_frame_at" />
+            <result property="created_at" column="created_at" />
+            <result property="updated_at" column="updated_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,task_code,camera_id,stream_url,model_version,frame_interval_ms,
+        callback_url,task_status,started_at,stopped_at,last_frame_at,
+        created_at,updated_at
+    </sql>
+</mapper>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.AlertRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.AlertRecord">
+            <id property="id" column="id" />
+            <result property="alert_uid" column="alert_uid" />
+            <result property="event_id" column="event_id" />
+            <result property="camera_id" column="camera_id" />
+            <result property="venue_id" column="venue_id" />
+            <result property="lifeguard_id" column="lifeguard_id" />
+            <result property="alert_type" column="alert_type" />
+            <result property="alert_status" column="alert_status" />
+            <result property="emergency_contact_name" column="emergency_contact_name" />
+            <result property="emergency_contact_phone" column="emergency_contact_phone" />
+            <result property="incident_location" column="incident_location" />
+            <result property="video_stream_url" column="video_stream_url" />
+            <result property="pushed_to_app" column="pushed_to_app" />
+            <result property="pushed_to_pc" column="pushed_to_pc" />
+            <result property="first_push_time" column="first_push_time" />
+            <result property="resolved_time" column="resolved_time" />
+            <result property="created_at" column="created_at" />
+            <result property="updated_at" column="updated_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,alert_uid,event_id,camera_id,venue_id,lifeguard_id,
+        alert_type,alert_status,emergency_contact_name,emergency_contact_phone,incident_location,
+        video_stream_url,pushed_to_app,pushed_to_pc,first_push_time,resolved_time,
+        created_at,updated_at
+    </sql>
+</mapper>

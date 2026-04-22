@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.SysUserMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.SysUser">
+            <id property="id" column="id" />
+            <result property="username" column="username" />
+            <result property="password_hash" column="password_hash" />
+            <result property="display_name" column="display_name" />
+            <result property="phone" column="phone" />
+            <result property="email" column="email" />
+            <result property="status" column="status" />
+            <result property="failed_login_count" column="failed_login_count" />
+            <result property="lock_until" column="lock_until" />
+            <result property="force_change_password" column="force_change_password" />
+            <result property="last_login_at" column="last_login_at" />
+            <result property="created_at" column="created_at" />
+            <result property="updated_at" column="updated_at" />
+            <result property="is_delete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,username,password_hash,display_name,phone,email,
+        status,failed_login_count,lock_until,force_change_password,last_login_at,
+        created_at,updated_at,is_delete
+    </sql>
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.LifeguardMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.Lifeguard">
+            <id property="id" column="id" />
+            <result property="user_id" column="user_id" />
+            <result property="lifeguard_code" column="lifeguard_code" />
+            <result property="full_name" column="full_name" />
+            <result property="phone" column="phone" />
+            <result property="venue_id" column="venue_id" />
+            <result property="fence_geo_json" column="fence_geo_json" />
+            <result property="audit_status" column="audit_status" />
+            <result property="duty_status" column="duty_status" />
+            <result property="last_login_at" column="last_login_at" />
+            <result property="created_at" column="created_at" />
+            <result property="updated_at" column="updated_at" />
+            <result property="is_delete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,lifeguard_code,full_name,phone,venue_id,
+        fence_geo_json,audit_status,duty_status,last_login_at,created_at,
+        updated_at,is_delete
+    </sql>
+</mapper>

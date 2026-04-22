@@ -1,0 +1,12 @@
+package com.springboot.websocket;
+
+public enum WsMessageType {
+    ALERT_CREATED,
+    ALERT_UPDATED,
+    MONITOR_VIDEO_FRAME,
+    MONITOR_REALTIME_BATCH,
+    MONITOR_REALTIME_HEARTBEAT,
+    CAMERA_STATUS_CHANGED,
+    LIFEGUARD_STATUS_CHANGED,
+    SYSTEM_NOTICE
+}

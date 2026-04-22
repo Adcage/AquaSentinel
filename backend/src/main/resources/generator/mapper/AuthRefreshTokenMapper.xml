@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.AuthRefreshTokenMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.AuthRefreshToken">
+            <id property="id" column="id" />
+            <result property="user_id" column="user_id" />
+            <result property="refresh_token_hash" column="refresh_token_hash" />
+            <result property="device_id" column="device_id" />
+            <result property="client_type" column="client_type" />
+            <result property="client_version" column="client_version" />
+            <result property="ip_address" column="ip_address" />
+            <result property="expires_at" column="expires_at" />
+            <result property="revoked" column="revoked" />
+            <result property="revoked_at" column="revoked_at" />
+            <result property="revoke_reason" column="revoke_reason" />
+            <result property="last_used_at" column="last_used_at" />
+            <result property="created_at" column="created_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,refresh_token_hash,device_id,client_type,client_version,
+        ip_address,expires_at,revoked,revoked_at,revoke_reason,
+        last_used_at,created_at
+    </sql>
+</mapper>

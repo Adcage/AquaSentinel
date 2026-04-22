@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.springboot.mapper.CameraDeviceMapper">
+
+    <resultMap id="BaseResultMap" type="com.springboot.model.entity.CameraDevice">
+            <id property="id" column="id" />
+            <result property="venue_id" column="venue_id" />
+            <result property="zone_id" column="zone_id" />
+            <result property="camera_code" column="camera_code" />
+            <result property="camera_name" column="camera_name" />
+            <result property="stream_url" column="stream_url" />
+            <result property="protocol" column="protocol" />
+            <result property="device_status" column="device_status" />
+            <result property="health_status" column="health_status" />
+            <result property="enabled" column="enabled" />
+            <result property="last_heartbeat_at" column="last_heartbeat_at" />
+            <result property="created_at" column="created_at" />
+            <result property="updated_at" column="updated_at" />
+            <result property="is_delete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,venue_id,zone_id,camera_code,camera_name,stream_url,
+        protocol,device_status,health_status,enabled,last_heartbeat_at,
+        created_at,updated_at,is_delete
+    </sql>
+</mapper>

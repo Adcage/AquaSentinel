@@ -1,0 +1,129 @@
+# 公共配置文件
+spring:
+  application:
+    name: springboot
+  # 默认 dev 环境
+  profiles:
+    active: dev
+  # session 配置
+  session:
+    # todo 取消注释开启分布式 session（须先配置 Redis）
+    # store-type: redis
+    # 30 天过期
+    timeout: 2592000
+  # 数据库配置
+  # todo 需替换配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ai_drowning
+    username: root
+    password: 123456
+  # Redis 配置
+  # todo 需替换配置，然后取消注释
+#  redis:
+#    database: 1
+#    host: localhost
+#    port: 6379
+#    timeout: 5000
+#    password: 123456
+  # Elasticsearch 配置
+  # todo 需替换配置，然后取消注释
+#  elasticsearch:
+#    uris: http://localhost:9200
+#    username: root
+#    password: 123456
+  # 文件上传
+  servlet:
+    multipart:
+      # 大小限制
+      max-file-size: 10MB
+  # 本地文件上传配置
+  web:
+    resources:
+      static-locations: file:src/main/resources/files/,classpath:/static/
+  # 文件上传路径
+  file:
+    upload:
+      path: src/main/resources/files/
+server:
+  address: 0.0.0.0
+  port: 8300
+  servlet:
+    context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
+  websocket:
+    max-message-size: 10MB
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # 全局逻辑删除的实体字段名
+      logic-delete-value: 1 # 逻辑已删除值（默认为 1）
+      logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
+# 接口文档配置
+knife4j:
+  enable: true
+  openapi:
+    title: "接口文档"
+    version: 1.0
+    group:
+      default:
+        api-rule: package
+        api-rule-resources:
+          - com.springboot.controller
+
+app:
+  security:
+    jwt:
+      issuer: aqua-sentinel-backend
+      secret: change-this-jwt-secret-change-this-jwt-secret
+      access-token-expire-seconds: 172800
+      refresh-token-expire-seconds: 1209600
+    cors:
+      allowed-origins:
+        - http://localhost:5173
+        - http://localhost:5174
+        - http://127.0.0.1:5173
+        - http://127.0.0.1:5174
+        - http://localhost:4173
+        - http://127.0.0.1:4173
+        - http://localhost:3000
+    ai-callback:
+      key: ai-service
+      secret: change-this-ai-callback-secret
+      allowed-skew-seconds: 300
+  ai:
+    engine:
+      base-url: http://127.0.0.1:5000
+      start-path: /engine/tasks/start
+      stop-path: /engine/tasks/stop
+      status-path: /engine/tasks
+      callback-url: http://127.0.0.1:8300/api/internal/ai/events
+      input-stream-mode: source
+      proxy-base-url: http://127.0.0.1:8300/api
+      internal-preview-path-template: /internal/streams/cameras/{cameraId}/preview
+      display-preview-path-template: /streams/cameras/{cameraId}/preview
+      timeout-ms: 5000
+  stream:
+    proxy:
+      enabled: true
+      mode: auto
+      provider-priority:
+        - ffmpeg
+        - javacv
+        - rtsp_direct
+      ffmpeg-path: ffmpeg
+      ffmpeg-log-level: error
+      jpeg-quality: 6
+      token-param-name: token
+      internal-allowed-remote-addrs:
+        - 127.0.0.1
+        - ::1
+        - 0:0:0:0:0:0:0:1
+  lifeguard:
+    off-post-consecutive-threshold: 2
