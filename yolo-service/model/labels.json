@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "labels": [
+    { "en": "drowning", "zh": "溺水" },
+    { "en": "out of water", "zh": "离水" },
+    { "en": "swimming", "zh": "游泳" },
+    { "en": "Drowning", "zh": "溺水" },
+    { "en": "Not Swimming", "zh": "未游泳" },
+    { "en": "Swimming", "zh": "游泳" }
+  ]
+}
