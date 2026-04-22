@@ -62,6 +62,7 @@ temp/
 **/model/*.engine
 **/model/*.weights
 !yolo-service/model/*.pt
+yolo-service/model/drowning-v11-x.pt
 
 # ===== Archives / binaries =====
 *.zip
