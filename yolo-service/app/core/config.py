@@ -76,6 +76,10 @@ class BaseConfig:
     CAMERA_MAX_UPLOAD_SIZE_MB = 2
     CAMERA_TARGET_WIDTH = 640
     CAMERA_INFER_TIMEOUT_MS = 8000
+    RABBITMQ_URL = "amqp://localhost:5672/"
+    RABBITMQ_EXCHANGE = "alert.topic"
+    METRICS_ENABLED = True
+    METRICS_PORT = 9091
 
 
 def apply_env_overrides(app):
@@ -185,3 +189,11 @@ def apply_env_overrides(app):
     app.config["CAMERA_INFER_TIMEOUT_MS"] = _env_int(
         "CAMERA_INFER_TIMEOUT_MS", app.config["CAMERA_INFER_TIMEOUT_MS"]
     )
+    app.config["RABBITMQ_URL"] = os.getenv("RABBITMQ_URL", app.config["RABBITMQ_URL"])
+    app.config["RABBITMQ_EXCHANGE"] = os.getenv(
+        "RABBITMQ_EXCHANGE", app.config["RABBITMQ_EXCHANGE"]
+    )
+    app.config["METRICS_ENABLED"] = _env_bool(
+        "METRICS_ENABLED", app.config["METRICS_ENABLED"]
+    )
+    app.config["METRICS_PORT"] = _env_int("METRICS_PORT", app.config["METRICS_PORT"])

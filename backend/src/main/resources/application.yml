@@ -5,6 +5,23 @@ spring:
   # 默认 dev 环境
   profiles:
     active: dev
+  # RabbitMQ 配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:change_me}
+    virtual-host: /
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 10
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
   # session 配置
   session:
     # todo 取消注释开启分布式 session（须先配置 Redis）
@@ -127,3 +144,32 @@ app:
         - 0:0:0:0:0:0:0:1
   lifeguard:
     off-post-consecutive-threshold: 2
+  # 消息队列配置
+  messaging:
+    rabbitmq:
+      enabled: true
+      alert-exchange: alert.topic
+      alert-record-queue: alert.record.queue
+      alert-notification-queue: alert.notification.queue
+      alert-analytics-queue: alert.analytics.queue
+      device-control-exchange: device.control.direct
+      notification-consumer-enabled: false
+      analytics-consumer-enabled: false
+      message-ttl: 86400000
+# Actuator + Prometheus 指标暴露
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
