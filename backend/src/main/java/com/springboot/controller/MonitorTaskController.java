@@ -1,6 +1,12 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
@@ -16,13 +22,9 @@ import com.springboot.service.AiEngineClient;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.service.MonitorRealtimeQueryService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import jakarta.annotation.Resource;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,17 +47,13 @@ public class MonitorTaskController {
 
     private final Map<Long, Long> cameraAutoStartCooldownUntilMap = new ConcurrentHashMap<>();
 
-    @Resource
-    private AiStreamTaskService aiStreamTaskService;
+    @Resource private AiStreamTaskService aiStreamTaskService;
 
-    @Resource
-    private AiEngineClient aiEngineClient;
+    @Resource private AiEngineClient aiEngineClient;
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private MonitorRealtimeQueryService monitorRealtimeQueryService;
+    @Resource private MonitorRealtimeQueryService monitorRealtimeQueryService;
 
     private Map<String, Object> buildCameraSite(Long cameraId) {
         if (cameraId == null) {
@@ -121,7 +119,8 @@ public class MonitorTaskController {
                     }
                     continue;
                 }
-                monitorRealtimeQueryService.buildRealtimeDataByCamera(entry.getKey(), entry.getValue());
+                monitorRealtimeQueryService.buildRealtimeDataByCamera(
+                        entry.getKey(), entry.getValue());
             } catch (Exception ignored) {
             }
         }
@@ -160,7 +159,8 @@ public class MonitorTaskController {
                 aiStreamTaskService.startTask(request);
                 cameraAutoStartCooldownUntilMap.remove(cameraDevice.getId());
             } catch (Exception e) {
-                cameraAutoStartCooldownUntilMap.put(cameraDevice.getId(), now + AUTO_START_COOLDOWN_MS);
+                cameraAutoStartCooldownUntilMap.put(
+                        cameraDevice.getId(), now + AUTO_START_COOLDOWN_MS);
                 log.warn("auto start monitor task failed, cameraId={}", cameraDevice.getId(), e);
             }
         }
@@ -239,7 +239,8 @@ public class MonitorTaskController {
 
     @GetMapping("/{taskCode}")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Map<String, Object>> getTaskByPath(@PathVariable("taskCode") String taskCode) {
+    public BaseResponse<Map<String, Object>> getTaskByPath(
+            @PathVariable("taskCode") String taskCode) {
         return getTaskByCode(taskCode);
     }
 }

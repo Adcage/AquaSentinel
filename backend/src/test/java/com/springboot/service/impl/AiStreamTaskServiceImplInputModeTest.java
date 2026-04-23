@@ -11,10 +11,10 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.springboot.config.AppAiEngineProperties;
+import java.util.Map;
+
 import com.springboot.common.ErrorCode;
+import com.springboot.config.AppAiEngineProperties;
 import com.springboot.exception.BusinessException;
 import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
 import com.springboot.model.entity.AiStreamTask;
@@ -22,7 +22,9 @@ import com.springboot.model.entity.CameraDevice;
 import com.springboot.service.AiEngineClient;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.service.SystemNoticeConfigService;
-import java.util.Map;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,14 +33,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class AiStreamTaskServiceImplInputModeTest {
 
-    @Mock
-    private CameraDeviceService cameraDeviceService;
+    @Mock private CameraDeviceService cameraDeviceService;
 
-    @Mock
-    private AiEngineClient aiEngineClient;
+    @Mock private AiEngineClient aiEngineClient;
 
-    @Mock
-    private SystemNoticeConfigService systemNoticeConfigService;
+    @Mock private SystemNoticeConfigService systemNoticeConfigService;
 
     @Test
     void startTaskShouldUseSourceStreamWhenModeIsSource() {
@@ -51,13 +50,14 @@ class AiStreamTaskServiceImplInputModeTest {
 
         service.startTask(request);
 
-        verify(aiEngineClient).startTask(
-                eq("TASK_CAM_1001_1"),
-                eq("CAM-1001"),
-                eq("rtsp://cam/live"),
-                eq(200),
-                eq("http://127.0.0.1:8300/api/streams/cameras/1001/preview"),
-                eq(3.0));
+        verify(aiEngineClient)
+                .startTask(
+                        eq("TASK_CAM_1001_1"),
+                        eq("CAM-1001"),
+                        eq("rtsp://cam/live"),
+                        eq(200),
+                        eq("http://127.0.0.1:8300/api/streams/cameras/1001/preview"),
+                        eq(3.0));
     }
 
     @Test
@@ -72,23 +72,22 @@ class AiStreamTaskServiceImplInputModeTest {
         AiStreamTask result = service.startTask(request);
 
         assertNotNull(result);
-        verify(aiEngineClient).startTask(
-                eq("TASK_CAM_1001_2"),
-                eq("CAM-1001"),
-                eq("http://127.0.0.1:8300/api/internal/streams/cameras/1001/preview"),
-                eq(200),
-                eq("http://127.0.0.1:8300/api/streams/cameras/1001/preview"),
-                eq(3.0));
+        verify(aiEngineClient)
+                .startTask(
+                        eq("TASK_CAM_1001_2"),
+                        eq("CAM-1001"),
+                        eq("http://127.0.0.1:8300/api/internal/streams/cameras/1001/preview"),
+                        eq(200),
+                        eq("http://127.0.0.1:8300/api/streams/cameras/1001/preview"),
+                        eq(3.0));
     }
 
     @Test
     void startTaskShouldRejectDeletedCamera() {
         AppAiEngineProperties properties = buildAiProperties("source");
-        AiStreamTaskServiceImpl service = new AiStreamTaskServiceImpl(
-                cameraDeviceService,
-                aiEngineClient,
-                properties,
-                systemNoticeConfigService);
+        AiStreamTaskServiceImpl service =
+                new AiStreamTaskServiceImpl(
+                        cameraDeviceService, aiEngineClient, properties, systemNoticeConfigService);
 
         CameraDevice deleted = new CameraDevice();
         deleted.setId(1001L);
@@ -108,8 +107,13 @@ class AiStreamTaskServiceImplInputModeTest {
     @Test
     void stopTaskShouldIgnoreEngine404AndMarkStopped() {
         AppAiEngineProperties properties = buildAiProperties("source");
-        AiStreamTaskServiceImpl service = org.mockito.Mockito.spy(
-                new AiStreamTaskServiceImpl(cameraDeviceService, aiEngineClient, properties, systemNoticeConfigService));
+        AiStreamTaskServiceImpl service =
+                org.mockito.Mockito.spy(
+                        new AiStreamTaskServiceImpl(
+                                cameraDeviceService,
+                                aiEngineClient,
+                                properties,
+                                systemNoticeConfigService));
 
         AiStreamTask storedTask = new AiStreamTask();
         storedTask.setId(1L);
@@ -126,8 +130,13 @@ class AiStreamTaskServiceImplInputModeTest {
     }
 
     private AiStreamTaskServiceImpl buildService(AppAiEngineProperties properties) {
-        AiStreamTaskServiceImpl service = org.mockito.Mockito.spy(
-                new AiStreamTaskServiceImpl(cameraDeviceService, aiEngineClient, properties, systemNoticeConfigService));
+        AiStreamTaskServiceImpl service =
+                org.mockito.Mockito.spy(
+                        new AiStreamTaskServiceImpl(
+                                cameraDeviceService,
+                                aiEngineClient,
+                                properties,
+                                systemNoticeConfigService));
 
         CameraDevice cameraDevice = new CameraDevice();
         cameraDevice.setId(1001L);
@@ -151,7 +160,8 @@ class AiStreamTaskServiceImplInputModeTest {
 
         when(systemNoticeConfigService.getDrowningAlertThresholdSec()).thenReturn(3);
 
-        when(aiEngineClient.startTask(anyString(), anyString(), anyString(), any(), anyString(), any()))
+        when(aiEngineClient.startTask(
+                        anyString(), anyString(), anyString(), any(), anyString(), any()))
                 .thenReturn(Map.of("status", "RUNNING"));
         return service;
     }

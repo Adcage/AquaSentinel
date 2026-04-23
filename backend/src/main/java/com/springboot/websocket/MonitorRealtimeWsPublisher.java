@@ -1,12 +1,13 @@
 package com.springboot.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -25,15 +26,16 @@ public class MonitorRealtimeWsPublisher {
 
     private final Map<String, Long> lastHeartbeatMap = new ConcurrentHashMap<>();
 
-    public MonitorRealtimeWsPublisher(AlertWebSocketHandler alertWebSocketHandler,
-                                      ObjectMapper objectMapper) {
+    public MonitorRealtimeWsPublisher(
+            AlertWebSocketHandler alertWebSocketHandler, ObjectMapper objectMapper) {
         this.alertWebSocketHandler = alertWebSocketHandler;
         this.objectMapper = objectMapper;
     }
 
     @Scheduled(fixedDelay = 5_000)
     public void publishHeartbeats() {
-        Map<String, Set<Long>> subscriptions = alertWebSocketHandler.snapshotRealtimeSubscriptions();
+        Map<String, Set<Long>> subscriptions =
+                alertWebSocketHandler.snapshotRealtimeSubscriptions();
         if (subscriptions.isEmpty()) {
             return;
         }

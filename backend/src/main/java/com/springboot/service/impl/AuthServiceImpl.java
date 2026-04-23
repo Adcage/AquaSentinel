@@ -1,6 +1,26 @@
 package com.springboot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.constant.RoleConstant;
 import com.springboot.exception.BusinessException;
@@ -17,36 +37,19 @@ import com.springboot.model.entity.AuthRefreshToken;
 import com.springboot.model.entity.SysRole;
 import com.springboot.model.entity.SysUser;
 import com.springboot.model.entity.SysUserRole;
+import com.springboot.model.entity.SystemAuditLog;
 import com.springboot.model.vo.CaptchaVO;
 import com.springboot.model.vo.LoginResultVO;
 import com.springboot.security.JwtTokenProvider;
-import com.springboot.model.entity.SystemAuditLog;
 import com.springboot.service.AccessControlService;
 import com.springboot.service.AuthService;
 import com.springboot.service.SystemAuditLogService;
 import com.springboot.utils.PasswordHashUtils;
 import com.springboot.utils.TokenHashUtils;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import jakarta.annotation.Resource;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Base64;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import javax.imageio.ImageIO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -70,26 +73,19 @@ public class AuthServiceImpl implements AuthService {
 
     private final SecureRandom secureRandom = new SecureRandom();
 
-    @Resource
-    private SysUserMapper sysUserMapper;
+    @Resource private SysUserMapper sysUserMapper;
 
-    @Resource
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Resource private SysUserRoleMapper sysUserRoleMapper;
 
-    @Resource
-    private SysRoleMapper sysRoleMapper;
+    @Resource private SysRoleMapper sysRoleMapper;
 
-    @Resource
-    private AuthRefreshTokenMapper authRefreshTokenMapper;
+    @Resource private AuthRefreshTokenMapper authRefreshTokenMapper;
 
-    @Resource
-    private JwtTokenProvider jwtTokenProvider;
+    @Resource private JwtTokenProvider jwtTokenProvider;
 
-    @Resource
-    private AccessControlService accessControlService;
+    @Resource private AccessControlService accessControlService;
 
-    @Resource
-    private SystemAuditLogService systemAuditLogService;
+    @Resource private SystemAuditLogService systemAuditLogService;
 
     @Override
     @Transactional(rollbackFor = Exception.class, noRollbackFor = BusinessException.class)
@@ -103,13 +99,19 @@ public class AuthServiceImpl implements AuthService {
         }
         resetLoginFailState(user.getId());
         List<String> roleCodes = listRoleCodes(user.getId());
-        return issueTokens(user, roleCodes, request.getDeviceId(), request.getClientType(), request.getClientVersion(),
+        return issueTokens(
+                user,
+                roleCodes,
+                request.getDeviceId(),
+                request.getClientType(),
+                request.getClientVersion(),
                 getClientIp(httpServletRequest));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class, noRollbackFor = BusinessException.class)
-    public LoginResultVO adminLogin(AdminLoginRequest request, HttpServletRequest httpServletRequest) {
+    public LoginResultVO adminLogin(
+            AdminLoginRequest request, HttpServletRequest httpServletRequest) {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         }
@@ -133,7 +135,8 @@ public class AuthServiceImpl implements AuthService {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         }
-        if (StringUtils.isAnyBlank(request.getUsername(), request.getPassword(), request.getDisplayName())) {
+        if (StringUtils.isAnyBlank(
+                request.getUsername(), request.getPassword(), request.getDisplayName())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名、密码和显示名不能为空");
         }
         if (request.getPassword().length() < 6) {
@@ -159,7 +162,8 @@ public class AuthServiceImpl implements AuthService {
         if (insertRows != 1 || sysUser.getId() == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败");
         }
-        String targetRoleCode = StringUtils.defaultIfBlank(request.getRoleCode(), RoleConstant.USER);
+        String targetRoleCode =
+                StringUtils.defaultIfBlank(request.getRoleCode(), RoleConstant.USER);
         SysRole role = getRoleByCode(targetRoleCode);
         if (role == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "角色不存在");
@@ -173,7 +177,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public LoginResultVO refreshToken(RefreshTokenRequest request, HttpServletRequest httpServletRequest) {
+    public LoginResultVO refreshToken(
+            RefreshTokenRequest request, HttpServletRequest httpServletRequest) {
         if (request == null || StringUtils.isBlank(request.getRefreshToken())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "refreshToken不能为空");
         }
@@ -185,7 +190,8 @@ public class AuthServiceImpl implements AuthService {
         if (authRefreshToken == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "refreshToken无效");
         }
-        if (authRefreshToken.getExpires_at() == null || authRefreshToken.getExpires_at().before(new Date())) {
+        if (authRefreshToken.getExpires_at() == null
+                || authRefreshToken.getExpires_at().before(new Date())) {
             revokeToken(authRefreshToken, "REFRESH_TOKEN_EXPIRED");
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "refreshToken已过期");
         }
@@ -200,8 +206,13 @@ public class AuthServiceImpl implements AuthService {
         verifyUserCanLogin(user);
         revokeToken(authRefreshToken, "REFRESH_ROTATE");
         List<String> roleCodes = listRoleCodes(user.getId());
-        return issueTokens(user, roleCodes, authRefreshToken.getDevice_id(), authRefreshToken.getClient_type(),
-                authRefreshToken.getClient_version(), getClientIp(httpServletRequest));
+        return issueTokens(
+                user,
+                roleCodes,
+                authRefreshToken.getDevice_id(),
+                authRefreshToken.getClient_type(),
+                authRefreshToken.getClient_version(),
+                getClientIp(httpServletRequest));
     }
 
     @Override
@@ -218,7 +229,8 @@ public class AuthServiceImpl implements AuthService {
                 queryWrapper.eq("device_id", request.getDeviceId());
             }
             if (StringUtils.isNotBlank(request.getRefreshToken())) {
-                queryWrapper.eq("refresh_token_hash", TokenHashUtils.sha256(request.getRefreshToken()));
+                queryWrapper.eq(
+                        "refresh_token_hash", TokenHashUtils.sha256(request.getRefreshToken()));
             }
         }
         List<AuthRefreshToken> tokenList = authRefreshTokenMapper.selectList(queryWrapper);
@@ -248,13 +260,17 @@ public class AuthServiceImpl implements AuthService {
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
         try {
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setColor(new Color(248, 250, 252));
             g2d.fillRect(0, 0, width, height);
 
             for (int i = 0; i < 8; i++) {
-                g2d.setColor(new Color(190 + secureRandom.nextInt(40), 190 + secureRandom.nextInt(40),
-                        190 + secureRandom.nextInt(40)));
+                g2d.setColor(
+                        new Color(
+                                190 + secureRandom.nextInt(40),
+                                190 + secureRandom.nextInt(40),
+                                190 + secureRandom.nextInt(40)));
                 int x1 = secureRandom.nextInt(width);
                 int y1 = secureRandom.nextInt(height);
                 int x2 = secureRandom.nextInt(width);
@@ -265,8 +281,11 @@ public class AuthServiceImpl implements AuthService {
 
             g2d.setFont(new Font("SansSerif", Font.BOLD, 30));
             for (int i = 0; i < captchaCode.length(); i++) {
-                g2d.setColor(new Color(20 + secureRandom.nextInt(120), 20 + secureRandom.nextInt(120),
-                        20 + secureRandom.nextInt(120)));
+                g2d.setColor(
+                        new Color(
+                                20 + secureRandom.nextInt(120),
+                                20 + secureRandom.nextInt(120),
+                                20 + secureRandom.nextInt(120)));
                 String text = String.valueOf(captchaCode.charAt(i));
                 int x = 18 + i * 26;
                 int y = 32 + secureRandom.nextInt(6);
@@ -274,8 +293,11 @@ public class AuthServiceImpl implements AuthService {
             }
 
             for (int i = 0; i < 40; i++) {
-                g2d.setColor(new Color(130 + secureRandom.nextInt(100), 130 + secureRandom.nextInt(100),
-                        130 + secureRandom.nextInt(100)));
+                g2d.setColor(
+                        new Color(
+                                130 + secureRandom.nextInt(100),
+                                130 + secureRandom.nextInt(100),
+                                130 + secureRandom.nextInt(100)));
                 g2d.drawRect(secureRandom.nextInt(width), secureRandom.nextInt(height), 1, 1);
             }
 
@@ -321,7 +343,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void onPasswordMismatch(SysUser user) {
-        int currentFailedCount = user.getFailed_login_count() == null ? 0 : user.getFailed_login_count();
+        int currentFailedCount =
+                user.getFailed_login_count() == null ? 0 : user.getFailed_login_count();
         int nextFailedCount = currentFailedCount + 1;
         SysUser update = new SysUser();
         update.setId(user.getId());
@@ -353,7 +376,8 @@ public class AuthServiceImpl implements AuthService {
         if (sysUserRoleList == null || sysUserRoleList.isEmpty()) {
             return List.of(RoleConstant.USER);
         }
-        List<Long> roleIdList = sysUserRoleList.stream().map(SysUserRole::getRole_id).distinct().toList();
+        List<Long> roleIdList =
+                sysUserRoleList.stream().map(SysUserRole::getRole_id).distinct().toList();
         QueryWrapper<SysRole> roleQuery = new QueryWrapper<>();
         roleQuery.in("id", roleIdList);
         roleQuery.eq("status", 1);
@@ -362,7 +386,10 @@ public class AuthServiceImpl implements AuthService {
         if (roleList == null || roleList.isEmpty()) {
             return List.of(RoleConstant.USER);
         }
-        return roleList.stream().map(SysRole::getRole_code).filter(StringUtils::isNotBlank).distinct()
+        return roleList.stream()
+                .map(SysRole::getRole_code)
+                .filter(StringUtils::isNotBlank)
+                .distinct()
                 .collect(Collectors.toList());
     }
 
@@ -370,7 +397,8 @@ public class AuthServiceImpl implements AuthService {
         if (roleCodes == null || roleCodes.isEmpty()) {
             return false;
         }
-        return roleCodes.contains(RoleConstant.SUPER_ADMIN) || roleCodes.contains(RoleConstant.VENUE_ADMIN);
+        return roleCodes.contains(RoleConstant.SUPER_ADMIN)
+                || roleCodes.contains(RoleConstant.VENUE_ADMIN);
     }
 
     private SysRole getRoleByCode(String roleCode) {
@@ -381,18 +409,27 @@ public class AuthServiceImpl implements AuthService {
         return sysRoleMapper.selectOne(roleQuery);
     }
 
-    private LoginResultVO issueTokens(SysUser user, List<String> roleCodes, String deviceId, String clientType,
-                                      String clientVersion, String ipAddress) {
+    private LoginResultVO issueTokens(
+            SysUser user,
+            List<String> roleCodes,
+            String deviceId,
+            String clientType,
+            String clientVersion,
+            String ipAddress) {
         if (roleCodes.contains(RoleConstant.LIFEGUARD)) {
             revokeAllActiveTokens(user.getId(), "LIFEGUARD_SINGLE_DEVICE");
         }
         String normalizedDeviceId = StringUtils.isNotBlank(deviceId) ? deviceId : "unknown-device";
-        String normalizedClientType = StringUtils.isNotBlank(clientType) ? clientType : CLIENT_TYPE_UNKNOWN;
+        String normalizedClientType =
+                StringUtils.isNotBlank(clientType) ? clientType : CLIENT_TYPE_UNKNOWN;
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getUsername(), roleCodes);
+        String accessToken =
+                jwtTokenProvider.generateAccessToken(user.getId(), user.getUsername(), roleCodes);
         String refreshToken = jwtTokenProvider.generateRefreshTokenValue();
         String refreshTokenHash = TokenHashUtils.sha256(refreshToken);
-        Date expiresAt = Date.from(Instant.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpireSeconds()));
+        Date expiresAt =
+                Date.from(
+                        Instant.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpireSeconds()));
 
         AuthRefreshToken authRefreshToken = new AuthRefreshToken();
         authRefreshToken.setUser_id(user.getId());
@@ -411,8 +448,8 @@ public class AuthServiceImpl implements AuthService {
         loginResultVO.setExpiresIn(jwtTokenProvider.getAccessTokenExpireSeconds());
         loginResultVO.setForceChangePassword(user.getForce_change_password());
 
-        List<String> permissionCodes = new ArrayList<>(
-                accessControlService.listPermissionsByRoleCodes(roleCodes));
+        List<String> permissionCodes =
+                new ArrayList<>(accessControlService.listPermissionsByRoleCodes(roleCodes));
         permissionCodes.sort(String::compareTo);
 
         LoginResultVO.UserInfo userInfo = new LoginResultVO.UserInfo();
@@ -514,6 +551,5 @@ public class AuthServiceImpl implements AuthService {
         captchaStore.entrySet().removeIf(entry -> entry.getValue().expireAt < now);
     }
 
-    private record CaptchaEntry(String code, long expireAt) {
-    }
+    private record CaptchaEntry(String code, long expireAt) {}
 }

@@ -3,19 +3,15 @@ package com.springboot;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-/**
- * 主类测试
-*
- */
-@SpringBootTest(properties = {
-        "app.websocket.enabled=false",
-        "spring.main.web-application-type=none",
-        "spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration"
-})
+/** 主类测试 */
+@SpringBootTest(
+        properties = {
+            "app.websocket.enabled=false",
+            "spring.main.web-application-type=none",
+            "spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration"
+        })
 class MainApplicationTests {
 
     @Test
-    void contextLoads() {
-    }
-
+    void contextLoads() {}
 }

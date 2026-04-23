@@ -6,17 +6,15 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
-/**
- * Spring 上下文获取工具
-*
- */
+/** Spring 上下文获取工具 */
 @Component
 public class SpringContextUtils implements ApplicationContextAware {
 
     private static ApplicationContext applicationContext;
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext)
+            throws BeansException {
         SpringContextUtils.applicationContext = applicationContext;
     }
 

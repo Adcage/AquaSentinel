@@ -1,29 +1,31 @@
 package com.springboot.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.constant.CommonConstant;
 import com.springboot.exception.BusinessException;
+import com.springboot.mapper.VenueZoneMapper;
 import com.springboot.model.dto.venuezone.VenueZoneQueryRequest;
 import com.springboot.model.entity.VenueZone;
 import com.springboot.model.vo.VenueZoneVO;
 import com.springboot.service.VenueZoneService;
-import com.springboot.mapper.VenueZoneMapper;
 import com.springboot.utils.SqlUtils;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
-* @description 针对表【venue_zone(场馆区域表)】的数据库操作Service实现
-*/
+ * @description 针对表【venue_zone(场馆区域表)】的数据库操作Service实现
+ */
 @Service
 public class VenueZoneServiceImpl extends ServiceImpl<VenueZoneMapper, VenueZone>
-    implements VenueZoneService{
+        implements VenueZoneService {
 
     @Override
     public void validVenueZone(VenueZone venueZone, boolean add) {
@@ -39,10 +41,12 @@ public class VenueZoneServiceImpl extends ServiceImpl<VenueZoneMapper, VenueZone
         if (add && StringUtils.isBlank(venueZone.getZone_name())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "区域名称不能为空");
         }
-        if (StringUtils.isNotBlank(venueZone.getZone_code()) && venueZone.getZone_code().length() > 32) {
+        if (StringUtils.isNotBlank(venueZone.getZone_code())
+                && venueZone.getZone_code().length() > 32) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "区域编码过长");
         }
-        if (StringUtils.isNotBlank(venueZone.getZone_name()) && venueZone.getZone_name().length() > 128) {
+        if (StringUtils.isNotBlank(venueZone.getZone_name())
+                && venueZone.getZone_name().length() > 128) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "区域名称过长");
         }
         if (StringUtils.isNotBlank(venueZone.getZone_code())) {
@@ -64,19 +68,33 @@ public class VenueZoneServiceImpl extends ServiceImpl<VenueZoneMapper, VenueZone
         }
         QueryWrapper<VenueZone> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(venueZoneQueryRequest.getId() != null, "id", venueZoneQueryRequest.getId());
-        queryWrapper.eq(venueZoneQueryRequest.getVenueId() != null, "venue_id", venueZoneQueryRequest.getVenueId());
-        queryWrapper.eq(StringUtils.isNotBlank(venueZoneQueryRequest.getZoneCode()), "zone_code",
+        queryWrapper.eq(
+                venueZoneQueryRequest.getVenueId() != null,
+                "venue_id",
+                venueZoneQueryRequest.getVenueId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(venueZoneQueryRequest.getZoneCode()),
+                "zone_code",
                 venueZoneQueryRequest.getZoneCode());
-        queryWrapper.like(StringUtils.isNotBlank(venueZoneQueryRequest.getZoneName()), "zone_name",
+        queryWrapper.like(
+                StringUtils.isNotBlank(venueZoneQueryRequest.getZoneName()),
+                "zone_name",
                 venueZoneQueryRequest.getZoneName());
-        queryWrapper.eq(StringUtils.isNotBlank(venueZoneQueryRequest.getZoneType()), "zone_type",
+        queryWrapper.eq(
+                StringUtils.isNotBlank(venueZoneQueryRequest.getZoneType()),
+                "zone_type",
                 venueZoneQueryRequest.getZoneType());
-        queryWrapper.eq(StringUtils.isNotBlank(venueZoneQueryRequest.getRiskLevel()), "risk_level",
+        queryWrapper.eq(
+                StringUtils.isNotBlank(venueZoneQueryRequest.getRiskLevel()),
+                "risk_level",
                 venueZoneQueryRequest.getRiskLevel());
         queryWrapper.eq("is_delete", 0);
         String sortField = venueZoneQueryRequest.getSortField();
         String sortOrder = venueZoneQueryRequest.getSortOrder();
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), CommonConstant.SORT_ORDER_ASC.equals(sortOrder), sortField);
+        queryWrapper.orderBy(
+                SqlUtils.validSortField(sortField),
+                CommonConstant.SORT_ORDER_ASC.equals(sortOrder),
+                sortField);
         return queryWrapper;
     }
 
@@ -106,7 +124,3 @@ public class VenueZoneServiceImpl extends ServiceImpl<VenueZoneMapper, VenueZone
         return venueZoneList.stream().map(this::getVenueZoneVO).collect(Collectors.toList());
     }
 }
-
-
-
-

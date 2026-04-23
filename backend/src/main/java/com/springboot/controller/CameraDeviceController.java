@@ -1,7 +1,9 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -14,17 +16,17 @@ import com.springboot.model.dto.cameradevice.CameraDeviceAddRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceEditRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceQueryRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceUpdateRequest;
-import com.springboot.model.entity.CameraDevice;
-import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
 import com.springboot.model.entity.AiStreamTask;
+import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.websocket.AlertWsPublisher;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,31 +38,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/cameras")
 public class CameraDeviceController {
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private AlertWsPublisher alertWsPublisher;
+    @Resource private AlertWsPublisher alertWsPublisher;
 
-    @Resource
-    private AiStreamTaskService aiStreamTaskService;
+    @Resource private AiStreamTaskService aiStreamTaskService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Long> addCameraDevice(@RequestBody CameraDeviceAddRequest cameraDeviceAddRequest) {
+    public BaseResponse<Long> addCameraDevice(
+            @RequestBody CameraDeviceAddRequest cameraDeviceAddRequest) {
         if (cameraDeviceAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         CameraDevice cameraDevice = toCameraDevice(cameraDeviceAddRequest);
         cameraDevice.setProtocol(StringUtils.defaultIfBlank(cameraDevice.getProtocol(), "RTSP"));
-        cameraDevice.setDevice_status(StringUtils.defaultIfBlank(cameraDevice.getDevice_status(), "OFFLINE"));
-        cameraDevice.setHealth_status(StringUtils.defaultIfBlank(cameraDevice.getHealth_status(), "NORMAL"));
+        cameraDevice.setDevice_status(
+                StringUtils.defaultIfBlank(cameraDevice.getDevice_status(), "OFFLINE"));
+        cameraDevice.setHealth_status(
+                StringUtils.defaultIfBlank(cameraDevice.getHealth_status(), "NORMAL"));
         cameraDevice.setEnabled(cameraDevice.getEnabled() == null ? 1 : cameraDevice.getEnabled());
         cameraDevice.setIs_delete(0);
         cameraDeviceService.validCameraDevice(cameraDevice, true);
         boolean result = cameraDeviceService.save(cameraDevice);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        publishCameraStatusChanged(cameraDevice.getId(), cameraDevice.getCamera_code(), cameraDevice.getDevice_status(),
+        publishCameraStatusChanged(
+                cameraDevice.getId(),
+                cameraDevice.getCamera_code(),
+                cameraDevice.getDevice_status(),
                 cameraDevice.getHealth_status());
         return ResultUtils.success(cameraDevice.getId());
     }
@@ -81,15 +86,20 @@ public class CameraDeviceController {
         cameraDevice.setIs_delete(1);
         boolean result = cameraDeviceService.updateById(cameraDevice);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        publishCameraStatusChanged(oldCameraDevice.getId(), oldCameraDevice.getCamera_code(), "DELETED",
+        publishCameraStatusChanged(
+                oldCameraDevice.getId(),
+                oldCameraDevice.getCamera_code(),
+                "DELETED",
                 oldCameraDevice.getHealth_status());
         return ResultUtils.success(true);
     }
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateCameraDevice(@RequestBody CameraDeviceUpdateRequest cameraDeviceUpdateRequest) {
-        if (cameraDeviceUpdateRequest == null || cameraDeviceUpdateRequest.getId() == null
+    public BaseResponse<Boolean> updateCameraDevice(
+            @RequestBody CameraDeviceUpdateRequest cameraDeviceUpdateRequest) {
+        if (cameraDeviceUpdateRequest == null
+                || cameraDeviceUpdateRequest.getId() == null
                 || cameraDeviceUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -100,10 +110,14 @@ public class CameraDeviceController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         CameraDevice latest = cameraDeviceService.getById(cameraDevice.getId());
         if (latest != null) {
-            publishCameraStatusChanged(latest.getId(), latest.getCamera_code(), latest.getDevice_status(),
+            publishCameraStatusChanged(
+                    latest.getId(),
+                    latest.getCamera_code(),
+                    latest.getDevice_status(),
                     latest.getHealth_status());
         }
-        if (old != null && StringUtils.isNotBlank(cameraDeviceUpdateRequest.getStreamUrl())
+        if (old != null
+                && StringUtils.isNotBlank(cameraDeviceUpdateRequest.getStreamUrl())
                 && !cameraDeviceUpdateRequest.getStreamUrl().equals(old.getStream_url())) {
             restartAiTaskIfRunning(cameraDeviceUpdateRequest.getId());
         }
@@ -112,8 +126,10 @@ public class CameraDeviceController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editCameraDevice(@RequestBody CameraDeviceEditRequest cameraDeviceEditRequest) {
-        if (cameraDeviceEditRequest == null || cameraDeviceEditRequest.getId() == null
+    public BaseResponse<Boolean> editCameraDevice(
+            @RequestBody CameraDeviceEditRequest cameraDeviceEditRequest) {
+        if (cameraDeviceEditRequest == null
+                || cameraDeviceEditRequest.getId() == null
                 || cameraDeviceEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -133,10 +149,14 @@ public class CameraDeviceController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         CameraDevice latest = cameraDeviceService.getById(cameraDevice.getId());
         if (latest != null) {
-            publishCameraStatusChanged(latest.getId(), latest.getCamera_code(), latest.getDevice_status(),
+            publishCameraStatusChanged(
+                    latest.getId(),
+                    latest.getCamera_code(),
+                    latest.getDevice_status(),
                     latest.getHealth_status());
         }
-        if (old != null && StringUtils.isNotBlank(cameraDeviceEditRequest.getStreamUrl())
+        if (old != null
+                && StringUtils.isNotBlank(cameraDeviceEditRequest.getStreamUrl())
                 && !cameraDeviceEditRequest.getStreamUrl().equals(old.getStream_url())) {
             restartAiTaskIfRunning(cameraDeviceEditRequest.getId());
         }
@@ -163,25 +183,34 @@ public class CameraDeviceController {
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<CameraDevice>> listCameraDeviceByPage(@RequestBody CameraDeviceQueryRequest cameraDeviceQueryRequest) {
+    public BaseResponse<Page<CameraDevice>> listCameraDeviceByPage(
+            @RequestBody CameraDeviceQueryRequest cameraDeviceQueryRequest) {
         if (cameraDeviceQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = cameraDeviceQueryRequest.getCurrent();
         long size = cameraDeviceQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<CameraDevice> cameraDevicePage = cameraDeviceService.page(new Page<>(current, size),
-                cameraDeviceService.getQueryWrapper(cameraDeviceQueryRequest));
+        Page<CameraDevice> cameraDevicePage =
+                cameraDeviceService.page(
+                        new Page<>(current, size),
+                        cameraDeviceService.getQueryWrapper(cameraDeviceQueryRequest));
         return ResultUtils.success(cameraDevicePage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<CameraDeviceVO>> listCameraDeviceVOByPage(@RequestBody CameraDeviceQueryRequest cameraDeviceQueryRequest) {
-        BaseResponse<Page<CameraDevice>> response = listCameraDeviceByPage(cameraDeviceQueryRequest);
+    public BaseResponse<Page<CameraDeviceVO>> listCameraDeviceVOByPage(
+            @RequestBody CameraDeviceQueryRequest cameraDeviceQueryRequest) {
+        BaseResponse<Page<CameraDevice>> response =
+                listCameraDeviceByPage(cameraDeviceQueryRequest);
         Page<CameraDevice> cameraDevicePage = response.getData();
-        Page<CameraDeviceVO> cameraDeviceVOPage = new Page<>(cameraDevicePage.getCurrent(), cameraDevicePage.getSize(),
-                cameraDevicePage.getTotal());
-        List<CameraDeviceVO> cameraDeviceVOList = cameraDeviceService.getCameraDeviceVO(cameraDevicePage.getRecords());
+        Page<CameraDeviceVO> cameraDeviceVOPage =
+                new Page<>(
+                        cameraDevicePage.getCurrent(),
+                        cameraDevicePage.getSize(),
+                        cameraDevicePage.getTotal());
+        List<CameraDeviceVO> cameraDeviceVOList =
+                cameraDeviceService.getCameraDeviceVO(cameraDevicePage.getRecords());
         cameraDeviceVOPage.setRecords(cameraDeviceVOList);
         return ResultUtils.success(cameraDeviceVOPage);
     }
@@ -250,12 +279,14 @@ public class CameraDeviceController {
         }
     }
 
-    private void publishCameraStatusChanged(Long cameraId, String cameraCode, String deviceStatus, String healthStatus) {
+    private void publishCameraStatusChanged(
+            Long cameraId, String cameraCode, String deviceStatus, String healthStatus) {
         Map<String, Object> data = new HashMap<>();
         data.put("cameraId", cameraId);
         data.put("cameraCode", cameraCode);
         data.put("deviceStatus", deviceStatus);
         data.put("healthStatus", healthStatus);
-        alertWsPublisher.publishCameraStatusChanged("camera-status-" + cameraId + "-" + System.currentTimeMillis(), data);
+        alertWsPublisher.publishCameraStatusChanged(
+                "camera-status-" + cameraId + "-" + System.currentTimeMillis(), data);
     }
 }

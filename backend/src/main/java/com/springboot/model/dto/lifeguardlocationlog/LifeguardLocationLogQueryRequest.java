@@ -1,6 +1,7 @@
 package com.springboot.model.dto.lifeguardlocationlog;
 
 import com.springboot.common.PageRequest;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

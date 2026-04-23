@@ -1,19 +1,17 @@
 package com.springboot.config;
 
-import jakarta.annotation.Resource;
 import java.util.List;
+
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * 全局跨域配置
- */
+/** 全局跨域配置 */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    @Resource
-    private AppSecurityProperties appSecurityProperties;
+    @Resource private AppSecurityProperties appSecurityProperties;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {

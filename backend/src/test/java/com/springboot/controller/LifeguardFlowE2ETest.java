@@ -6,7 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+
 import com.springboot.common.BaseResponse;
+import com.springboot.mapper.SysRoleMapper;
+import com.springboot.mapper.SysUserMapper;
+import com.springboot.mapper.SysUserRoleMapper;
 import com.springboot.model.dto.auth.LoginRequest;
 import com.springboot.model.dto.lifeguard.LifeguardAddRequest;
 import com.springboot.model.dto.lifeguardlocationlog.LifeguardLocationReportRequest;
@@ -15,20 +23,14 @@ import com.springboot.model.entity.LifeguardLocationLog;
 import com.springboot.model.entity.SysRole;
 import com.springboot.model.entity.SysUser;
 import com.springboot.model.vo.LoginResultVO;
+import com.springboot.security.AuthContextHolder;
+import com.springboot.security.AuthUserContext;
 import com.springboot.service.AuthService;
 import com.springboot.service.LifeguardLocationLogService;
 import com.springboot.service.LifeguardService;
 import com.springboot.service.VenueService;
 import com.springboot.service.impl.LifeguardOffPostAlertService;
-import com.springboot.mapper.SysRoleMapper;
-import com.springboot.mapper.SysUserMapper;
-import com.springboot.mapper.SysUserRoleMapper;
-import com.springboot.security.AuthContextHolder;
-import com.springboot.security.AuthUserContext;
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,29 +42,21 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class LifeguardFlowE2ETest {
 
-    @Mock
-    private LifeguardService lifeguardService;
+    @Mock private LifeguardService lifeguardService;
 
-    @Mock
-    private LifeguardLocationLogService lifeguardLocationLogService;
+    @Mock private LifeguardLocationLogService lifeguardLocationLogService;
 
-    @Mock
-    private LifeguardOffPostAlertService lifeguardOffPostAlertService;
+    @Mock private LifeguardOffPostAlertService lifeguardOffPostAlertService;
 
-    @Mock
-    private AuthService authService;
+    @Mock private AuthService authService;
 
-    @Mock
-    private SysUserMapper sysUserMapper;
+    @Mock private SysUserMapper sysUserMapper;
 
-    @Mock
-    private SysRoleMapper sysRoleMapper;
+    @Mock private SysRoleMapper sysRoleMapper;
 
-    @Mock
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Mock private SysUserRoleMapper sysUserRoleMapper;
 
-    @Mock
-    private VenueService venueService;
+    @Mock private VenueService venueService;
 
     private LifeguardController controller;
 
@@ -70,14 +64,17 @@ class LifeguardFlowE2ETest {
     void setUp() {
         controller = new LifeguardController();
         ReflectionTestUtils.setField(controller, "lifeguardService", lifeguardService);
-        ReflectionTestUtils.setField(controller, "lifeguardLocationLogService", lifeguardLocationLogService);
-        ReflectionTestUtils.setField(controller, "lifeguardOffPostAlertService", lifeguardOffPostAlertService);
+        ReflectionTestUtils.setField(
+                controller, "lifeguardLocationLogService", lifeguardLocationLogService);
+        ReflectionTestUtils.setField(
+                controller, "lifeguardOffPostAlertService", lifeguardOffPostAlertService);
         ReflectionTestUtils.setField(controller, "authService", authService);
         ReflectionTestUtils.setField(controller, "sysUserMapper", sysUserMapper);
         ReflectionTestUtils.setField(controller, "sysRoleMapper", sysRoleMapper);
         ReflectionTestUtils.setField(controller, "sysUserRoleMapper", sysUserRoleMapper);
         ReflectionTestUtils.setField(controller, "venueService", venueService);
-        ReflectionTestUtils.setField(controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
+        ReflectionTestUtils.setField(
+                controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
     }
 
     @AfterEach
@@ -106,11 +103,13 @@ class LifeguardFlowE2ETest {
         when(sysRoleMapper.selectOne(any())).thenReturn(role);
         when(sysUserRoleMapper.selectCount(any())).thenReturn(0L);
         when(sysUserRoleMapper.insert(any())).thenReturn(1);
-        when(lifeguardService.save(any(Lifeguard.class))).thenAnswer(invocation -> {
-            Lifeguard lifeguard = invocation.getArgument(0);
-            lifeguard.setId(91001L);
-            return true;
-        });
+        when(lifeguardService.save(any(Lifeguard.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Lifeguard lifeguard = invocation.getArgument(0);
+                            lifeguard.setId(91001L);
+                            return true;
+                        });
 
         BaseResponse<Long> addResponse = controller.addLifeguard(addRequest);
         assertEquals(0, addResponse.getCode());
@@ -155,11 +154,13 @@ class LifeguardFlowE2ETest {
         locationReportRequest.setReportSource("APP_GPS");
         locationReportRequest.setReportedAt(new Date());
 
-        when(lifeguardLocationLogService.reportLocation(any(LifeguardLocationLog.class))).thenReturn(true);
+        when(lifeguardLocationLogService.reportLocation(any(LifeguardLocationLog.class)))
+                .thenReturn(true);
         when(lifeguardOffPostAlertService.checkAfterLocationReport(any(LifeguardLocationLog.class)))
                 .thenReturn(Map.of("offPostAlert", false, "created", false));
 
-        BaseResponse<Map<String, Object>> locationResponse = controller.reportLocation(locationReportRequest);
+        BaseResponse<Map<String, Object>> locationResponse =
+                controller.reportLocation(locationReportRequest);
         assertEquals(0, locationResponse.getCode());
         assertTrue((Boolean) locationResponse.getData().get("saved"));
     }

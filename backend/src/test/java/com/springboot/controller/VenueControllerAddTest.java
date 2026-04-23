@@ -11,6 +11,7 @@ import com.springboot.exception.BusinessException;
 import com.springboot.model.dto.venue.VenueAddRequest;
 import com.springboot.model.entity.Venue;
 import com.springboot.service.VenueService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class VenueControllerAddTest {
 
-    @Mock
-    private VenueService venueService;
+    @Mock private VenueService venueService;
 
     private VenueController controller;
 
@@ -32,7 +32,8 @@ class VenueControllerAddTest {
     void setUp() {
         controller = new VenueController();
         ReflectionTestUtils.setField(controller, "venueService", venueService);
-        ReflectionTestUtils.setField(controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
+        ReflectionTestUtils.setField(
+                controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
     }
 
     @Test
@@ -42,11 +43,13 @@ class VenueControllerAddTest {
         request.setVenueName("浦东场馆");
         request.setAddress("浦东新区XX路88号");
 
-        when(venueService.save(any(Venue.class))).thenAnswer(invocation -> {
-            Venue venue = invocation.getArgument(0);
-            venue.setId(3001L);
-            return true;
-        });
+        when(venueService.save(any(Venue.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Venue venue = invocation.getArgument(0);
+                            venue.setId(3001L);
+                            return true;
+                        });
 
         BaseResponse<Long> response = controller.addVenue(request);
 
@@ -68,9 +71,11 @@ class VenueControllerAddTest {
         request.setVenueName("测试场馆");
 
         when(venueService.save(any(Venue.class)))
-                .thenThrow(new DataIntegrityViolationException("Field does not have a default value"));
+                .thenThrow(
+                        new DataIntegrityViolationException("Field does not have a default value"));
 
-        BusinessException exception = assertThrows(BusinessException.class, () -> controller.addVenue(request));
+        BusinessException exception =
+                assertThrows(BusinessException.class, () -> controller.addVenue(request));
 
         assertEquals(ErrorCode.OPERATION_ERROR.getCode(), exception.getCode());
         assertEquals("场馆信息不完整，请补充必填字段", exception.getMessage());

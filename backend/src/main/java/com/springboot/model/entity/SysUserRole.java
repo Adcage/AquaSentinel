@@ -1,41 +1,31 @@
 package com.springboot.model.entity;
 
+import java.io.Serializable;
+import java.util.Date;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
-/**
- * 用户角色关联表
- * @TableName sys_user_role
- */
-@TableName(value ="sys_user_role")
+/** 用户角色关联表 @TableName sys_user_role */
+@TableName(value = "sys_user_role")
 @Data
 public class SysUserRole implements Serializable {
-    /**
-     * 主键
-     */
+    /** 主键 */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 用户ID
-     */
+    /** 用户ID */
     @TableField(value = "user_id")
     private Long user_id;
 
-    /**
-     * 角色ID
-     */
+    /** 角色ID */
     @TableField(value = "role_id")
     private Long role_id;
 
-    /**
-     * 创建时间
-     */
+    /** 创建时间 */
     @TableField(value = "created_at")
     private Date created_at;
 
@@ -55,9 +45,15 @@ public class SysUserRole implements Serializable {
         }
         SysUserRole other = (SysUserRole) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
-            && (this.getUser_id() == null ? other.getUser_id() == null : this.getUser_id().equals(other.getUser_id()))
-            && (this.getRole_id() == null ? other.getRole_id() == null : this.getRole_id().equals(other.getRole_id()))
-            && (this.getCreated_at() == null ? other.getCreated_at() == null : this.getCreated_at().equals(other.getCreated_at()));
+                && (this.getUser_id() == null
+                        ? other.getUser_id() == null
+                        : this.getUser_id().equals(other.getUser_id()))
+                && (this.getRole_id() == null
+                        ? other.getRole_id() == null
+                        : this.getRole_id().equals(other.getRole_id()))
+                && (this.getCreated_at() == null
+                        ? other.getCreated_at() == null
+                        : this.getCreated_at().equals(other.getCreated_at()));
     }
 
     @Override

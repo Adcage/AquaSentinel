@@ -1,10 +1,5 @@
 package com.springboot.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.springboot.common.ErrorCode;
-import com.springboot.config.AppAiEngineProperties;
-import com.springboot.exception.BusinessException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -12,6 +7,13 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.config.AppAiEngineProperties;
+import com.springboot.exception.BusinessException;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -27,14 +29,19 @@ public class AiEngineClient {
     public AiEngineClient(AppAiEngineProperties appAiEngineProperties, ObjectMapper objectMapper) {
         this.appAiEngineProperties = appAiEngineProperties;
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(appAiEngineProperties.getTimeoutMs()))
-                .build();
+        this.httpClient =
+                HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofMillis(appAiEngineProperties.getTimeoutMs()))
+                        .build();
     }
 
-    public Map<String, Object> startTask(String taskCode, String cameraCode, String streamUrl,
-                                         Integer frameIntervalMs, String displayStreamUrl,
-                                         Double drowningAlertThresholdSec) {
+    public Map<String, Object> startTask(
+            String taskCode,
+            String cameraCode,
+            String streamUrl,
+            Integer frameIntervalMs,
+            String displayStreamUrl,
+            Double drowningAlertThresholdSec) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("task_code", taskCode);
         payload.put("camera_code", cameraCode);
@@ -51,13 +58,17 @@ public class AiEngineClient {
         return postJson(appAiEngineProperties.getStartPath(), payload);
     }
 
-    public Map<String, Object> startTask(String taskCode, String cameraCode, String streamUrl,
-                                         Integer frameIntervalMs) {
+    public Map<String, Object> startTask(
+            String taskCode, String cameraCode, String streamUrl, Integer frameIntervalMs) {
         return startTask(taskCode, cameraCode, streamUrl, frameIntervalMs, null, null);
     }
 
-    public Map<String, Object> startTask(String taskCode, String cameraCode, String streamUrl,
-                                         Integer frameIntervalMs, String displayStreamUrl) {
+    public Map<String, Object> startTask(
+            String taskCode,
+            String cameraCode,
+            String streamUrl,
+            Integer frameIntervalMs,
+            String displayStreamUrl) {
         return startTask(taskCode, cameraCode, streamUrl, frameIntervalMs, displayStreamUrl, null);
     }
 
@@ -74,21 +85,24 @@ public class AiEngineClient {
     public Map<String, Object> getTask(String taskCode, Integer timeoutMs) {
         String url = joinUrl(appAiEngineProperties.getStatusPath() + "/" + taskCode);
         try {
-            int requestTimeoutMs = timeoutMs == null || timeoutMs <= 0
-                    ? appAiEngineProperties.getTimeoutMs()
-                    : timeoutMs;
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofMillis(requestTimeoutMs))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            int requestTimeoutMs =
+                    timeoutMs == null || timeoutMs <= 0
+                            ? appAiEngineProperties.getTimeoutMs()
+                            : timeoutMs;
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .timeout(Duration.ofMillis(requestTimeoutMs))
+                            .GET()
+                            .build();
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR,
-                        "AI引擎状态查询失败: HTTP " + response.statusCode());
+                throw new BusinessException(
+                        ErrorCode.SYSTEM_ERROR, "AI引擎状态查询失败: HTTP " + response.statusCode());
             }
-            Map<String, Object> payload = objectMapper.readValue(response.body(), new TypeReference<>() {
-            });
+            Map<String, Object> payload =
+                    objectMapper.readValue(response.body(), new TypeReference<>() {});
             return unwrapData(payload);
         } catch (BusinessException e) {
             throw e;
@@ -100,18 +114,20 @@ public class AiEngineClient {
     public Map<String, Object> healthCheck() {
         String url = joinUrl(appAiEngineProperties.getHealthPath());
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofMillis(appAiEngineProperties.getTimeoutMs()))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .timeout(Duration.ofMillis(appAiEngineProperties.getTimeoutMs()))
+                            .GET()
+                            .build();
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR,
-                        "AI引擎健康检查失败: HTTP " + response.statusCode());
+                throw new BusinessException(
+                        ErrorCode.SYSTEM_ERROR, "AI引擎健康检查失败: HTTP " + response.statusCode());
             }
-            Map<String, Object> payload = objectMapper.readValue(response.body(), new TypeReference<>() {
-            });
+            Map<String, Object> payload =
+                    objectMapper.readValue(response.body(), new TypeReference<>() {});
             return unwrapData(payload);
         } catch (BusinessException e) {
             throw e;
@@ -137,19 +153,21 @@ public class AiEngineClient {
         String url = joinUrl(path);
         try {
             String body = objectMapper.writeValueAsString(requestPayload);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofMillis(appAiEngineProperties.getTimeoutMs()))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .timeout(Duration.ofMillis(appAiEngineProperties.getTimeoutMs()))
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString(body))
+                            .build();
+            HttpResponse<String> response =
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR,
-                        "AI引擎调用失败: HTTP " + response.statusCode());
+                throw new BusinessException(
+                        ErrorCode.SYSTEM_ERROR, "AI引擎调用失败: HTTP " + response.statusCode());
             }
-            Map<String, Object> responsePayload = objectMapper.readValue(response.body(), new TypeReference<>() {
-            });
+            Map<String, Object> responsePayload =
+                    objectMapper.readValue(response.body(), new TypeReference<>() {});
             return unwrapData(responsePayload);
         } catch (BusinessException e) {
             throw e;

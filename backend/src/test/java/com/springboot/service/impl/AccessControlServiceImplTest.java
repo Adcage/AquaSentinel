@@ -5,15 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Set;
+
 import com.springboot.mapper.SysRoleMapper;
 import com.springboot.mapper.SysUserMapper;
 import com.springboot.mapper.SysUserRoleMapper;
 import com.springboot.model.entity.SysRole;
 import com.springboot.model.entity.SysUserRole;
-import java.util.List;
-import java.util.Set;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,20 +25,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class AccessControlServiceImplTest {
 
-    @Mock
-    private SysUserMapper sysUserMapper;
+    @Mock private SysUserMapper sysUserMapper;
 
-    @Mock
-    private SysRoleMapper sysRoleMapper;
+    @Mock private SysRoleMapper sysRoleMapper;
 
-    @Mock
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Mock private SysUserRoleMapper sysUserRoleMapper;
 
-    @Mock
-    private ObjectMapper objectMapper;
+    @Mock private ObjectMapper objectMapper;
 
-    @InjectMocks
-    private AccessControlServiceImpl accessControlService;
+    @InjectMocks private AccessControlServiceImpl accessControlService;
 
     @Test
     void listRoleCodesByUserIdShouldReturnDistinctCodes() {

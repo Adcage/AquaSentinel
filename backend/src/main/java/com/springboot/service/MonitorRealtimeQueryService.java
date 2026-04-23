@@ -1,17 +1,18 @@
 package com.springboot.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
-import com.springboot.model.entity.AiStreamTask;
-import com.springboot.model.entity.CameraDevice;
-import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
+import com.springboot.model.entity.AiStreamTask;
+import com.springboot.model.entity.CameraDevice;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +33,11 @@ public class MonitorRealtimeQueryService {
 
     private final Map<Long, Object[]> cameraSiteCache = new ConcurrentHashMap<>();
 
-    @Resource
-    private AiStreamTaskService aiStreamTaskService;
+    @Resource private AiStreamTaskService aiStreamTaskService;
 
-    @Resource
-    private AiEngineClient aiEngineClient;
+    @Resource private AiEngineClient aiEngineClient;
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
     private Map<String, Object> buildCameraSite(Long cameraId) {
         if (cameraId == null) {
@@ -61,7 +59,7 @@ public class MonitorRealtimeQueryService {
         cameraSite.put("cameraCode", cameraDevice.getCamera_code());
         cameraSite.put("venueId", cameraDevice.getVenue_id());
         cameraSite.put("zoneId", cameraDevice.getZone_id());
-        cameraSiteCache.put(cameraId, new Object[]{cameraSite, now + CAMERA_SITE_CACHE_TTL_MS});
+        cameraSiteCache.put(cameraId, new Object[] {cameraSite, now + CAMERA_SITE_CACHE_TTL_MS});
         return cameraSite;
     }
 
@@ -142,7 +140,8 @@ public class MonitorRealtimeQueryService {
         }
 
         try {
-            Map<String, Object> engineTask = aiEngineClient.getTask(pickedTask.getTask_code(), REALTIME_ENGINE_TIMEOUT_MS);
+            Map<String, Object> engineTask =
+                    aiEngineClient.getTask(pickedTask.getTask_code(), REALTIME_ENGINE_TIMEOUT_MS);
             engineTask.put("cameraSite", buildCameraSite(cameraId));
             data.put("engine", engineTask);
             cameraCooldownUntilMap.remove(cameraId);
@@ -153,7 +152,10 @@ public class MonitorRealtimeQueryService {
                     try {
                         aiStreamTaskService.stop(pickedTask.getTask_code());
                     } catch (Exception ignoreStopError) {
-                        log.debug("mark stale task stopped failed, taskCode={}", pickedTask.getTask_code(), ignoreStopError);
+                        log.debug(
+                                "mark stale task stopped failed, taskCode={}",
+                                pickedTask.getTask_code(),
+                                ignoreStopError);
                     }
                     CameraDevice cameraDevice = cameraDeviceService.getById(cameraId);
                     if (!isCameraActive(cameraDevice)) {
@@ -169,9 +171,12 @@ public class MonitorRealtimeQueryService {
                             "auto rebuilding engine task, cameraId={}, staleTaskCode={}",
                             cameraId,
                             pickedTask.getTask_code());
-                    AiStreamTask restartedTask = aiStreamTaskService.startTask(buildAutoRestartRequest(pickedTask));
+                    AiStreamTask restartedTask =
+                            aiStreamTaskService.startTask(buildAutoRestartRequest(pickedTask));
                     data.put("local", restartedTask);
-                    Map<String, Object> engineTask = aiEngineClient.getTask(restartedTask.getTask_code(), REALTIME_ENGINE_TIMEOUT_MS);
+                    Map<String, Object> engineTask =
+                            aiEngineClient.getTask(
+                                    restartedTask.getTask_code(), REALTIME_ENGINE_TIMEOUT_MS);
                     engineTask.put("cameraSite", buildCameraSite(cameraId));
                     engineTask.put("autoRestarted", true);
                     data.put("engine", engineTask);
@@ -183,7 +188,8 @@ public class MonitorRealtimeQueryService {
                             cameraId,
                             pickedTask.getTask_code(),
                             restartError);
-                    cameraCooldownUntilMap.put(cameraId, System.currentTimeMillis() + ENGINE_COOLDOWN_MS);
+                    cameraCooldownUntilMap.put(
+                            cameraId, System.currentTimeMillis() + ENGINE_COOLDOWN_MS);
                     data.put("engine", buildEngineFallback(cameraId, "AI任务自动重建失败"));
                     return data;
                 }

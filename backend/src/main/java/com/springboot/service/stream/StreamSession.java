@@ -2,6 +2,7 @@ package com.springboot.service.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
 import lombok.Getter;
 
 @Getter
@@ -23,8 +24,12 @@ public class StreamSession implements AutoCloseable {
 
     private final AutoCloseable closeable;
 
-    public StreamSession(String providerName, String contentType, String sourceUrl, StreamPipe streamPipe,
-                         AutoCloseable closeable) {
+    public StreamSession(
+            String providerName,
+            String contentType,
+            String sourceUrl,
+            StreamPipe streamPipe,
+            AutoCloseable closeable) {
         this.providerName = providerName;
         this.contentType = contentType;
         this.sourceUrl = sourceUrl;

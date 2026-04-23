@@ -11,6 +11,7 @@ import com.springboot.model.entity.CameraDevice;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.websocket.AlertWsPublisher;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,14 +23,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class CameraDeviceControllerAddTest {
 
-    @Mock
-    private CameraDeviceService cameraDeviceService;
+    @Mock private CameraDeviceService cameraDeviceService;
 
-    @Mock
-    private AlertWsPublisher alertWsPublisher;
+    @Mock private AlertWsPublisher alertWsPublisher;
 
-    @Mock
-    private AiStreamTaskService aiStreamTaskService;
+    @Mock private AiStreamTaskService aiStreamTaskService;
 
     private CameraDeviceController controller;
 
@@ -50,11 +48,13 @@ class CameraDeviceControllerAddTest {
         request.setCameraName("测试设备");
         request.setStreamUrl("rtsp://example/stream");
 
-        when(cameraDeviceService.save(any(CameraDevice.class))).thenAnswer(invocation -> {
-            CameraDevice cameraDevice = invocation.getArgument(0);
-            cameraDevice.setId(1001L);
-            return true;
-        });
+        when(cameraDeviceService.save(any(CameraDevice.class)))
+                .thenAnswer(
+                        invocation -> {
+                            CameraDevice cameraDevice = invocation.getArgument(0);
+                            cameraDevice.setId(1001L);
+                            return true;
+                        });
 
         BaseResponse<Long> response = controller.addCameraDevice(request);
 
@@ -75,11 +75,13 @@ class CameraDeviceControllerAddTest {
         request.setCameraName("测试设备2");
         request.setStreamUrl("rtsp://example/stream2");
 
-        when(cameraDeviceService.save(any(CameraDevice.class))).thenAnswer(invocation -> {
-            CameraDevice cameraDevice = invocation.getArgument(0);
-            cameraDevice.setId(1002L);
-            return true;
-        });
+        when(cameraDeviceService.save(any(CameraDevice.class)))
+                .thenAnswer(
+                        invocation -> {
+                            CameraDevice cameraDevice = invocation.getArgument(0);
+                            cameraDevice.setId(1002L);
+                            return true;
+                        });
 
         controller.addCameraDevice(request);
 

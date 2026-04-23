@@ -1,6 +1,7 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -16,8 +17,9 @@ import com.springboot.model.dto.lifeguarddutylog.LifeguardDutyLogUpdateRequest;
 import com.springboot.model.entity.LifeguardDutyLog;
 import com.springboot.model.vo.LifeguardDutyLogVO;
 import com.springboot.service.LifeguardDutyLogService;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,12 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/lifeguards/duty-logs")
 public class LifeguardDutyController {
 
-    @Resource
-    private LifeguardDutyLogService lifeguardDutyLogService;
+    @Resource private LifeguardDutyLogService lifeguardDutyLogService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Long> addLifeguardDutyLog(@RequestBody LifeguardDutyLogAddRequest lifeguardDutyLogAddRequest) {
+    public BaseResponse<Long> addLifeguardDutyLog(
+            @RequestBody LifeguardDutyLogAddRequest lifeguardDutyLogAddRequest) {
         if (lifeguardDutyLogAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -56,8 +58,10 @@ public class LifeguardDutyController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateLifeguardDutyLog(@RequestBody LifeguardDutyLogUpdateRequest lifeguardDutyLogUpdateRequest) {
-        if (lifeguardDutyLogUpdateRequest == null || lifeguardDutyLogUpdateRequest.getId() == null
+    public BaseResponse<Boolean> updateLifeguardDutyLog(
+            @RequestBody LifeguardDutyLogUpdateRequest lifeguardDutyLogUpdateRequest) {
+        if (lifeguardDutyLogUpdateRequest == null
+                || lifeguardDutyLogUpdateRequest.getId() == null
                 || lifeguardDutyLogUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -70,8 +74,10 @@ public class LifeguardDutyController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editLifeguardDutyLog(@RequestBody LifeguardDutyLogEditRequest lifeguardDutyLogEditRequest) {
-        if (lifeguardDutyLogEditRequest == null || lifeguardDutyLogEditRequest.getId() == null
+    public BaseResponse<Boolean> editLifeguardDutyLog(
+            @RequestBody LifeguardDutyLogEditRequest lifeguardDutyLogEditRequest) {
+        if (lifeguardDutyLogEditRequest == null
+                || lifeguardDutyLogEditRequest.getId() == null
                 || lifeguardDutyLogEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -101,7 +107,8 @@ public class LifeguardDutyController {
     @GetMapping("/get/vo")
     public BaseResponse<LifeguardDutyLogVO> getLifeguardDutyLogVOById(long id) {
         BaseResponse<LifeguardDutyLog> response = getLifeguardDutyLogById(id);
-        return ResultUtils.success(lifeguardDutyLogService.getLifeguardDutyLogVO(response.getData()));
+        return ResultUtils.success(
+                lifeguardDutyLogService.getLifeguardDutyLogVO(response.getData()));
     }
 
     @PostMapping("/list/page")
@@ -113,20 +120,26 @@ public class LifeguardDutyController {
         long current = lifeguardDutyLogQueryRequest.getCurrent();
         long size = lifeguardDutyLogQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<LifeguardDutyLog> lifeguardDutyLogPage = lifeguardDutyLogService.page(new Page<>(current, size),
-                lifeguardDutyLogService.getQueryWrapper(lifeguardDutyLogQueryRequest));
+        Page<LifeguardDutyLog> lifeguardDutyLogPage =
+                lifeguardDutyLogService.page(
+                        new Page<>(current, size),
+                        lifeguardDutyLogService.getQueryWrapper(lifeguardDutyLogQueryRequest));
         return ResultUtils.success(lifeguardDutyLogPage);
     }
 
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<LifeguardDutyLogVO>> listLifeguardDutyLogVOByPage(
             @RequestBody LifeguardDutyLogQueryRequest lifeguardDutyLogQueryRequest) {
-        BaseResponse<Page<LifeguardDutyLog>> response = listLifeguardDutyLogByPage(lifeguardDutyLogQueryRequest);
+        BaseResponse<Page<LifeguardDutyLog>> response =
+                listLifeguardDutyLogByPage(lifeguardDutyLogQueryRequest);
         Page<LifeguardDutyLog> lifeguardDutyLogPage = response.getData();
-        Page<LifeguardDutyLogVO> lifeguardDutyLogVOPage = new Page<>(lifeguardDutyLogPage.getCurrent(),
-                lifeguardDutyLogPage.getSize(), lifeguardDutyLogPage.getTotal());
-        List<LifeguardDutyLogVO> lifeguardDutyLogVOList = lifeguardDutyLogService.getLifeguardDutyLogVO(
-                lifeguardDutyLogPage.getRecords());
+        Page<LifeguardDutyLogVO> lifeguardDutyLogVOPage =
+                new Page<>(
+                        lifeguardDutyLogPage.getCurrent(),
+                        lifeguardDutyLogPage.getSize(),
+                        lifeguardDutyLogPage.getTotal());
+        List<LifeguardDutyLogVO> lifeguardDutyLogVOList =
+                lifeguardDutyLogService.getLifeguardDutyLogVO(lifeguardDutyLogPage.getRecords());
         lifeguardDutyLogVOPage.setRecords(lifeguardDutyLogVOList);
         return ResultUtils.success(lifeguardDutyLogVOPage);
     }

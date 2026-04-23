@@ -1,10 +1,13 @@
 package com.springboot.security;
 
-import com.springboot.config.AppSecurityProperties;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import com.springboot.config.AppSecurityProperties;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +41,8 @@ public class HmacSignatureVerifier {
         }
         String payload = timestamp + "\n" + StringUtils.defaultString(body);
         String expected = hmacSha256Hex(aiCallback.getSecret(), payload);
-        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
                 signature.trim().toLowerCase().getBytes(StandardCharsets.UTF_8));
     }
 

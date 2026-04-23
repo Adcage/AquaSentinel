@@ -3,6 +3,7 @@ package com.springboot.security;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,7 +31,8 @@ public class AuthUserContext {
     }
 
     public void setPermissionCodes(Set<String> permissionCodes) {
-        this.permissionCodes = permissionCodes == null ? new HashSet<>() : new HashSet<>(permissionCodes);
+        this.permissionCodes =
+                permissionCodes == null ? new HashSet<>() : new HashSet<>(permissionCodes);
     }
 
     public boolean hasRole(String roleCode) {

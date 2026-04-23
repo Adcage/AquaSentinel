@@ -1,95 +1,67 @@
 package com.springboot.model.entity;
 
+import java.io.Serializable;
+import java.util.Date;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
-/**
- * 救生员表
- * @TableName lifeguard
- */
-@TableName(value ="lifeguard")
+/** 救生员表 @TableName lifeguard */
+@TableName(value = "lifeguard")
 @Data
 public class Lifeguard implements Serializable {
-    /**
-     * 主键
-     */
+    /** 主键 */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 关联用户ID
-     */
+    /** 关联用户ID */
     @TableField(value = "user_id")
     private Long user_id;
 
-    /**
-     * 救生员编码
-     */
+    /** 救生员编码 */
     @TableField(value = "lifeguard_code")
     private String lifeguard_code;
 
-    /**
-     * 姓名
-     */
+    /** 姓名 */
     @TableField(value = "full_name")
     private String full_name;
 
-    /**
-     * 手机号
-     */
+    /** 手机号 */
     @TableField(value = "phone")
     private String phone;
 
-    /**
-     * 绑定场馆
-     */
+    /** 绑定场馆 */
     @TableField(value = "venue_id")
     private Long venue_id;
 
-    /**
-     * 电子围栏GeoJSON
-     */
+    /** 电子围栏GeoJSON */
     @TableField(value = "fence_geo_json")
     private Object fence_geo_json;
 
-    /**
-     * 审核状态
-     */
+    /** 审核状态 */
     @TableField(value = "audit_status")
     private String audit_status;
 
-    /**
-     * 在岗状态
-     */
+    /** 在岗状态 */
     @TableField(value = "duty_status")
     private String duty_status;
 
-    /**
-     * 最近登录时间
-     */
+    /** 最近登录时间 */
     @TableField(value = "last_login_at")
     private Date last_login_at;
 
-    /**
-     * 创建时间
-     */
+    /** 创建时间 */
     @TableField(value = "created_at")
     private Date created_at;
 
-    /**
-     * 更新时间
-     */
+    /** 更新时间 */
     @TableField(value = "updated_at")
     private Date updated_at;
 
-    /**
-     * 逻辑删除
-     */
+    /** 逻辑删除 */
     @TableField(value = "is_delete")
     private Integer is_delete;
 
@@ -109,18 +81,42 @@ public class Lifeguard implements Serializable {
         }
         Lifeguard other = (Lifeguard) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
-            && (this.getUser_id() == null ? other.getUser_id() == null : this.getUser_id().equals(other.getUser_id()))
-            && (this.getLifeguard_code() == null ? other.getLifeguard_code() == null : this.getLifeguard_code().equals(other.getLifeguard_code()))
-            && (this.getFull_name() == null ? other.getFull_name() == null : this.getFull_name().equals(other.getFull_name()))
-            && (this.getPhone() == null ? other.getPhone() == null : this.getPhone().equals(other.getPhone()))
-            && (this.getVenue_id() == null ? other.getVenue_id() == null : this.getVenue_id().equals(other.getVenue_id()))
-            && (this.getFence_geo_json() == null ? other.getFence_geo_json() == null : this.getFence_geo_json().equals(other.getFence_geo_json()))
-            && (this.getAudit_status() == null ? other.getAudit_status() == null : this.getAudit_status().equals(other.getAudit_status()))
-            && (this.getDuty_status() == null ? other.getDuty_status() == null : this.getDuty_status().equals(other.getDuty_status()))
-            && (this.getLast_login_at() == null ? other.getLast_login_at() == null : this.getLast_login_at().equals(other.getLast_login_at()))
-            && (this.getCreated_at() == null ? other.getCreated_at() == null : this.getCreated_at().equals(other.getCreated_at()))
-            && (this.getUpdated_at() == null ? other.getUpdated_at() == null : this.getUpdated_at().equals(other.getUpdated_at()))
-            && (this.getIs_delete() == null ? other.getIs_delete() == null : this.getIs_delete().equals(other.getIs_delete()));
+                && (this.getUser_id() == null
+                        ? other.getUser_id() == null
+                        : this.getUser_id().equals(other.getUser_id()))
+                && (this.getLifeguard_code() == null
+                        ? other.getLifeguard_code() == null
+                        : this.getLifeguard_code().equals(other.getLifeguard_code()))
+                && (this.getFull_name() == null
+                        ? other.getFull_name() == null
+                        : this.getFull_name().equals(other.getFull_name()))
+                && (this.getPhone() == null
+                        ? other.getPhone() == null
+                        : this.getPhone().equals(other.getPhone()))
+                && (this.getVenue_id() == null
+                        ? other.getVenue_id() == null
+                        : this.getVenue_id().equals(other.getVenue_id()))
+                && (this.getFence_geo_json() == null
+                        ? other.getFence_geo_json() == null
+                        : this.getFence_geo_json().equals(other.getFence_geo_json()))
+                && (this.getAudit_status() == null
+                        ? other.getAudit_status() == null
+                        : this.getAudit_status().equals(other.getAudit_status()))
+                && (this.getDuty_status() == null
+                        ? other.getDuty_status() == null
+                        : this.getDuty_status().equals(other.getDuty_status()))
+                && (this.getLast_login_at() == null
+                        ? other.getLast_login_at() == null
+                        : this.getLast_login_at().equals(other.getLast_login_at()))
+                && (this.getCreated_at() == null
+                        ? other.getCreated_at() == null
+                        : this.getCreated_at().equals(other.getCreated_at()))
+                && (this.getUpdated_at() == null
+                        ? other.getUpdated_at() == null
+                        : this.getUpdated_at().equals(other.getUpdated_at()))
+                && (this.getIs_delete() == null
+                        ? other.getIs_delete() == null
+                        : this.getIs_delete().equals(other.getIs_delete()));
     }
 
     @Override
@@ -129,14 +125,19 @@ public class Lifeguard implements Serializable {
         int result = 1;
         result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
         result = prime * result + ((getUser_id() == null) ? 0 : getUser_id().hashCode());
-        result = prime * result + ((getLifeguard_code() == null) ? 0 : getLifeguard_code().hashCode());
+        result =
+                prime * result
+                        + ((getLifeguard_code() == null) ? 0 : getLifeguard_code().hashCode());
         result = prime * result + ((getFull_name() == null) ? 0 : getFull_name().hashCode());
         result = prime * result + ((getPhone() == null) ? 0 : getPhone().hashCode());
         result = prime * result + ((getVenue_id() == null) ? 0 : getVenue_id().hashCode());
-        result = prime * result + ((getFence_geo_json() == null) ? 0 : getFence_geo_json().hashCode());
+        result =
+                prime * result
+                        + ((getFence_geo_json() == null) ? 0 : getFence_geo_json().hashCode());
         result = prime * result + ((getAudit_status() == null) ? 0 : getAudit_status().hashCode());
         result = prime * result + ((getDuty_status() == null) ? 0 : getDuty_status().hashCode());
-        result = prime * result + ((getLast_login_at() == null) ? 0 : getLast_login_at().hashCode());
+        result =
+                prime * result + ((getLast_login_at() == null) ? 0 : getLast_login_at().hashCode());
         result = prime * result + ((getCreated_at() == null) ? 0 : getCreated_at().hashCode());
         result = prime * result + ((getUpdated_at() == null) ? 0 : getUpdated_at().hashCode());
         result = prime * result + ((getIs_delete() == null) ? 0 : getIs_delete().hashCode());

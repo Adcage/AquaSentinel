@@ -1,7 +1,9 @@
 package com.springboot.model.dto.alertrecord;
 
-import com.springboot.common.PageRequest;
 import java.util.Date;
+
+import com.springboot.common.PageRequest;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

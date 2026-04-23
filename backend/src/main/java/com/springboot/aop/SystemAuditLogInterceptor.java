@@ -1,5 +1,9 @@
 package com.springboot.aop;
 
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.RequestIdHolder;
@@ -8,10 +12,8 @@ import com.springboot.model.entity.SystemAuditLog;
 import com.springboot.security.AuthContextHolder;
 import com.springboot.security.AuthUserContext;
 import com.springboot.service.SystemAuditLogService;
+
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -29,16 +31,17 @@ public class SystemAuditLogInterceptor {
 
     private static final int MAX_REQUEST_BODY_LENGTH = 2000;
 
-    private static final List<String> AUDIT_URI_PREFIXES = List.of(
-            "/api/auth/admin/login",
-            "/api/auth/login",
-            "/api/lifeguards/login",
-            "/api/cameras/",
-            "/api/monitor/tasks/",
-            "/api/alerts/",
-            "/api/lifeguards/",
-            "/api/stats/",
-            "/api/internal/ai/events");
+    private static final List<String> AUDIT_URI_PREFIXES =
+            List.of(
+                    "/api/auth/admin/login",
+                    "/api/auth/login",
+                    "/api/lifeguards/login",
+                    "/api/cameras/",
+                    "/api/monitor/tasks/",
+                    "/api/alerts/",
+                    "/api/lifeguards/",
+                    "/api/stats/",
+                    "/api/internal/ai/events");
 
     private final SystemAuditLogService systemAuditLogService;
 
@@ -78,16 +81,27 @@ public class SystemAuditLogInterceptor {
             responseMessage = throwable.getMessage();
             throw throwable;
         } finally {
-            persistAuditLog(request, point.getArgs(), requestUri, responseCode, responseMessage,
+            persistAuditLog(
+                    request,
+                    point.getArgs(),
+                    requestUri,
+                    responseCode,
+                    responseMessage,
                     System.currentTimeMillis() - start);
         }
     }
 
-    private void persistAuditLog(HttpServletRequest request, Object[] args, String requestUri,
-                                 Integer responseCode, String responseMessage, long costMs) {
+    private void persistAuditLog(
+            HttpServletRequest request,
+            Object[] args,
+            String requestUri,
+            Integer responseCode,
+            String responseMessage,
+            long costMs) {
         SystemAuditLog systemAuditLog = new SystemAuditLog();
         String traceId = RequestIdHolder.get();
-        systemAuditLog.setTrace_id(StringUtils.defaultIfBlank(traceId, UUID.randomUUID().toString()));
+        systemAuditLog.setTrace_id(
+                StringUtils.defaultIfBlank(traceId, UUID.randomUUID().toString()));
         systemAuditLog.setLog_category(resolveLogCategory(requestUri));
         AuthUserContext authUserContext = AuthContextHolder.get();
         if (authUserContext != null) {
@@ -99,8 +113,10 @@ public class SystemAuditLogInterceptor {
         systemAuditLog.setRequest_method(request.getMethod());
         systemAuditLog.setRequest_body(buildRequestBody(args));
         systemAuditLog.setResponse_code(responseCode);
-        systemAuditLog.setResponse_message(StringUtils.substring(StringUtils.defaultString(responseMessage), 0, 255));
-        systemAuditLog.setCost_ms(Math.toIntExact(Math.min(Math.max(costMs, 0L), Integer.MAX_VALUE)));
+        systemAuditLog.setResponse_message(
+                StringUtils.substring(StringUtils.defaultString(responseMessage), 0, 255));
+        systemAuditLog.setCost_ms(
+                Math.toIntExact(Math.min(Math.max(costMs, 0L), Integer.MAX_VALUE)));
         systemAuditLog.setCreated_at(new Date());
         try {
             systemAuditLogService.save(systemAuditLog);
@@ -113,7 +129,8 @@ public class SystemAuditLogInterceptor {
         if (args == null || args.length == 0) {
             return null;
         }
-        String requestBody = StringUtils.substring(StringUtils.join(args, ", "), 0, MAX_REQUEST_BODY_LENGTH);
+        String requestBody =
+                StringUtils.substring(StringUtils.join(args, ", "), 0, MAX_REQUEST_BODY_LENGTH);
         return StringUtils.defaultIfBlank(requestBody, null);
     }
 

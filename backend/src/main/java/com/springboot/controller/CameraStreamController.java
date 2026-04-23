@@ -1,5 +1,10 @@
 package com.springboot.controller;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.ResultUtils;
@@ -11,13 +16,10 @@ import com.springboot.service.CameraDeviceService;
 import com.springboot.service.stream.StreamOpenRequest;
 import com.springboot.service.stream.StreamProviderRouter;
 import com.springboot.service.stream.StreamSession;
+
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,17 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping
 public class CameraStreamController {
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private StreamProviderRouter streamProviderRouter;
+    @Resource private StreamProviderRouter streamProviderRouter;
 
-    @Resource
-    private StreamTokenAuthService streamTokenAuthService;
+    @Resource private StreamTokenAuthService streamTokenAuthService;
 
-    @Resource
-    private AppStreamProxyProperties appStreamProxyProperties;
+    @Resource private AppStreamProxyProperties appStreamProxyProperties;
 
     @GetMapping("/streams/capabilities")
     public BaseResponse<Map<String, Object>> streamCapabilities() {
@@ -57,7 +55,8 @@ public class CameraStreamController {
             @PathVariable Long cameraId,
             @RequestParam(value = "provider", required = false) String provider,
             @RequestParam Map<String, String> params,
-            HttpServletResponse response) throws IOException {
+            HttpServletResponse response)
+            throws IOException {
         ensureEnabled();
         String token = params.get(streamTokenAuthService.resolveTokenParamName());
         streamTokenAuthService.verifyPreviewToken(token);
@@ -69,24 +68,28 @@ public class CameraStreamController {
             @PathVariable Long cameraId,
             @RequestParam(value = "provider", required = false) String provider,
             HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+            HttpServletResponse response)
+            throws IOException {
         ensureEnabled();
         ensureInternalCaller(request.getRemoteAddr());
         pipePreview(cameraId, provider, true, response);
     }
 
-    private void pipePreview(Long cameraId, String provider, boolean internalRequest, HttpServletResponse response)
+    private void pipePreview(
+            Long cameraId, String provider, boolean internalRequest, HttpServletResponse response)
             throws IOException {
         CameraDevice cameraDevice = cameraDeviceService.getById(cameraId);
-        if (cameraDevice == null || cameraDevice.getIs_delete() != null && cameraDevice.getIs_delete() == 1) {
+        if (cameraDevice == null
+                || cameraDevice.getIs_delete() != null && cameraDevice.getIs_delete() == 1) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "摄像头不存在");
         }
         if (cameraDevice.getEnabled() != null && cameraDevice.getEnabled() == 0) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "摄像头未启用");
         }
-        StreamOpenRequest request = internalRequest
-                ? StreamOpenRequest.internal(provider)
-                : StreamOpenRequest.external(provider);
+        StreamOpenRequest request =
+                internalRequest
+                        ? StreamOpenRequest.internal(provider)
+                        : StreamOpenRequest.external(provider);
         try (StreamSession streamSession = streamProviderRouter.open(cameraDevice, request)) {
             if (!streamSession.supportsPipe()) {
                 if (StringUtils.isBlank(streamSession.getSourceUrl())) {

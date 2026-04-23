@@ -4,8 +4,7 @@ public final class RequestIdHolder {
 
     private static final ThreadLocal<String> REQUEST_ID = new ThreadLocal<>();
 
-    private RequestIdHolder() {
-    }
+    private RequestIdHolder() {}
 
     public static void set(String requestId) {
         REQUEST_ID.set(requestId);

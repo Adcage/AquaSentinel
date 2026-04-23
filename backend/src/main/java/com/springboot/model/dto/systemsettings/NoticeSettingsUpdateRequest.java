@@ -1,6 +1,7 @@
 package com.springboot.model.dto.systemsettings;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
 @Data

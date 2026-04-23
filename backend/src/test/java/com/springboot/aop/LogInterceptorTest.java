@@ -24,7 +24,7 @@ class LogInterceptorTest {
     @Test
     void doInterceptorShouldProceedWhenNoRequestContext() throws Throwable {
         ProceedingJoinPoint point = mock(ProceedingJoinPoint.class);
-        when(point.getArgs()).thenReturn(new Object[]{"demo"});
+        when(point.getArgs()).thenReturn(new Object[] {"demo"});
         when(point.proceed()).thenReturn("ok");
 
         Object result = logInterceptor.doInterceptor(point);
@@ -35,12 +35,13 @@ class LogInterceptorTest {
 
     @Test
     void doInterceptorShouldProceedWithRequestContext() throws Throwable {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/monitor/tasks/realtime/by-camera");
+        MockHttpServletRequest request =
+                new MockHttpServletRequest("GET", "/monitor/tasks/realtime/by-camera");
         request.setRemoteHost("127.0.0.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         ProceedingJoinPoint point = mock(ProceedingJoinPoint.class);
-        when(point.getArgs()).thenReturn(new Object[]{1L});
+        when(point.getArgs()).thenReturn(new Object[] {1L});
         when(point.proceed()).thenReturn("ok");
 
         Object result = logInterceptor.doInterceptor(point);

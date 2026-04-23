@@ -1,16 +1,18 @@
 package com.springboot.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.springboot.model.entity.AiStreamTask;
-import com.springboot.model.dto.aistreamtask.AiStreamTaskQueryRequest;
-import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
-import com.springboot.model.vo.AiStreamTaskVO;
-import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
+import com.springboot.model.dto.aistreamtask.AiStreamTaskQueryRequest;
+import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
+import com.springboot.model.entity.AiStreamTask;
+import com.springboot.model.vo.AiStreamTaskVO;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.IService;
+
 /**
-* @description 针对表【ai_stream_task(AI流任务表)】的数据库操作Service
-*/
+ * @description 针对表【ai_stream_task(AI流任务表)】的数据库操作Service
+ */
 public interface AiStreamTaskService extends IService<AiStreamTask> {
 
     void validAiStreamTask(AiStreamTask aiStreamTask, boolean add);

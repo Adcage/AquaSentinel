@@ -1,9 +1,11 @@
 package com.springboot.websocket;
 
-import com.springboot.security.AuthUserContext;
-import com.springboot.security.JwtTokenProvider;
 import java.util.List;
 import java.util.Map;
+
+import com.springboot.security.AuthUserContext;
+import com.springboot.security.JwtTokenProvider;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,8 +30,11 @@ public class AuthHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler,
-                                   Map<String, Object> attributes) {
+    public boolean beforeHandshake(
+            ServerHttpRequest request,
+            ServerHttpResponse response,
+            WebSocketHandler wsHandler,
+            Map<String, Object> attributes) {
         String token = resolveToken(request);
         if (StringUtils.isBlank(token)) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -48,9 +53,11 @@ public class AuthHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler,
-                               Exception exception) {
-    }
+    public void afterHandshake(
+            ServerHttpRequest request,
+            ServerHttpResponse response,
+            WebSocketHandler wsHandler,
+            Exception exception) {}
 
     private String resolveToken(ServerHttpRequest request) {
         if (request instanceof ServletServerHttpRequest servletRequest) {

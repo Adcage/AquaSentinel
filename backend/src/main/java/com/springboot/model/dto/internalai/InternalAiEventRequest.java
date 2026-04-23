@@ -1,9 +1,10 @@
 package com.springboot.model.dto.internalai;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 
 @Data

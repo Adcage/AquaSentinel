@@ -1,14 +1,5 @@
 package com.springboot.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.springboot.model.entity.AlertRecord;
-import com.springboot.model.entity.CameraDevice;
-import com.springboot.model.entity.Lifeguard;
-import com.springboot.model.entity.MonitoringEvent;
-import com.springboot.model.entity.StatsSnapshot;
-import com.springboot.model.entity.Venue;
-import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +13,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.springboot.model.entity.AlertRecord;
+import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.entity.Lifeguard;
+import com.springboot.model.entity.MonitoringEvent;
+import com.springboot.model.entity.StatsSnapshot;
+import com.springboot.model.entity.Venue;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import jakarta.annotation.Resource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -30,28 +32,28 @@ public class StatsAggregationService {
 
     private static final String METRIC_TYPE_OVERVIEW = "OVERVIEW";
 
-    @Resource
-    private StatsSnapshotService statsSnapshotService;
+    @Resource private StatsSnapshotService statsSnapshotService;
 
-    @Resource
-    private AlertRecordService alertRecordService;
+    @Resource private AlertRecordService alertRecordService;
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private LifeguardService lifeguardService;
+    @Resource private LifeguardService lifeguardService;
 
-    @Resource
-    private MonitoringEventService monitoringEventService;
+    @Resource private MonitoringEventService monitoringEventService;
 
-    @Resource
-    private VenueService venueService;
+    @Resource private VenueService venueService;
 
     @Scheduled(cron = "0 0 * * * ?")
     public void snapshotHourScheduled() {
-        LocalDateTime targetHour = LocalDateTime.now().minusHours(1).withMinute(0).withSecond(0).withNano(0);
-        aggregateAndSave("HOUR", targetHour.toLocalDate(), targetHour.getHour(), targetHour, targetHour.plusHours(1));
+        LocalDateTime targetHour =
+                LocalDateTime.now().minusHours(1).withMinute(0).withSecond(0).withNano(0);
+        aggregateAndSave(
+                "HOUR",
+                targetHour.toLocalDate(),
+                targetHour.getHour(),
+                targetHour,
+                targetHour.plusHours(1));
     }
 
     @Scheduled(cron = "0 5 0 * * ?")
@@ -91,26 +93,45 @@ public class StatsAggregationService {
 
         Map<String, Object> todayMetrics;
         if (LocalDate.now().equals(targetDate)) {
-            todayMetrics = buildMetricMap(venueId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
+            todayMetrics =
+                    buildMetricMap(
+                            venueId,
+                            targetDate.atStartOfDay(),
+                            targetDate.plusDays(1).atStartOfDay());
         } else if (todaySnapshots.isEmpty()) {
-            todayMetrics = buildMetricMap(venueId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
+            todayMetrics =
+                    buildMetricMap(
+                            venueId,
+                            targetDate.atStartOfDay(),
+                            targetDate.plusDays(1).atStartOfDay());
         } else {
             todayMetrics = new HashMap<>();
-            todayMetrics.put("onlineDeviceCount", metricAsLong(todaySnapshots, "onlineDeviceCount"));
+            todayMetrics.put(
+                    "onlineDeviceCount", metricAsLong(todaySnapshots, "onlineDeviceCount"));
             todayMetrics.put("todayAlertCount", metricAsLong(todaySnapshots, "todayAlertCount"));
-            todayMetrics.put("pendingAlertCount", metricAsLong(todaySnapshots, "pendingAlertCount"));
-            todayMetrics.put("onDutyLifeguardCount", metricAsLong(todaySnapshots, "onDutyLifeguardCount"));
-            todayMetrics.put("currentPoolHeadCount", metricAsLong(todaySnapshots, "currentPoolHeadCount"));
+            todayMetrics.put(
+                    "pendingAlertCount", metricAsLong(todaySnapshots, "pendingAlertCount"));
+            todayMetrics.put(
+                    "onDutyLifeguardCount", metricAsLong(todaySnapshots, "onDutyLifeguardCount"));
+            todayMetrics.put(
+                    "currentPoolHeadCount", metricAsLong(todaySnapshots, "currentPoolHeadCount"));
         }
 
         Map<String, Object> data = new HashMap<>(todayMetrics);
-        data.put("onlineDeviceDiff", (long) todayMetrics.get("onlineDeviceCount") - metricAsLong(yesterdaySnapshots, "onlineDeviceCount"));
-        data.put("todayAlertDiff", (long) todayMetrics.get("todayAlertCount") - metricAsLong(yesterdaySnapshots, "todayAlertCount"));
+        data.put(
+                "onlineDeviceDiff",
+                (long) todayMetrics.get("onlineDeviceCount")
+                        - metricAsLong(yesterdaySnapshots, "onlineDeviceCount"));
+        data.put(
+                "todayAlertDiff",
+                (long) todayMetrics.get("todayAlertCount")
+                        - metricAsLong(yesterdaySnapshots, "todayAlertCount"));
         data.put("generatedAt", new Date());
         return data;
     }
 
-    public List<Map<String, Object>> getRanking(LocalDate startDate, LocalDate endDate, Integer limit) {
+    public List<Map<String, Object>> getRanking(
+            LocalDate startDate, LocalDate endDate, Integer limit) {
         LocalDate start = startDate == null ? LocalDate.now().minusDays(6) : startDate;
         LocalDate end = endDate == null ? LocalDate.now() : endDate;
         int topN = limit == null || limit <= 0 ? 10 : Math.min(limit, 100);
@@ -130,49 +151,70 @@ public class StatsAggregationService {
             if (venueId == null) {
                 continue;
             }
-            venueAlertCountMap.merge(venueId,
-                    snapshot.getMetric_value() == null ? BigDecimal.ZERO : snapshot.getMetric_value(),
+            venueAlertCountMap.merge(
+                    venueId,
+                    snapshot.getMetric_value() == null
+                            ? BigDecimal.ZERO
+                            : snapshot.getMetric_value(),
                     BigDecimal::add);
         }
 
-        Map<Long, String> venueNameMap = venueService.list().stream()
-                .collect(Collectors.toMap(Venue::getId, Venue::getVenue_name, (a, b) -> a));
+        Map<Long, String> venueNameMap =
+                venueService.list().stream()
+                        .collect(Collectors.toMap(Venue::getId, Venue::getVenue_name, (a, b) -> a));
         List<Map<String, Object>> ranking = new ArrayList<>();
         venueAlertCountMap.entrySet().stream()
                 .sorted(Map.Entry.<Long, BigDecimal>comparingByValue(Comparator.reverseOrder()))
                 .limit(topN)
-                .forEach(entry -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("venueId", entry.getKey());
-                    item.put("venueName", venueNameMap.getOrDefault(entry.getKey(), ""));
-                    item.put("alertCount", entry.getValue().longValue());
-                    ranking.add(item);
-                });
+                .forEach(
+                        entry -> {
+                            Map<String, Object> item = new HashMap<>();
+                            item.put("venueId", entry.getKey());
+                            item.put("venueName", venueNameMap.getOrDefault(entry.getKey(), ""));
+                            item.put("alertCount", entry.getValue().longValue());
+                            ranking.add(item);
+                        });
         return ranking;
     }
 
-    private void aggregateAndSave(String granularity, LocalDate snapshotDate, Integer snapshotHour,
-                                  LocalDateTime start, LocalDateTime end) {
+    private void aggregateAndSave(
+            String granularity,
+            LocalDate snapshotDate,
+            Integer snapshotHour,
+            LocalDateTime start,
+            LocalDateTime end) {
         List<Venue> venues = venueService.list();
         for (Venue venue : venues) {
-            persistOverviewMetrics(granularity, snapshotDate, snapshotHour, venue.getId(), start, end);
+            persistOverviewMetrics(
+                    granularity, snapshotDate, snapshotHour, venue.getId(), start, end);
         }
         persistOverviewMetrics(granularity, snapshotDate, snapshotHour, null, start, end);
     }
 
-    private void persistOverviewMetrics(String granularity, LocalDate snapshotDate, Integer snapshotHour,
-                                        Long venueId, LocalDateTime start, LocalDateTime end) {
+    private void persistOverviewMetrics(
+            String granularity,
+            LocalDate snapshotDate,
+            Integer snapshotHour,
+            Long venueId,
+            LocalDateTime start,
+            LocalDateTime end) {
         Map<String, Object> metrics = buildMetricMap(venueId, start, end);
         for (Map.Entry<String, Object> entry : metrics.entrySet()) {
             if ("generatedAt".equals(entry.getKey())) {
                 continue;
             }
-            upsertMetric(granularity, snapshotDate, snapshotHour, venueId, entry.getKey(),
+            upsertMetric(
+                    granularity,
+                    snapshotDate,
+                    snapshotHour,
+                    venueId,
+                    entry.getKey(),
                     BigDecimal.valueOf(((Number) entry.getValue()).doubleValue()));
         }
     }
 
-    private Map<String, Object> buildMetricMap(Long venueId, LocalDateTime start, LocalDateTime end) {
+    private Map<String, Object> buildMetricMap(
+            Long venueId, LocalDateTime start, LocalDateTime end) {
         Map<String, Object> data = new HashMap<>();
         Date startDate = toDate(start);
         Date endDate = toDate(end);
@@ -207,7 +249,8 @@ public class StatsAggregationService {
         activeCameraQuery.eq("is_delete", 0);
         activeCameraQuery.eq(venueId != null, "venue_id", venueId);
         List<CameraDevice> activeCameras = cameraDeviceService.list(activeCameraQuery);
-        List<Long> activeCameraIds = activeCameras.stream().map(CameraDevice::getId).collect(Collectors.toList());
+        List<Long> activeCameraIds =
+                activeCameras.stream().map(CameraDevice::getId).collect(Collectors.toList());
         if (activeCameraIds.isEmpty()) {
             data.put("onlineDeviceCount", onlineDeviceCount);
             data.put("todayAlertCount", todayAlertCount);
@@ -246,8 +289,13 @@ public class StatsAggregationService {
         return data;
     }
 
-    private void upsertMetric(String granularity, LocalDate snapshotDate, Integer snapshotHour,
-                              Long venueId, String metricKey, BigDecimal metricValue) {
+    private void upsertMetric(
+            String granularity,
+            LocalDate snapshotDate,
+            Integer snapshotHour,
+            Long venueId,
+            String metricKey,
+            BigDecimal metricValue) {
         QueryWrapper<StatsSnapshot> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("granularity", granularity);
         queryWrapper.eq("snapshot_date", toDate(snapshotDate.atStartOfDay()));
@@ -286,7 +334,9 @@ public class StatsAggregationService {
     private long metricAsLong(List<StatsSnapshot> snapshots, String metricKey) {
         for (StatsSnapshot snapshot : snapshots) {
             if (metricKey.equals(snapshot.getMetric_key())) {
-                return snapshot.getMetric_value() == null ? 0L : snapshot.getMetric_value().longValue();
+                return snapshot.getMetric_value() == null
+                        ? 0L
+                        : snapshot.getMetric_value().longValue();
             }
         }
         return 0L;

@@ -1,14 +1,16 @@
 package com.springboot.service.stream;
 
-import com.springboot.common.ErrorCode;
-import com.springboot.config.AppStreamProxyProperties;
-import com.springboot.exception.BusinessException;
-import com.springboot.model.entity.CameraDevice;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.config.AppStreamProxyProperties;
+import com.springboot.exception.BusinessException;
+import com.springboot.model.entity.CameraDevice;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +21,8 @@ public class StreamProviderRouter {
 
     private final Map<String, StreamProvider> providerMap = new HashMap<>();
 
-    public StreamProviderRouter(AppStreamProxyProperties appStreamProxyProperties, List<StreamProvider> providers) {
+    public StreamProviderRouter(
+            AppStreamProxyProperties appStreamProxyProperties, List<StreamProvider> providers) {
         this.appStreamProxyProperties = appStreamProxyProperties;
         for (StreamProvider provider : providers) {
             providerMap.put(normalize(provider.name()), provider);
@@ -50,9 +53,7 @@ public class StreamProviderRouter {
                 }
             }
         }
-        String message = errors.isEmpty()
-                ? "无可用流提供器"
-                : "流提供器均不可用: " + String.join("; ", errors);
+        String message = errors.isEmpty() ? "无可用流提供器" : "流提供器均不可用: " + String.join("; ", errors);
         throw new BusinessException(ErrorCode.OPERATION_ERROR, message);
     }
 

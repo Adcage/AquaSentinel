@@ -1,6 +1,9 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -16,10 +19,9 @@ import com.springboot.model.dto.statssnapshot.StatsSnapshotUpdateRequest;
 import com.springboot.model.entity.StatsSnapshot;
 import com.springboot.model.vo.StatsSnapshotVO;
 import com.springboot.service.StatsSnapshotService;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,17 +32,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/stats-snapshots")
 public class StatsSnapshotController {
 
-    @Resource
-    private StatsSnapshotService statsSnapshotService;
+    @Resource private StatsSnapshotService statsSnapshotService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Long> addStatsSnapshot(@RequestBody StatsSnapshotAddRequest statsSnapshotAddRequest) {
+    public BaseResponse<Long> addStatsSnapshot(
+            @RequestBody StatsSnapshotAddRequest statsSnapshotAddRequest) {
         if (statsSnapshotAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         StatsSnapshot statsSnapshot = toStatsSnapshot(statsSnapshotAddRequest);
-        statsSnapshot.setMetric_value(statsSnapshot.getMetric_value() == null ? BigDecimal.ZERO : statsSnapshot.getMetric_value());
+        statsSnapshot.setMetric_value(
+                statsSnapshot.getMetric_value() == null
+                        ? BigDecimal.ZERO
+                        : statsSnapshot.getMetric_value());
         statsSnapshot.setCreated_at(new Date());
         statsSnapshotService.validStatsSnapshot(statsSnapshot, true);
         boolean result = statsSnapshotService.save(statsSnapshot);
@@ -61,8 +66,11 @@ public class StatsSnapshotController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateStatsSnapshot(@RequestBody StatsSnapshotUpdateRequest statsSnapshotUpdateRequest) {
-        if (statsSnapshotUpdateRequest == null || statsSnapshotUpdateRequest.getId() == null || statsSnapshotUpdateRequest.getId() <= 0) {
+    public BaseResponse<Boolean> updateStatsSnapshot(
+            @RequestBody StatsSnapshotUpdateRequest statsSnapshotUpdateRequest) {
+        if (statsSnapshotUpdateRequest == null
+                || statsSnapshotUpdateRequest.getId() == null
+                || statsSnapshotUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         StatsSnapshot statsSnapshot = toStatsSnapshot(statsSnapshotUpdateRequest);
@@ -74,8 +82,11 @@ public class StatsSnapshotController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editStatsSnapshot(@RequestBody StatsSnapshotEditRequest statsSnapshotEditRequest) {
-        if (statsSnapshotEditRequest == null || statsSnapshotEditRequest.getId() == null || statsSnapshotEditRequest.getId() <= 0) {
+    public BaseResponse<Boolean> editStatsSnapshot(
+            @RequestBody StatsSnapshotEditRequest statsSnapshotEditRequest) {
+        if (statsSnapshotEditRequest == null
+                || statsSnapshotEditRequest.getId() == null
+                || statsSnapshotEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         StatsSnapshot statsSnapshot = new StatsSnapshot();
@@ -105,39 +116,52 @@ public class StatsSnapshotController {
     }
 
     @PostMapping("/list")
-    public BaseResponse<List<StatsSnapshot>> listStatsSnapshot(@RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
+    public BaseResponse<List<StatsSnapshot>> listStatsSnapshot(
+            @RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
         if (statsSnapshotQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return ResultUtils.success(statsSnapshotService.list(statsSnapshotService.getQueryWrapper(statsSnapshotQueryRequest)));
+        return ResultUtils.success(
+                statsSnapshotService.list(
+                        statsSnapshotService.getQueryWrapper(statsSnapshotQueryRequest)));
     }
 
     @PostMapping("/list/vo")
-    public BaseResponse<List<StatsSnapshotVO>> listStatsSnapshotVO(@RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
+    public BaseResponse<List<StatsSnapshotVO>> listStatsSnapshotVO(
+            @RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
         BaseResponse<List<StatsSnapshot>> response = listStatsSnapshot(statsSnapshotQueryRequest);
         return ResultUtils.success(statsSnapshotService.getStatsSnapshotVO(response.getData()));
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<StatsSnapshot>> listStatsSnapshotByPage(@RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
+    public BaseResponse<Page<StatsSnapshot>> listStatsSnapshotByPage(
+            @RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
         if (statsSnapshotQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = statsSnapshotQueryRequest.getCurrent();
         long size = statsSnapshotQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<StatsSnapshot> statsSnapshotPage = statsSnapshotService.page(new Page<>(current, size),
-                statsSnapshotService.getQueryWrapper(statsSnapshotQueryRequest));
+        Page<StatsSnapshot> statsSnapshotPage =
+                statsSnapshotService.page(
+                        new Page<>(current, size),
+                        statsSnapshotService.getQueryWrapper(statsSnapshotQueryRequest));
         return ResultUtils.success(statsSnapshotPage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<StatsSnapshotVO>> listStatsSnapshotVOByPage(@RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
-        BaseResponse<Page<StatsSnapshot>> response = listStatsSnapshotByPage(statsSnapshotQueryRequest);
+    public BaseResponse<Page<StatsSnapshotVO>> listStatsSnapshotVOByPage(
+            @RequestBody StatsSnapshotQueryRequest statsSnapshotQueryRequest) {
+        BaseResponse<Page<StatsSnapshot>> response =
+                listStatsSnapshotByPage(statsSnapshotQueryRequest);
         Page<StatsSnapshot> statsSnapshotPage = response.getData();
-        Page<StatsSnapshotVO> statsSnapshotVOPage = new Page<>(statsSnapshotPage.getCurrent(), statsSnapshotPage.getSize(),
-                statsSnapshotPage.getTotal());
-        statsSnapshotVOPage.setRecords(statsSnapshotService.getStatsSnapshotVO(statsSnapshotPage.getRecords()));
+        Page<StatsSnapshotVO> statsSnapshotVOPage =
+                new Page<>(
+                        statsSnapshotPage.getCurrent(),
+                        statsSnapshotPage.getSize(),
+                        statsSnapshotPage.getTotal());
+        statsSnapshotVOPage.setRecords(
+                statsSnapshotService.getStatsSnapshotVO(statsSnapshotPage.getRecords()));
         return ResultUtils.success(statsSnapshotVOPage);
     }
 

@@ -13,6 +13,7 @@ import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.model.entity.SystemAuditLog;
 import com.springboot.service.SystemAuditLogService;
+
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +27,8 @@ class SystemAuditLogInterceptorTest {
 
     private final SystemAuditLogService systemAuditLogService = mock(SystemAuditLogService.class);
 
-    private final SystemAuditLogInterceptor interceptor = new SystemAuditLogInterceptor(systemAuditLogService);
+    private final SystemAuditLogInterceptor interceptor =
+            new SystemAuditLogInterceptor(systemAuditLogService);
 
     @BeforeEach
     void setUp() {
@@ -45,8 +47,9 @@ class SystemAuditLogInterceptorTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         ProceedingJoinPoint point = mock(ProceedingJoinPoint.class);
-        when(point.getArgs()).thenReturn(new Object[]{"{\"alertId\":1}"});
-        when(point.proceed()).thenReturn(new BaseResponse<>(ErrorCode.SUCCESS.getCode(), true, "ok"));
+        when(point.getArgs()).thenReturn(new Object[] {"{\"alertId\":1}"});
+        when(point.proceed())
+                .thenReturn(new BaseResponse<>(ErrorCode.SUCCESS.getCode(), true, "ok"));
 
         Object result = interceptor.doInterceptor(point);
 
@@ -67,8 +70,9 @@ class SystemAuditLogInterceptorTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         ProceedingJoinPoint point = mock(ProceedingJoinPoint.class);
-        when(point.getArgs()).thenReturn(new Object[]{});
-        when(point.proceed()).thenReturn(new BaseResponse<>(ErrorCode.SUCCESS.getCode(), true, "ok"));
+        when(point.getArgs()).thenReturn(new Object[] {});
+        when(point.proceed())
+                .thenReturn(new BaseResponse<>(ErrorCode.SUCCESS.getCode(), true, "ok"));
 
         interceptor.doInterceptor(point);
 
@@ -77,15 +81,17 @@ class SystemAuditLogInterceptorTest {
 
     @Test
     void doInterceptorShouldSaveFailureAuditLogWhenBusinessExceptionThrown() throws Throwable {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/admin/login");
+        MockHttpServletRequest request =
+                new MockHttpServletRequest("POST", "/api/auth/admin/login");
         request.setRemoteAddr("127.0.0.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         ProceedingJoinPoint point = mock(ProceedingJoinPoint.class);
-        when(point.getArgs()).thenReturn(new Object[]{"admin"});
+        when(point.getArgs()).thenReturn(new Object[] {"admin"});
         when(point.proceed()).thenThrow(new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "账号已锁定"));
 
-        BusinessException exception = assertThrows(BusinessException.class, () -> interceptor.doInterceptor(point));
+        BusinessException exception =
+                assertThrows(BusinessException.class, () -> interceptor.doInterceptor(point));
         assertEquals(ErrorCode.NOT_LOGIN_ERROR.getCode(), exception.getCode());
 
         ArgumentCaptor<SystemAuditLog> logCaptor = ArgumentCaptor.forClass(SystemAuditLog.class);

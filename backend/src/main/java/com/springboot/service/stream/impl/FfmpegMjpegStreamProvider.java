@@ -1,5 +1,11 @@
 package com.springboot.service.stream.impl;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.config.AppStreamProxyProperties;
 import com.springboot.exception.BusinessException;
@@ -8,11 +14,7 @@ import com.springboot.service.stream.StreamOpenRequest;
 import com.springboot.service.stream.StreamProvider;
 import com.springboot.service.stream.StreamProviderException;
 import com.springboot.service.stream.StreamSession;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -67,7 +69,8 @@ public class FfmpegMjpegStreamProvider implements StreamProvider {
         command.add(StringUtils.defaultIfBlank(appStreamProxyProperties.getFfmpegPath(), "ffmpeg"));
         command.add("-hide_banner");
         command.add("-loglevel");
-        command.add(StringUtils.defaultIfBlank(appStreamProxyProperties.getFfmpegLogLevel(), "error"));
+        command.add(
+                StringUtils.defaultIfBlank(appStreamProxyProperties.getFfmpegLogLevel(), "error"));
         if (source.toLowerCase().startsWith("rtsp")) {
             command.add("-rtsp_transport");
             command.add("tcp");

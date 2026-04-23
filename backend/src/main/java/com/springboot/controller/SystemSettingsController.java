@@ -9,6 +9,7 @@ import com.springboot.exception.BusinessException;
 import com.springboot.model.dto.systemsettings.NoticeSettingsUpdateRequest;
 import com.springboot.model.vo.NoticeSettingsVO;
 import com.springboot.service.SystemNoticeConfigService;
+
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/system-settings")
 public class SystemSettingsController {
 
-    @Resource
-    private SystemNoticeConfigService systemNoticeConfigService;
+    @Resource private SystemNoticeConfigService systemNoticeConfigService;
 
     @GetMapping("/notice")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
@@ -31,13 +31,15 @@ public class SystemSettingsController {
 
     @PostMapping("/notice")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<NoticeSettingsVO> saveNoticeSettings(@RequestBody NoticeSettingsUpdateRequest request) {
+    public BaseResponse<NoticeSettingsVO> saveNoticeSettings(
+            @RequestBody NoticeSettingsUpdateRequest request) {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         }
-        return ResultUtils.success(systemNoticeConfigService.updateNoticeSettings(
-                request.getOffDutyThreshold(),
-                request.getDeviceOfflineThreshold(),
-                request.getDrowningAlertThreshold()));
+        return ResultUtils.success(
+                systemNoticeConfigService.updateNoticeSettings(
+                        request.getOffDutyThreshold(),
+                        request.getDeviceOfflineThreshold(),
+                        request.getDrowningAlertThreshold()));
     }
 }

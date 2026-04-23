@@ -1,21 +1,5 @@
 package com.springboot.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.springboot.common.ErrorCode;
-import com.springboot.constant.CommonConstant;
-import com.springboot.exception.BusinessException;
-import com.springboot.model.dto.lifeguard.LifeguardQueryRequest;
-import com.springboot.model.entity.LifeguardDutyLog;
-import com.springboot.model.entity.Lifeguard;
-import com.springboot.model.vo.LifeguardVO;
-import com.springboot.service.LifeguardDutyLogService;
-import com.springboot.service.LifeguardService;
-import com.springboot.mapper.LifeguardMapper;
-import com.springboot.utils.SqlUtils;
-import com.springboot.websocket.AlertWsPublisher;
-import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,21 +7,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.constant.CommonConstant;
+import com.springboot.exception.BusinessException;
+import com.springboot.mapper.LifeguardMapper;
+import com.springboot.model.dto.lifeguard.LifeguardQueryRequest;
+import com.springboot.model.entity.Lifeguard;
+import com.springboot.model.entity.LifeguardDutyLog;
+import com.springboot.model.vo.LifeguardVO;
+import com.springboot.service.LifeguardDutyLogService;
+import com.springboot.service.LifeguardService;
+import com.springboot.utils.SqlUtils;
+import com.springboot.websocket.AlertWsPublisher;
+
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
-* @description 针对表【lifeguard(救生员表)】的数据库操作Service实现
-*/
+ * @description 针对表【lifeguard(救生员表)】的数据库操作Service实现
+ */
 @Service
 public class LifeguardServiceImpl extends ServiceImpl<LifeguardMapper, Lifeguard>
-    implements LifeguardService{
+        implements LifeguardService {
 
-    @Resource
-    private LifeguardDutyLogService lifeguardDutyLogService;
+    @Resource private LifeguardDutyLogService lifeguardDutyLogService;
 
-    @Resource
-    private AlertWsPublisher alertWsPublisher;
+    @Resource private AlertWsPublisher alertWsPublisher;
 
     @Override
     public void validLifeguard(Lifeguard lifeguard, boolean add) {
@@ -47,10 +47,12 @@ public class LifeguardServiceImpl extends ServiceImpl<LifeguardMapper, Lifeguard
         if (add && StringUtils.isBlank(lifeguard.getFull_name())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "救生员姓名不能为空");
         }
-        if (StringUtils.isNotBlank(lifeguard.getLifeguard_code()) && lifeguard.getLifeguard_code().length() > 32) {
+        if (StringUtils.isNotBlank(lifeguard.getLifeguard_code())
+                && lifeguard.getLifeguard_code().length() > 32) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "救生员编码过长");
         }
-        if (StringUtils.isNotBlank(lifeguard.getFull_name()) && lifeguard.getFull_name().length() > 64) {
+        if (StringUtils.isNotBlank(lifeguard.getFull_name())
+                && lifeguard.getFull_name().length() > 64) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "救生员姓名过长");
         }
         if (StringUtils.isNotBlank(lifeguard.getPhone()) && lifeguard.getPhone().length() > 32) {
@@ -75,22 +77,41 @@ public class LifeguardServiceImpl extends ServiceImpl<LifeguardMapper, Lifeguard
         }
         QueryWrapper<Lifeguard> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(lifeguardQueryRequest.getId() != null, "id", lifeguardQueryRequest.getId());
-        queryWrapper.eq(lifeguardQueryRequest.getUserId() != null, "user_id", lifeguardQueryRequest.getUserId());
-        queryWrapper.eq(StringUtils.isNotBlank(lifeguardQueryRequest.getLifeguardCode()),
-                "lifeguard_code", lifeguardQueryRequest.getLifeguardCode());
-        queryWrapper.like(StringUtils.isNotBlank(lifeguardQueryRequest.getFullName()),
-                "full_name", lifeguardQueryRequest.getFullName());
-        queryWrapper.eq(StringUtils.isNotBlank(lifeguardQueryRequest.getPhone()),
-                "phone", lifeguardQueryRequest.getPhone());
-        queryWrapper.eq(lifeguardQueryRequest.getVenueId() != null, "venue_id", lifeguardQueryRequest.getVenueId());
-        queryWrapper.eq(StringUtils.isNotBlank(lifeguardQueryRequest.getAuditStatus()),
-                "audit_status", lifeguardQueryRequest.getAuditStatus());
-        queryWrapper.eq(StringUtils.isNotBlank(lifeguardQueryRequest.getDutyStatus()),
-                "duty_status", lifeguardQueryRequest.getDutyStatus());
+        queryWrapper.eq(
+                lifeguardQueryRequest.getUserId() != null,
+                "user_id",
+                lifeguardQueryRequest.getUserId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(lifeguardQueryRequest.getLifeguardCode()),
+                "lifeguard_code",
+                lifeguardQueryRequest.getLifeguardCode());
+        queryWrapper.like(
+                StringUtils.isNotBlank(lifeguardQueryRequest.getFullName()),
+                "full_name",
+                lifeguardQueryRequest.getFullName());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(lifeguardQueryRequest.getPhone()),
+                "phone",
+                lifeguardQueryRequest.getPhone());
+        queryWrapper.eq(
+                lifeguardQueryRequest.getVenueId() != null,
+                "venue_id",
+                lifeguardQueryRequest.getVenueId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(lifeguardQueryRequest.getAuditStatus()),
+                "audit_status",
+                lifeguardQueryRequest.getAuditStatus());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(lifeguardQueryRequest.getDutyStatus()),
+                "duty_status",
+                lifeguardQueryRequest.getDutyStatus());
         queryWrapper.eq("is_delete", 0);
         String sortField = lifeguardQueryRequest.getSortField();
         String sortOrder = lifeguardQueryRequest.getSortOrder();
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), CommonConstant.SORT_ORDER_ASC.equals(sortOrder), sortField);
+        queryWrapper.orderBy(
+                SqlUtils.validSortField(sortField),
+                CommonConstant.SORT_ORDER_ASC.equals(sortOrder),
+                sortField);
         return queryWrapper;
     }
 
@@ -215,12 +236,6 @@ public class LifeguardServiceImpl extends ServiceImpl<LifeguardMapper, Lifeguard
         data.put("venueId", lifeguard.getVenue_id());
         data.put("dutyStatus", dutyStatus);
         alertWsPublisher.publishLifeguardStatusChanged(
-                "lifeguard-status-" + lifeguard.getId() + "-" + System.currentTimeMillis(),
-                data);
+                "lifeguard-status-" + lifeguard.getId() + "-" + System.currentTimeMillis(), data);
     }
-
 }
-
-
-
-

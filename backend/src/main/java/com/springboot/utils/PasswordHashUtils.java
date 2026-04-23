@@ -6,8 +6,7 @@ public final class PasswordHashUtils {
 
     private static final String SALT = "springboot";
 
-    private PasswordHashUtils() {
-    }
+    private PasswordHashUtils() {}
 
     public static String md5WithSalt(String plainPassword) {
         return DigestUtils.md5DigestAsHex((SALT + plainPassword).getBytes());

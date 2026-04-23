@@ -1,6 +1,7 @@
 package com.springboot.model.dto.venue;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
 @Data

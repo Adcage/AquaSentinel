@@ -6,14 +6,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.springboot.model.entity.CameraDevice;
-import com.springboot.model.entity.MonitoringEvent;
-import com.springboot.model.entity.StatsSnapshot;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.entity.MonitoringEvent;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,26 +25,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class StatsAggregationServiceTest {
 
-    @Mock
-    private StatsSnapshotService statsSnapshotService;
+    @Mock private StatsSnapshotService statsSnapshotService;
 
-    @Mock
-    private AlertRecordService alertRecordService;
+    @Mock private AlertRecordService alertRecordService;
 
-    @Mock
-    private CameraDeviceService cameraDeviceService;
+    @Mock private CameraDeviceService cameraDeviceService;
 
-    @Mock
-    private LifeguardService lifeguardService;
+    @Mock private LifeguardService lifeguardService;
 
-    @Mock
-    private MonitoringEventService monitoringEventService;
+    @Mock private MonitoringEventService monitoringEventService;
 
-    @Mock
-    private VenueService venueService;
+    @Mock private VenueService venueService;
 
-    @InjectMocks
-    private StatsAggregationService statsAggregationService;
+    @InjectMocks private StatsAggregationService statsAggregationService;
 
     @Test
     void getOverviewShouldSumLatestHeadCountAcrossActiveCameras() {
@@ -51,15 +45,14 @@ class StatsAggregationServiceTest {
         when(cameraDeviceService.count(any(QueryWrapper.class))).thenReturn(4L);
         when(alertRecordService.count(any(QueryWrapper.class))).thenReturn(1L, 0L);
         when(lifeguardService.count(any(QueryWrapper.class))).thenReturn(2L);
-        when(cameraDeviceService.list(any(QueryWrapper.class))).thenReturn(List.of(
-                camera(5001L),
-                camera(5003L)
-        ));
-        when(monitoringEventService.list(any(QueryWrapper.class))).thenReturn(List.of(
-                event(5001L, 3, new Date(1_000L)),
-                event(5001L, 2, new Date(900L)),
-                event(5003L, 1, new Date(950L))
-        ));
+        when(cameraDeviceService.list(any(QueryWrapper.class)))
+                .thenReturn(List.of(camera(5001L), camera(5003L)));
+        when(monitoringEventService.list(any(QueryWrapper.class)))
+                .thenReturn(
+                        List.of(
+                                event(5001L, 3, new Date(1_000L)),
+                                event(5001L, 2, new Date(900L)),
+                                event(5003L, 1, new Date(950L))));
 
         Map<String, Object> overview = statsAggregationService.getOverview(null, LocalDate.now());
 
@@ -77,7 +70,8 @@ class StatsAggregationServiceTest {
 
         statsAggregationService.getOverview(null, LocalDate.now());
 
-        ArgumentCaptor<QueryWrapper<CameraDevice>> captor = ArgumentCaptor.forClass(QueryWrapper.class);
+        ArgumentCaptor<QueryWrapper<CameraDevice>> captor =
+                ArgumentCaptor.forClass(QueryWrapper.class);
         verify(cameraDeviceService).count(captor.capture());
         String sqlSegment = String.valueOf(captor.getValue().getSqlSegment()).toLowerCase();
         assertTrue(sqlSegment.contains("is_delete"));

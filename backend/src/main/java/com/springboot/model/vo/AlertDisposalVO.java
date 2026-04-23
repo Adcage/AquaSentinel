@@ -2,6 +2,7 @@ package com.springboot.model.vo;
 
 import java.io.Serializable;
 import java.util.Date;
+
 import lombok.Data;
 
 @Data

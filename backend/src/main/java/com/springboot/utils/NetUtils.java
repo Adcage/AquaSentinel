@@ -1,12 +1,10 @@
 package com.springboot.utils;
 
 import java.net.InetAddress;
+
 import jakarta.servlet.http.HttpServletRequest;
 
-/**
- * 网络工具类
- *
- */
+/** 网络工具类 */
 public class NetUtils {
 
     /**
@@ -49,5 +47,4 @@ public class NetUtils {
         }
         return ip;
     }
-
 }

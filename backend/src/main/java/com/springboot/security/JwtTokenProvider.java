@@ -1,13 +1,5 @@
 package com.springboot.security;
 
-import com.springboot.common.ErrorCode;
-import com.springboot.config.AppSecurityProperties;
-import com.springboot.exception.BusinessException;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
@@ -15,7 +7,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.crypto.SecretKey;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.config.AppSecurityProperties;
+import com.springboot.exception.BusinessException;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -40,7 +43,8 @@ public class JwtTokenProvider {
 
     public String generateAccessToken(Long userId, String username, List<String> roleCodes) {
         Instant now = Instant.now();
-        Instant expireAt = now.plusSeconds(appSecurityProperties.getJwt().getAccessTokenExpireSeconds());
+        Instant expireAt =
+                now.plusSeconds(appSecurityProperties.getJwt().getAccessTokenExpireSeconds());
         return Jwts.builder()
                 .issuer(appSecurityProperties.getJwt().getIssuer())
                 .subject(String.valueOf(userId))
@@ -54,7 +58,8 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshTokenValue() {
-        return UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+        return UUID.randomUUID().toString().replace("-", "")
+                + UUID.randomUUID().toString().replace("-", "");
     }
 
     public AuthUserContext parseAccessToken(String accessToken) {

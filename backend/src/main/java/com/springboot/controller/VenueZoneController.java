@@ -1,6 +1,7 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -16,8 +17,9 @@ import com.springboot.model.dto.venuezone.VenueZoneUpdateRequest;
 import com.springboot.model.entity.VenueZone;
 import com.springboot.model.vo.VenueZoneVO;
 import com.springboot.service.VenueZoneService;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,8 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/venue-zones")
 public class VenueZoneController {
 
-    @Resource
-    private VenueZoneService venueZoneService;
+    @Resource private VenueZoneService venueZoneService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
@@ -60,8 +61,11 @@ public class VenueZoneController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateVenueZone(@RequestBody VenueZoneUpdateRequest venueZoneUpdateRequest) {
-        if (venueZoneUpdateRequest == null || venueZoneUpdateRequest.getId() == null || venueZoneUpdateRequest.getId() <= 0) {
+    public BaseResponse<Boolean> updateVenueZone(
+            @RequestBody VenueZoneUpdateRequest venueZoneUpdateRequest) {
+        if (venueZoneUpdateRequest == null
+                || venueZoneUpdateRequest.getId() == null
+                || venueZoneUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         VenueZone venueZone = toVenueZone(venueZoneUpdateRequest);
@@ -73,8 +77,11 @@ public class VenueZoneController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editVenueZone(@RequestBody VenueZoneEditRequest venueZoneEditRequest) {
-        if (venueZoneEditRequest == null || venueZoneEditRequest.getId() == null || venueZoneEditRequest.getId() <= 0) {
+    public BaseResponse<Boolean> editVenueZone(
+            @RequestBody VenueZoneEditRequest venueZoneEditRequest) {
+        if (venueZoneEditRequest == null
+                || venueZoneEditRequest.getId() == null
+                || venueZoneEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         VenueZone venueZone = new VenueZone();
@@ -106,25 +113,33 @@ public class VenueZoneController {
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<VenueZone>> listVenueZoneByPage(@RequestBody VenueZoneQueryRequest venueZoneQueryRequest) {
+    public BaseResponse<Page<VenueZone>> listVenueZoneByPage(
+            @RequestBody VenueZoneQueryRequest venueZoneQueryRequest) {
         if (venueZoneQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = venueZoneQueryRequest.getCurrent();
         long size = venueZoneQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<VenueZone> venueZonePage = venueZoneService.page(new Page<>(current, size),
-                venueZoneService.getQueryWrapper(venueZoneQueryRequest));
+        Page<VenueZone> venueZonePage =
+                venueZoneService.page(
+                        new Page<>(current, size),
+                        venueZoneService.getQueryWrapper(venueZoneQueryRequest));
         return ResultUtils.success(venueZonePage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<VenueZoneVO>> listVenueZoneVOByPage(@RequestBody VenueZoneQueryRequest venueZoneQueryRequest) {
+    public BaseResponse<Page<VenueZoneVO>> listVenueZoneVOByPage(
+            @RequestBody VenueZoneQueryRequest venueZoneQueryRequest) {
         BaseResponse<Page<VenueZone>> response = listVenueZoneByPage(venueZoneQueryRequest);
         Page<VenueZone> venueZonePage = response.getData();
-        Page<VenueZoneVO> venueZoneVOPage = new Page<>(venueZonePage.getCurrent(), venueZonePage.getSize(),
-                venueZonePage.getTotal());
-        List<VenueZoneVO> venueZoneVOList = venueZoneService.getVenueZoneVO(venueZonePage.getRecords());
+        Page<VenueZoneVO> venueZoneVOPage =
+                new Page<>(
+                        venueZonePage.getCurrent(),
+                        venueZonePage.getSize(),
+                        venueZonePage.getTotal());
+        List<VenueZoneVO> venueZoneVOList =
+                venueZoneService.getVenueZoneVO(venueZonePage.getRecords());
         venueZoneVOPage.setRecords(venueZoneVOList);
         return ResultUtils.success(venueZoneVOPage);
     }

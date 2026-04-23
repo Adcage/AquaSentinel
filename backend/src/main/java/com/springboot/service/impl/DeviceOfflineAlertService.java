@@ -1,7 +1,12 @@
 package com.springboot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import com.springboot.model.entity.AlertRecord;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.model.entity.MonitoringEvent;
@@ -10,36 +15,27 @@ import com.springboot.service.CameraDeviceService;
 import com.springboot.service.MonitoringEventService;
 import com.springboot.service.SystemNoticeConfigService;
 import com.springboot.websocket.AlertWsPublisher;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DeviceOfflineAlertService {
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private MonitoringEventService monitoringEventService;
+    @Resource private MonitoringEventService monitoringEventService;
 
-    @Resource
-    private AlertRecordService alertRecordService;
+    @Resource private AlertRecordService alertRecordService;
 
-    @Resource
-    private SystemNoticeConfigService systemNoticeConfigService;
+    @Resource private SystemNoticeConfigService systemNoticeConfigService;
 
-    @Resource
-    private AlertWsPublisher alertWsPublisher;
+    @Resource private AlertWsPublisher alertWsPublisher;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
     @Scheduled(initialDelay = 15_000L, fixedDelay = 15_000L)
     public void checkDeviceOfflineAlerts() {
@@ -78,7 +74,8 @@ public class DeviceOfflineAlertService {
         return alertRecordService.getOne(queryWrapper) != null;
     }
 
-    private void createOfflineAlert(CameraDevice camera, Date now, long offlineSec, int thresholdSec) {
+    private void createOfflineAlert(
+            CameraDevice camera, Date now, long offlineSec, int thresholdSec) {
         MonitoringEvent event = new MonitoringEvent();
         event.setEvent_uid("evt_offline_" + camera.getId() + "_" + System.currentTimeMillis());
         event.setCamera_id(camera.getId());
@@ -91,7 +88,11 @@ public class DeviceOfflineAlertService {
         event.setVideo_stream_url(camera.getStream_url());
         event.setEvent_time(now);
         Map<String, Object> ext = new HashMap<>();
-        ext.put("lastHeartbeatAt", camera.getLast_heartbeat_at() == null ? null : camera.getLast_heartbeat_at().getTime());
+        ext.put(
+                "lastHeartbeatAt",
+                camera.getLast_heartbeat_at() == null
+                        ? null
+                        : camera.getLast_heartbeat_at().getTime());
         ext.put("offlineDurationSec", offlineSec);
         ext.put("thresholdSec", thresholdSec);
         event.setExt_json(toJsonText(ext));

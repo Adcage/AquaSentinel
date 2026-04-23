@@ -1,7 +1,13 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -13,25 +19,21 @@ import com.springboot.exception.ThrowUtils;
 import com.springboot.model.dto.user.UserAddRequest;
 import com.springboot.model.dto.user.UserQueryRequest;
 import com.springboot.model.dto.user.UserUpdateRequest;
+import com.springboot.model.entity.Lifeguard;
 import com.springboot.model.entity.SysRole;
 import com.springboot.model.entity.SysUser;
 import com.springboot.model.entity.SysUserRole;
-import com.springboot.model.entity.Lifeguard;
 import com.springboot.model.vo.UserVO;
 import com.springboot.service.AccessControlService;
+import com.springboot.service.LifeguardService;
 import com.springboot.service.SysRoleService;
 import com.springboot.service.SysUserRoleService;
 import com.springboot.service.SysUserService;
-import com.springboot.service.LifeguardService;
 import com.springboot.utils.PasswordHashUtils;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,25 +46,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/users")
 public class UserController {
 
-    @Resource
-    private SysUserService sysUserService;
+    @Resource private SysUserService sysUserService;
 
-    @Resource
-    private SysUserRoleService sysUserRoleService;
+    @Resource private SysUserRoleService sysUserRoleService;
 
-    @Resource
-    private SysRoleService sysRoleService;
+    @Resource private SysRoleService sysRoleService;
 
-    @Resource
-    private AccessControlService accessControlService;
+    @Resource private AccessControlService accessControlService;
 
-    @Resource
-    private LifeguardService lifeguardService;
+    @Resource private LifeguardService lifeguardService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.SUPER_ADMIN)
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest request) {
-        if (request == null || StringUtils.isAnyBlank(request.getUsername(), request.getPassword(), request.getDisplayName())) {
+        if (request == null
+                || StringUtils.isAnyBlank(
+                        request.getUsername(), request.getPassword(), request.getDisplayName())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名、密码、显示名不能为空");
         }
         if (request.getPassword().length() < 6) {
@@ -81,7 +80,8 @@ public class UserController {
         user.setEmail(StringUtils.trimToNull(request.getEmail()));
         user.setStatus(request.getStatus() == null ? 1 : request.getStatus());
         user.setFailed_login_count(0);
-        user.setForce_change_password(request.getForceChangePassword() == null ? 1 : request.getForceChangePassword());
+        user.setForce_change_password(
+                request.getForceChangePassword() == null ? 1 : request.getForceChangePassword());
         user.setIs_delete(0);
         user.setCreated_at(new Date());
         user.setUpdated_at(new Date());
@@ -103,7 +103,10 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "id不能为空");
         }
         SysUser oldUser = sysUserService.getById(request.getId());
-        ThrowUtils.throwIf(oldUser == null || Integer.valueOf(1).equals(oldUser.getIs_delete()), ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+        ThrowUtils.throwIf(
+                oldUser == null || Integer.valueOf(1).equals(oldUser.getIs_delete()),
+                ErrorCode.NOT_FOUND_ERROR,
+                "用户不存在");
         SysUser update = new SysUser();
         update.setId(request.getId());
         update.setIs_delete(1);
@@ -120,15 +123,20 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "id不能为空");
         }
         SysUser oldUser = sysUserService.getById(request.getId());
-        ThrowUtils.throwIf(oldUser == null || Integer.valueOf(1).equals(oldUser.getIs_delete()), ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+        ThrowUtils.throwIf(
+                oldUser == null || Integer.valueOf(1).equals(oldUser.getIs_delete()),
+                ErrorCode.NOT_FOUND_ERROR,
+                "用户不存在");
 
         SysUser update = new SysUser();
         update.setId(request.getId());
-        if (StringUtils.isNotBlank(request.getUsername()) && !StringUtils.equals(request.getUsername().trim(), oldUser.getUsername())) {
+        if (StringUtils.isNotBlank(request.getUsername())
+                && !StringUtils.equals(request.getUsername().trim(), oldUser.getUsername())) {
             QueryWrapper<SysUser> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("username", request.getUsername().trim());
             queryWrapper.eq("is_delete", 0);
-            ThrowUtils.throwIf(sysUserService.count(queryWrapper) > 0, ErrorCode.PARAMS_ERROR, "用户名已存在");
+            ThrowUtils.throwIf(
+                    sysUserService.count(queryWrapper) > 0, ErrorCode.PARAMS_ERROR, "用户名已存在");
             update.setUsername(request.getUsername().trim());
         }
         if (StringUtils.isNotBlank(request.getPassword())) {
@@ -169,7 +177,10 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "id不能为空");
         }
         SysUser user = sysUserService.getById(id);
-        ThrowUtils.throwIf(user == null || Integer.valueOf(1).equals(user.getIs_delete()), ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+        ThrowUtils.throwIf(
+                user == null || Integer.valueOf(1).equals(user.getIs_delete()),
+                ErrorCode.NOT_FOUND_ERROR,
+                "用户不存在");
         return ResultUtils.success(user);
     }
 
@@ -177,12 +188,14 @@ public class UserController {
     @AuthCheck(mustRole = RoleConstant.SUPER_ADMIN)
     public BaseResponse<UserVO> getUserVOById(@RequestParam Long id) {
         BaseResponse<SysUser> baseResponse = getUserById(id);
-        return ResultUtils.success(toUserVO(baseResponse.getData(), accessControlService.listRoleCodesByUserId(id)));
+        return ResultUtils.success(
+                toUserVO(baseResponse.getData(), accessControlService.listRoleCodesByUserId(id)));
     }
 
     @PostMapping("/list/page")
     @AuthCheck(mustRole = RoleConstant.SUPER_ADMIN)
-    public BaseResponse<Page<SysUser>> listUserPage(@RequestBody(required = false) UserQueryRequest request) {
+    public BaseResponse<Page<SysUser>> listUserPage(
+            @RequestBody(required = false) UserQueryRequest request) {
         UserQueryRequest queryRequest = request == null ? new UserQueryRequest() : request;
         long current = Math.max(1, queryRequest.getCurrent());
         long pageSize = Math.min(100, Math.max(1, queryRequest.getPageSize()));
@@ -193,10 +206,12 @@ public class UserController {
 
     @PostMapping("/list/page/vo")
     @AuthCheck(mustRole = RoleConstant.SUPER_ADMIN)
-    public BaseResponse<Page<UserVO>> listUserPageVO(@RequestBody(required = false) UserQueryRequest request) {
+    public BaseResponse<Page<UserVO>> listUserPageVO(
+            @RequestBody(required = false) UserQueryRequest request) {
         BaseResponse<Page<SysUser>> baseResponse = listUserPage(request);
         Page<SysUser> userPage = baseResponse.getData();
-        Page<UserVO> voPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        Page<UserVO> voPage =
+                new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         List<UserVO> records = buildUserVOList(userPage.getRecords());
         voPage.setRecords(records);
         return ResultUtils.success(voPage);
@@ -206,9 +221,18 @@ public class UserController {
         QueryWrapper<SysUser> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("is_delete", 0);
         queryWrapper.eq(request.getId() != null, "id", request.getId());
-        queryWrapper.like(StringUtils.isNotBlank(request.getUsername()), "username", StringUtils.trim(request.getUsername()));
-        queryWrapper.like(StringUtils.isNotBlank(request.getDisplayName()), "display_name", StringUtils.trim(request.getDisplayName()));
-        queryWrapper.like(StringUtils.isNotBlank(request.getPhone()), "phone", StringUtils.trim(request.getPhone()));
+        queryWrapper.like(
+                StringUtils.isNotBlank(request.getUsername()),
+                "username",
+                StringUtils.trim(request.getUsername()));
+        queryWrapper.like(
+                StringUtils.isNotBlank(request.getDisplayName()),
+                "display_name",
+                StringUtils.trim(request.getDisplayName()));
+        queryWrapper.like(
+                StringUtils.isNotBlank(request.getPhone()),
+                "phone",
+                StringUtils.trim(request.getPhone()));
         queryWrapper.eq(request.getStatus() != null, "status", request.getStatus());
         queryWrapper.orderByDesc("id");
         if (StringUtils.isNotBlank(request.getRoleCode())) {
@@ -227,7 +251,8 @@ public class UserController {
                 queryWrapper.eq("id", -1L);
                 return queryWrapper;
             }
-            List<Long> userIds = userRoles.stream().map(SysUserRole::getUser_id).distinct().toList();
+            List<Long> userIds =
+                    userRoles.stream().map(SysUserRole::getUser_id).distinct().toList();
             queryWrapper.in("id", userIds);
         }
         return queryWrapper;
@@ -249,7 +274,11 @@ public class UserController {
             roleQuery.in("id", roleIds);
             roleQuery.eq("is_delete", 0);
             List<SysRole> roles = sysRoleService.list(roleQuery);
-            roleCodeMap = roles.stream().collect(Collectors.toMap(SysRole::getId, SysRole::getRole_code, (a, b) -> a));
+            roleCodeMap =
+                    roles.stream()
+                            .collect(
+                                    Collectors.toMap(
+                                            SysRole::getId, SysRole::getRole_code, (a, b) -> a));
         }
 
         Map<Long, List<String>> userRoleCodeMap = new HashMap<>();
@@ -258,7 +287,9 @@ public class UserController {
             if (StringUtils.isBlank(roleCode)) {
                 continue;
             }
-            userRoleCodeMap.computeIfAbsent(relation.getUser_id(), key -> new ArrayList<>()).add(roleCode);
+            userRoleCodeMap
+                    .computeIfAbsent(relation.getUser_id(), key -> new ArrayList<>())
+                    .add(roleCode);
         }
 
         Map<Long, Long> linkedLifeguardMap = fetchLinkedLifeguardMap(userIds);

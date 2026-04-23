@@ -1,29 +1,31 @@
 package com.springboot.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.springboot.common.ErrorCode;
-import com.springboot.constant.CommonConstant;
-import com.springboot.exception.BusinessException;
-import com.springboot.model.entity.MonitoringEvent;
-import com.springboot.model.dto.monitoringevent.MonitoringEventQueryRequest;
-import com.springboot.model.vo.MonitoringEventVO;
-import com.springboot.service.MonitoringEventService;
-import com.springboot.mapper.MonitoringEventMapper;
-import com.springboot.utils.SqlUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.constant.CommonConstant;
+import com.springboot.exception.BusinessException;
+import com.springboot.mapper.MonitoringEventMapper;
+import com.springboot.model.dto.monitoringevent.MonitoringEventQueryRequest;
+import com.springboot.model.entity.MonitoringEvent;
+import com.springboot.model.vo.MonitoringEventVO;
+import com.springboot.service.MonitoringEventService;
+import com.springboot.utils.SqlUtils;
+
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
-* @description 针对表【monitoring_event(监控事件表)】的数据库操作Service实现
-*/
+ * @description 针对表【monitoring_event(监控事件表)】的数据库操作Service实现
+ */
 @Service
 public class MonitoringEventServiceImpl extends ServiceImpl<MonitoringEventMapper, MonitoringEvent>
-    implements MonitoringEventService{
+        implements MonitoringEventService {
 
     @Override
     public void validMonitoringEvent(MonitoringEvent monitoringEvent, boolean add) {
@@ -51,27 +53,50 @@ public class MonitoringEventServiceImpl extends ServiceImpl<MonitoringEventMappe
     }
 
     @Override
-    public QueryWrapper<MonitoringEvent> getQueryWrapper(MonitoringEventQueryRequest monitoringEventQueryRequest) {
+    public QueryWrapper<MonitoringEvent> getQueryWrapper(
+            MonitoringEventQueryRequest monitoringEventQueryRequest) {
         if (monitoringEventQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
         }
         QueryWrapper<MonitoringEvent> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(monitoringEventQueryRequest.getId() != null, "id", monitoringEventQueryRequest.getId());
-        queryWrapper.eq(StringUtils.isNotBlank(monitoringEventQueryRequest.getEventUid()), "event_uid",
+        queryWrapper.eq(
+                monitoringEventQueryRequest.getId() != null,
+                "id",
+                monitoringEventQueryRequest.getId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(monitoringEventQueryRequest.getEventUid()),
+                "event_uid",
                 monitoringEventQueryRequest.getEventUid());
-        queryWrapper.eq(monitoringEventQueryRequest.getCameraId() != null, "camera_id", monitoringEventQueryRequest.getCameraId());
-        queryWrapper.eq(monitoringEventQueryRequest.getTaskId() != null, "task_id", monitoringEventQueryRequest.getTaskId());
-        queryWrapper.eq(StringUtils.isNotBlank(monitoringEventQueryRequest.getEventType()), "event_type",
+        queryWrapper.eq(
+                monitoringEventQueryRequest.getCameraId() != null,
+                "camera_id",
+                monitoringEventQueryRequest.getCameraId());
+        queryWrapper.eq(
+                monitoringEventQueryRequest.getTaskId() != null,
+                "task_id",
+                monitoringEventQueryRequest.getTaskId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(monitoringEventQueryRequest.getEventType()),
+                "event_type",
                 monitoringEventQueryRequest.getEventType());
-        queryWrapper.eq(StringUtils.isNotBlank(monitoringEventQueryRequest.getRiskLevel()), "risk_level",
+        queryWrapper.eq(
+                StringUtils.isNotBlank(monitoringEventQueryRequest.getRiskLevel()),
+                "risk_level",
                 monitoringEventQueryRequest.getRiskLevel());
-        queryWrapper.ge(monitoringEventQueryRequest.getStartEventTime() != null, "event_time",
+        queryWrapper.ge(
+                monitoringEventQueryRequest.getStartEventTime() != null,
+                "event_time",
                 monitoringEventQueryRequest.getStartEventTime());
-        queryWrapper.le(monitoringEventQueryRequest.getEndEventTime() != null, "event_time",
+        queryWrapper.le(
+                monitoringEventQueryRequest.getEndEventTime() != null,
+                "event_time",
                 monitoringEventQueryRequest.getEndEventTime());
         String sortField = monitoringEventQueryRequest.getSortField();
         String sortOrder = monitoringEventQueryRequest.getSortOrder();
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), CommonConstant.SORT_ORDER_ASC.equals(sortOrder), sortField);
+        queryWrapper.orderBy(
+                SqlUtils.validSortField(sortField),
+                CommonConstant.SORT_ORDER_ASC.equals(sortOrder),
+                sortField);
         return queryWrapper;
     }
 
@@ -107,10 +132,8 @@ public class MonitoringEventServiceImpl extends ServiceImpl<MonitoringEventMappe
         if (CollUtil.isEmpty(monitoringEventList)) {
             return new ArrayList<>();
         }
-        return monitoringEventList.stream().map(this::getMonitoringEventVO).collect(Collectors.toList());
+        return monitoringEventList.stream()
+                .map(this::getMonitoringEventVO)
+                .collect(Collectors.toList());
     }
 }
-
-
-
-

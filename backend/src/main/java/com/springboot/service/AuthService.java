@@ -7,6 +7,7 @@ import com.springboot.model.dto.auth.RefreshTokenRequest;
 import com.springboot.model.dto.auth.RegisterRequest;
 import com.springboot.model.vo.CaptchaVO;
 import com.springboot.model.vo.LoginResultVO;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {

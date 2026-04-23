@@ -1,7 +1,13 @@
 package com.springboot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.exception.ThrowUtils;
@@ -19,14 +25,10 @@ import com.springboot.service.LifeguardService;
 import com.springboot.service.MonitoringEventService;
 import com.springboot.service.SystemNoticeConfigService;
 import com.springboot.websocket.AlertWsPublisher;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,32 +40,23 @@ public class LifeguardOffPostAlertService {
 
     private static final int RECENT_LOCATION_LIMIT = 100;
 
-    @Resource
-    private LifeguardService lifeguardService;
+    @Resource private LifeguardService lifeguardService;
 
-    @Resource
-    private LifeguardLocationLogService lifeguardLocationLogService;
+    @Resource private LifeguardLocationLogService lifeguardLocationLogService;
 
-    @Resource
-    private LifeguardDutyLogService lifeguardDutyLogService;
+    @Resource private LifeguardDutyLogService lifeguardDutyLogService;
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private MonitoringEventService monitoringEventService;
+    @Resource private MonitoringEventService monitoringEventService;
 
-    @Resource
-    private AlertRecordService alertRecordService;
+    @Resource private AlertRecordService alertRecordService;
 
-    @Resource
-    private AlertWsPublisher alertWsPublisher;
+    @Resource private AlertWsPublisher alertWsPublisher;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
-    @Resource
-    private SystemNoticeConfigService systemNoticeConfigService;
+    @Resource private SystemNoticeConfigService systemNoticeConfigService;
 
     @Value("${app.lifeguard.off-post-threshold-sec:60}")
     private int offPostThresholdSec;
@@ -91,7 +84,8 @@ public class LifeguardOffPostAlertService {
         }
 
         LeaveState leaveState = resolveLeaveState(lifeguard.getId(), now);
-        if (StringUtils.equalsIgnoreCase(lifeguard.getDuty_status(), "LEAVE") && leaveState.withinApprovedWindow) {
+        if (StringUtils.equalsIgnoreCase(lifeguard.getDuty_status(), "LEAVE")
+                && leaveState.withinApprovedWindow) {
             result.put("reason", "LEAVE_REPORTED");
             return result;
         }
@@ -123,13 +117,22 @@ public class LifeguardOffPostAlertService {
 
         String offPostType = leaveState.leaveOverdue ? "LEAVE_TIMEOUT" : "FENCE_OUT";
 
-        MonitoringEvent monitoringEvent = buildMonitoringEvent(locationLog, lifeguard, cameraDevice, offPostType,
-                outFenceDurationSec, now, thresholdSec);
+        MonitoringEvent monitoringEvent =
+                buildMonitoringEvent(
+                        locationLog,
+                        lifeguard,
+                        cameraDevice,
+                        offPostType,
+                        outFenceDurationSec,
+                        now,
+                        thresholdSec);
         monitoringEventService.validMonitoringEvent(monitoringEvent, true);
         boolean eventSaved = monitoringEventService.save(monitoringEvent);
         ThrowUtils.throwIf(!eventSaved, ErrorCode.OPERATION_ERROR, "脱岗事件创建失败");
 
-        AlertRecord alertRecord = buildAlertRecord(locationLog, lifeguard, cameraDevice, monitoringEvent, offPostType, now);
+        AlertRecord alertRecord =
+                buildAlertRecord(
+                        locationLog, lifeguard, cameraDevice, monitoringEvent, offPostType, now);
         alertRecordService.validAlertRecord(alertRecord, true);
         boolean alertSaved = alertRecordService.save(alertRecord);
         ThrowUtils.throwIf(!alertSaved, ErrorCode.OPERATION_ERROR, "脱岗报警创建失败");
@@ -142,7 +145,8 @@ public class LifeguardOffPostAlertService {
         wsData.put("riskLevel", monitoringEvent.getRisk_level());
         wsData.put("lifeguardId", lifeguard.getId());
         wsData.put("offPostType", offPostType);
-        alertWsPublisher.publishAlertCreated(monitoringEvent.getEvent_uid(), alertRecord.getAlert_uid(), wsData);
+        alertWsPublisher.publishAlertCreated(
+                monitoringEvent.getEvent_uid(), alertRecord.getAlert_uid(), wsData);
 
         result.put("offPostAlert", true);
         result.put("created", true);
@@ -159,7 +163,8 @@ public class LifeguardOffPostAlertService {
         if (lifeguardId == null || lifeguardId <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "lifeguardId错误");
         }
-        List<LifeguardLocationLog> locationLogs = lifeguardLocationLogService.recentLocations(lifeguardId, 1);
+        List<LifeguardLocationLog> locationLogs =
+                lifeguardLocationLogService.recentLocations(lifeguardId, 1);
         LifeguardLocationLog latest = locationLogs.isEmpty() ? null : locationLogs.get(0);
         if (latest == null) {
             Lifeguard lifeguard = lifeguardService.getById(lifeguardId);
@@ -177,10 +182,17 @@ public class LifeguardOffPostAlertService {
         return checkAfterLocationReport(latest);
     }
 
-    private MonitoringEvent buildMonitoringEvent(LifeguardLocationLog locationLog, Lifeguard lifeguard,
-            CameraDevice cameraDevice, String offPostType, int outFenceDurationSec, Date now, int thresholdSec) {
+    private MonitoringEvent buildMonitoringEvent(
+            LifeguardLocationLog locationLog,
+            Lifeguard lifeguard,
+            CameraDevice cameraDevice,
+            String offPostType,
+            int outFenceDurationSec,
+            Date now,
+            int thresholdSec) {
         MonitoringEvent monitoringEvent = new MonitoringEvent();
-        monitoringEvent.setEvent_uid("evt_offpost_" + lifeguard.getId() + "_" + System.currentTimeMillis());
+        monitoringEvent.setEvent_uid(
+                "evt_offpost_" + lifeguard.getId() + "_" + System.currentTimeMillis());
         monitoringEvent.setCamera_id(cameraDevice.getId());
         monitoringEvent.setEvent_type("OFF_POST");
         monitoringEvent.setRisk_level("HIGH");
@@ -203,8 +215,13 @@ public class LifeguardOffPostAlertService {
         return monitoringEvent;
     }
 
-    private AlertRecord buildAlertRecord(LifeguardLocationLog locationLog, Lifeguard lifeguard, CameraDevice cameraDevice,
-            MonitoringEvent monitoringEvent, String offPostType, Date now) {
+    private AlertRecord buildAlertRecord(
+            LifeguardLocationLog locationLog,
+            Lifeguard lifeguard,
+            CameraDevice cameraDevice,
+            MonitoringEvent monitoringEvent,
+            String offPostType,
+            Date now) {
         AlertRecord alertRecord = new AlertRecord();
         alertRecord.setAlert_uid("ALERT-" + UUID.randomUUID().toString().replace("-", ""));
         alertRecord.setEvent_id(monitoringEvent.getId());
@@ -229,12 +246,19 @@ public class LifeguardOffPostAlertService {
         if (locationLog == null) {
             return "UNKNOWN";
         }
-        String lng = locationLog.getLongitude() == null ? "unknown" : locationLog.getLongitude().toPlainString();
-        String lat = locationLog.getLatitude() == null ? "unknown" : locationLog.getLatitude().toPlainString();
+        String lng =
+                locationLog.getLongitude() == null
+                        ? "unknown"
+                        : locationLog.getLongitude().toPlainString();
+        String lat =
+                locationLog.getLatitude() == null
+                        ? "unknown"
+                        : locationLog.getLatitude().toPlainString();
         return "lng=" + lng + ",lat=" + lat;
     }
 
-    private Map<String, Object> buildBaseResult(Lifeguard lifeguard, LifeguardLocationLog locationLog, int thresholdSec) {
+    private Map<String, Object> buildBaseResult(
+            Lifeguard lifeguard, LifeguardLocationLog locationLog, int thresholdSec) {
         Map<String, Object> result = new HashMap<>();
         result.put("lifeguardId", lifeguard.getId());
         result.put("dutyStatus", lifeguard.getDuty_status());
@@ -251,11 +275,13 @@ public class LifeguardOffPostAlertService {
         if (configured > 0) {
             return configured;
         }
-        return Math.max(1, offPostThresholdSec > 0 ? offPostThresholdSec : DEFAULT_OFF_DUTY_THRESHOLD_SEC);
+        return Math.max(
+                1, offPostThresholdSec > 0 ? offPostThresholdSec : DEFAULT_OFF_DUTY_THRESHOLD_SEC);
     }
 
     private int calculateOutFenceDurationSec(Long lifeguardId, Date now) {
-        List<LifeguardLocationLog> recent = lifeguardLocationLogService.recentLocations(lifeguardId, RECENT_LOCATION_LIMIT);
+        List<LifeguardLocationLog> recent =
+                lifeguardLocationLogService.recentLocations(lifeguardId, RECENT_LOCATION_LIMIT);
         Date earliestOutFenceAt = null;
         for (LifeguardLocationLog locationLog : recent) {
             if (locationLog == null || !Objects.equals(locationLog.getIn_fence(), 0)) {

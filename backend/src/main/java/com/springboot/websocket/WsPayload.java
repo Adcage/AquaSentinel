@@ -1,6 +1,7 @@
 package com.springboot.websocket;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
 @Data

@@ -9,6 +9,7 @@ import com.springboot.common.DeleteRequest;
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.service.VenueService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,8 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class VenueControllerDeleteTest {
 
-    @Mock
-    private VenueService venueService;
+    @Mock private VenueService venueService;
 
     private VenueController controller;
 
@@ -29,7 +29,8 @@ class VenueControllerDeleteTest {
     void setUp() {
         controller = new VenueController();
         ReflectionTestUtils.setField(controller, "venueService", venueService);
-        ReflectionTestUtils.setField(controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
+        ReflectionTestUtils.setField(
+                controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
     }
 
     @Test
@@ -51,7 +52,8 @@ class VenueControllerDeleteTest {
         when(venueService.removeById(2020L))
                 .thenThrow(new DataIntegrityViolationException("fk_alert_venue"));
 
-        BusinessException exception = assertThrows(BusinessException.class, () -> controller.deleteVenue(request));
+        BusinessException exception =
+                assertThrows(BusinessException.class, () -> controller.deleteVenue(request));
 
         assertEquals(ErrorCode.OPERATION_ERROR.getCode(), exception.getCode());
         assertEquals("场馆已被报警记录或其他业务数据引用，无法删除", exception.getMessage());

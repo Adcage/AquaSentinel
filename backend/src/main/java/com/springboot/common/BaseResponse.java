@@ -1,6 +1,7 @@
 package com.springboot.common;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
 /**

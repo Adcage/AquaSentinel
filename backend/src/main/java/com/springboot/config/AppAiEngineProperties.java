@@ -23,9 +23,7 @@ public class AppAiEngineProperties {
 
     private String callbackUrl = "http://127.0.0.1:8101/api/internal/ai/events";
 
-    /**
-     * source | proxy | auto
-     */
+    /** source | proxy | auto */
     private String inputStreamMode = "source";
 
     private String proxyBaseUrl = "http://127.0.0.1:8300/api";

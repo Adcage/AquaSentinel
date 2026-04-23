@@ -6,17 +6,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.springboot.common.BaseResponse;
-import com.springboot.model.dto.stats.StatsExportRequest;
-import com.springboot.model.entity.AlertRecord;
-import com.springboot.service.AlertRecordService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import com.springboot.common.BaseResponse;
+import com.springboot.model.dto.stats.StatsExportRequest;
+import com.springboot.model.entity.AlertRecord;
+import com.springboot.service.AlertRecordService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,8 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class StatsControllerTest {
 
-    @Mock
-    private AlertRecordService alertRecordService;
+    @Mock private AlertRecordService alertRecordService;
 
     private StatsController controller;
 

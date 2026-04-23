@@ -1,6 +1,7 @@
 package com.springboot.model.dto.auth;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
 @Data

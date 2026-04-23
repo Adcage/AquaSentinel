@@ -10,8 +10,13 @@ public interface AccessControlService {
 
     boolean updateRolePermissions(String roleCode, List<String> permissions);
 
-    boolean updateMyProfile(Long userId, String displayName, String phone, String email,
-                            String oldPassword, String newPassword);
+    boolean updateMyProfile(
+            Long userId,
+            String displayName,
+            String phone,
+            String email,
+            String oldPassword,
+            String newPassword);
 
     Set<String> listPermissionsByRoleCodes(Collection<String> roleCodes);
 

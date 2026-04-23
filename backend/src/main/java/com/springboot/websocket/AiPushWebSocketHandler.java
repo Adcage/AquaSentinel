@@ -1,7 +1,5 @@
 package com.springboot.websocket;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -9,23 +7,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.BinaryMessage;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
 /**
- * 接收 Python AI 引擎通过 WebSocket 主动推送的检测结果，
- * 并转发给订阅了对应摄像头的前端 WS session。
- * 仅允许本机（127.0.0.1）连接，由 AiPushHandshakeInterceptor 保证。
- * 
- * 支持两种消息格式：
- * 1. 文本消息：JSON 格式的检测结果
- * 2. 二进制消息：已画框的 JPEG 帧（需先发送文本元数据）
+ * 接收 Python AI 引擎通过 WebSocket 主动推送的检测结果， 并转发给订阅了对应摄像头的前端 WS session。 仅允许本机（127.0.0.1）连接，由
+ * AiPushHandshakeInterceptor 保证。
+ *
+ * <p>支持两种消息格式： 1. 文本消息：JSON 格式的检测结果 2. 二进制消息：已画框的 JPEG 帧（需先发送文本元数据）
  */
 @Component
 @Slf4j
@@ -39,8 +37,8 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
 
     private final Map<String, VideoFrameMetadata> pendingFrameMetadata = new ConcurrentHashMap<>();
 
-    public AiPushWebSocketHandler(AlertWebSocketHandler alertWebSocketHandler,
-                                  ObjectMapper objectMapper) {
+    public AiPushWebSocketHandler(
+            AlertWebSocketHandler alertWebSocketHandler, ObjectMapper objectMapper) {
         this.alertWebSocketHandler = alertWebSocketHandler;
         this.objectMapper = objectMapper;
     }
@@ -67,21 +65,10 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
     }
 
     /**
-     * 接收 Python 推送的 JSON 消息，格式：
-     * {
-     *   "cameraId": 5005,
-     *   "taskCode": "TASK_CAM_5005_xxx",
-     *   "headCount": 3,
-     *   "detections": [...],
-     *   "riskPoint": {...}
-     * }
-     * 
-     * 或者视频帧元数据（紧跟二进制帧）：
-     * {
-     *   "type": "VIDEO_FRAME",
-     *   "cameraId": 5005,
-     *   "frameTs": 1234567890
-     * }
+     * 接收 Python 推送的 JSON 消息，格式： { "cameraId": 5005, "taskCode": "TASK_CAM_5005_xxx", "headCount":
+     * 3, "detections": [...], "riskPoint": {...} }
+     *
+     * <p>或者视频帧元数据（紧跟二进制帧）： { "type": "VIDEO_FRAME", "cameraId": 5005, "frameTs": 1234567890 }
      * 转发给订阅了该摄像头的前端 WS session。
      */
     @Override
@@ -100,14 +87,20 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
                     int headCount = parseIntValue(data.get("headCount"));
                     List<Object> detections = parseListValue(data.get("detections"));
                     Object riskPoint = data.get("riskPoint");
-                    pendingFrameMetadata.put(session.getId(),
-                            new VideoFrameMetadata(cameraId, frameTs, headCount, detections, riskPoint));
+                    pendingFrameMetadata.put(
+                            session.getId(),
+                            new VideoFrameMetadata(
+                                    cameraId, frameTs, headCount, detections, riskPoint));
                 }
                 return;
             }
             forwardToFrontend(data);
         } catch (Exception e) {
-            log.warn("AI push ws message parse failed, sessionId={}, payload={}", session.getId(), payload, e);
+            log.warn(
+                    "AI push ws message parse failed, sessionId={}, payload={}",
+                    session.getId(),
+                    payload,
+                    e);
         }
     }
 
@@ -164,7 +157,8 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
             return;
         }
 
-        Map<String, Set<Long>> subscriptions = alertWebSocketHandler.snapshotRealtimeSubscriptions();
+        Map<String, Set<Long>> subscriptions =
+                alertWebSocketHandler.snapshotRealtimeSubscriptions();
         if (subscriptions.isEmpty()) {
             return;
         }
@@ -174,7 +168,8 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
         wsPayload.setMessageType(WsMessageType.MONITOR_REALTIME_BATCH);
         wsPayload.setOccurredAt(Instant.now().toEpochMilli());
 
-        Map<String, Object> batchData = Map.of(String.valueOf(cameraId), buildEnginePayload(aiData));
+        Map<String, Object> batchData =
+                Map.of(String.valueOf(cameraId), buildEnginePayload(aiData));
         wsPayload.setData(batchData);
 
         String text;
@@ -219,16 +214,17 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
         Object taskCode = aiData.getOrDefault("taskCode", "");
 
         return Map.of(
-                "engine", Map.of(
-                        "available", true,
-                        "realtime", Map.of(
+                "engine",
+                Map.of(
+                        "available",
+                        true,
+                        "realtime",
+                        Map.of(
                                 "detections", detections,
                                 "head_count", headCount,
-                                "risk_point", riskPoint
-                        ),
-                        "task_code", taskCode
-                )
-        );
+                                "risk_point", riskPoint),
+                        "task_code",
+                        taskCode));
     }
 
     @Override
@@ -243,7 +239,10 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
             return;
         }
         if (log.isDebugEnabled()) {
-            log.debug("received binary video frame, cameraId={}, size={}", metadata.cameraId, payload.length);
+            log.debug(
+                    "received binary video frame, cameraId={}, size={}",
+                    metadata.cameraId,
+                    payload.length);
         }
         forwardVideoFrameToFrontend(metadata, payload);
     }
@@ -251,9 +250,13 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
     private void forwardVideoFrameToFrontend(VideoFrameMetadata metadata, byte[] jpegBytes) {
         long cameraId = metadata.cameraId;
         if (log.isDebugEnabled()) {
-            log.debug("forwarding video frame to frontend, cameraId={}, size={}", cameraId, jpegBytes.length);
+            log.debug(
+                    "forwarding video frame to frontend, cameraId={}, size={}",
+                    cameraId,
+                    jpegBytes.length);
         }
-        Map<String, Set<Long>> subscriptions = alertWebSocketHandler.snapshotRealtimeSubscriptions();
+        Map<String, Set<Long>> subscriptions =
+                alertWebSocketHandler.snapshotRealtimeSubscriptions();
         if (subscriptions.isEmpty()) {
             return;
         }
@@ -288,7 +291,8 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
                     frontendSession.sendMessage(new BinaryMessage(jpegBytes));
                 }
             } catch (IOException e) {
-                log.debug("forward video frame to frontend failed, sessionId={}", entry.getKey(), e);
+                log.debug(
+                        "forward video frame to frontend failed, sessionId={}", entry.getKey(), e);
             }
         }
     }
@@ -300,7 +304,12 @@ public class AiPushWebSocketHandler extends AbstractWebSocketHandler {
         public List<Object> detections;
         public Object riskPoint;
 
-        public VideoFrameMetadata(long cameraId, long frameTs, int headCount, List<Object> detections, Object riskPoint) {
+        public VideoFrameMetadata(
+                long cameraId,
+                long frameTs,
+                int headCount,
+                List<Object> detections,
+                Object riskPoint) {
             this.cameraId = cameraId;
             this.frameTs = frameTs;
             this.headCount = headCount;

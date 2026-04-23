@@ -3,6 +3,7 @@ package com.springboot.model.dto.statssnapshot;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+
 import lombok.Data;
 
 @Data

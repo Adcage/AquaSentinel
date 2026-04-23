@@ -1,9 +1,15 @@
 package com.springboot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.mapper.SysRoleMapper;
@@ -14,16 +20,11 @@ import com.springboot.model.entity.SysUser;
 import com.springboot.model.entity.SysUserRole;
 import com.springboot.service.AccessControlService;
 import com.springboot.utils.PasswordHashUtils;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,17 +32,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AccessControlServiceImpl implements AccessControlService {
 
-    @Resource
-    private SysUserMapper sysUserMapper;
+    @Resource private SysUserMapper sysUserMapper;
 
-    @Resource
-    private SysRoleMapper sysRoleMapper;
+    @Resource private SysRoleMapper sysRoleMapper;
 
-    @Resource
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Resource private SysUserRoleMapper sysUserRoleMapper;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,7 +71,8 @@ public class AccessControlServiceImpl implements AccessControlService {
                     missing.add(code);
                 }
             }
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "角色不存在: " + String.join(",", missing));
+            throw new BusinessException(
+                    ErrorCode.PARAMS_ERROR, "角色不存在: " + String.join(",", missing));
         }
 
         QueryWrapper<SysUserRole> deleteQuery = new QueryWrapper<>();
@@ -120,8 +118,13 @@ public class AccessControlServiceImpl implements AccessControlService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateMyProfile(Long userId, String displayName, String phone, String email,
-                                   String oldPassword, String newPassword) {
+    public boolean updateMyProfile(
+            Long userId,
+            String displayName,
+            String phone,
+            String email,
+            String oldPassword,
+            String newPassword) {
         if (userId == null || userId <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户ID不能为空");
         }
@@ -196,7 +199,12 @@ public class AccessControlServiceImpl implements AccessControlService {
         if (relations.isEmpty()) {
             return Set.of();
         }
-        List<Long> roleIds = relations.stream().map(SysUserRole::getRole_id).filter(Objects::nonNull).distinct().toList();
+        List<Long> roleIds =
+                relations.stream()
+                        .map(SysUserRole::getRole_id)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
         if (roleIds.isEmpty()) {
             return Set.of();
         }
@@ -223,7 +231,12 @@ public class AccessControlServiceImpl implements AccessControlService {
         if (relations.isEmpty()) {
             return Set.of();
         }
-        List<Long> roleIds = relations.stream().map(SysUserRole::getRole_id).filter(Objects::nonNull).distinct().toList();
+        List<Long> roleIds =
+                relations.stream()
+                        .map(SysUserRole::getRole_id)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
         if (roleIds.isEmpty()) {
             return Set.of();
         }

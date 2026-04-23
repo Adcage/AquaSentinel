@@ -1,6 +1,8 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.Date;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -16,9 +18,9 @@ import com.springboot.model.dto.alertrecord.AlertRecordUpdateRequest;
 import com.springboot.model.entity.AlertRecord;
 import com.springboot.model.vo.AlertRecordVO;
 import com.springboot.service.AlertRecordService;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.Date;
-import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,20 +31,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/alert-records")
 public class AlertRecordController {
 
-    @Resource
-    private AlertRecordService alertRecordService;
+    @Resource private AlertRecordService alertRecordService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Long> addAlertRecord(@RequestBody AlertRecordAddRequest alertRecordAddRequest) {
+    public BaseResponse<Long> addAlertRecord(
+            @RequestBody AlertRecordAddRequest alertRecordAddRequest) {
         if (alertRecordAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         AlertRecord alertRecord = toAlertRecord(alertRecordAddRequest);
-        alertRecord.setAlert_status(alertRecord.getAlert_status() == null ? "PENDING" : alertRecord.getAlert_status());
-        alertRecord.setAlert_type(alertRecord.getAlert_type() == null ? "DROWING" : alertRecord.getAlert_type());
-        alertRecord.setPushed_to_app(alertRecord.getPushed_to_app() == null ? 0 : alertRecord.getPushed_to_app());
-        alertRecord.setPushed_to_pc(alertRecord.getPushed_to_pc() == null ? 0 : alertRecord.getPushed_to_pc());
+        alertRecord.setAlert_status(
+                alertRecord.getAlert_status() == null ? "PENDING" : alertRecord.getAlert_status());
+        alertRecord.setAlert_type(
+                alertRecord.getAlert_type() == null ? "DROWING" : alertRecord.getAlert_type());
+        alertRecord.setPushed_to_app(
+                alertRecord.getPushed_to_app() == null ? 0 : alertRecord.getPushed_to_app());
+        alertRecord.setPushed_to_pc(
+                alertRecord.getPushed_to_pc() == null ? 0 : alertRecord.getPushed_to_pc());
         alertRecord.setCreated_at(new Date());
         alertRecord.setUpdated_at(new Date());
         alertRecordService.validAlertRecord(alertRecord, true);
@@ -64,8 +70,11 @@ public class AlertRecordController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateAlertRecord(@RequestBody AlertRecordUpdateRequest alertRecordUpdateRequest) {
-        if (alertRecordUpdateRequest == null || alertRecordUpdateRequest.getId() == null || alertRecordUpdateRequest.getId() <= 0) {
+    public BaseResponse<Boolean> updateAlertRecord(
+            @RequestBody AlertRecordUpdateRequest alertRecordUpdateRequest) {
+        if (alertRecordUpdateRequest == null
+                || alertRecordUpdateRequest.getId() == null
+                || alertRecordUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         AlertRecord alertRecord = toAlertRecord(alertRecordUpdateRequest);
@@ -77,8 +86,11 @@ public class AlertRecordController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editAlertRecord(@RequestBody AlertRecordEditRequest alertRecordEditRequest) {
-        if (alertRecordEditRequest == null || alertRecordEditRequest.getId() == null || alertRecordEditRequest.getId() <= 0) {
+    public BaseResponse<Boolean> editAlertRecord(
+            @RequestBody AlertRecordEditRequest alertRecordEditRequest) {
+        if (alertRecordEditRequest == null
+                || alertRecordEditRequest.getId() == null
+                || alertRecordEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         AlertRecord alertRecord = new AlertRecord();
@@ -112,39 +124,51 @@ public class AlertRecordController {
     }
 
     @PostMapping("/list")
-    public BaseResponse<List<AlertRecord>> listAlertRecord(@RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
+    public BaseResponse<List<AlertRecord>> listAlertRecord(
+            @RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
         if (alertRecordQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return ResultUtils.success(alertRecordService.list(alertRecordService.getQueryWrapper(alertRecordQueryRequest)));
+        return ResultUtils.success(
+                alertRecordService.list(
+                        alertRecordService.getQueryWrapper(alertRecordQueryRequest)));
     }
 
     @PostMapping("/list/vo")
-    public BaseResponse<List<AlertRecordVO>> listAlertRecordVO(@RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
+    public BaseResponse<List<AlertRecordVO>> listAlertRecordVO(
+            @RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
         BaseResponse<List<AlertRecord>> response = listAlertRecord(alertRecordQueryRequest);
         return ResultUtils.success(alertRecordService.getAlertRecordVO(response.getData()));
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<AlertRecord>> listAlertRecordByPage(@RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
+    public BaseResponse<Page<AlertRecord>> listAlertRecordByPage(
+            @RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
         if (alertRecordQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = alertRecordQueryRequest.getCurrent();
         long size = alertRecordQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<AlertRecord> alertRecordPage = alertRecordService.page(new Page<>(current, size),
-                alertRecordService.getQueryWrapper(alertRecordQueryRequest));
+        Page<AlertRecord> alertRecordPage =
+                alertRecordService.page(
+                        new Page<>(current, size),
+                        alertRecordService.getQueryWrapper(alertRecordQueryRequest));
         return ResultUtils.success(alertRecordPage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<AlertRecordVO>> listAlertRecordVOByPage(@RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
+    public BaseResponse<Page<AlertRecordVO>> listAlertRecordVOByPage(
+            @RequestBody AlertRecordQueryRequest alertRecordQueryRequest) {
         BaseResponse<Page<AlertRecord>> response = listAlertRecordByPage(alertRecordQueryRequest);
         Page<AlertRecord> alertRecordPage = response.getData();
-        Page<AlertRecordVO> alertRecordVOPage = new Page<>(alertRecordPage.getCurrent(), alertRecordPage.getSize(),
-                alertRecordPage.getTotal());
-        alertRecordVOPage.setRecords(alertRecordService.getAlertRecordVO(alertRecordPage.getRecords()));
+        Page<AlertRecordVO> alertRecordVOPage =
+                new Page<>(
+                        alertRecordPage.getCurrent(),
+                        alertRecordPage.getSize(),
+                        alertRecordPage.getTotal());
+        alertRecordVOPage.setRecords(
+                alertRecordService.getAlertRecordVO(alertRecordPage.getRecords()));
         return ResultUtils.success(alertRecordVOPage);
     }
 

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.springboot.config.AppStreamProxyProperties;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,14 +15,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class StreamTokenAuthServiceTest {
 
-    @Mock
-    private JwtTokenProvider jwtTokenProvider;
+    @Mock private JwtTokenProvider jwtTokenProvider;
 
     private StreamTokenAuthService streamTokenAuthService;
 
     @BeforeEach
     void setUp() {
-        streamTokenAuthService = new StreamTokenAuthService(jwtTokenProvider, new AppStreamProxyProperties());
+        streamTokenAuthService =
+                new StreamTokenAuthService(jwtTokenProvider, new AppStreamProxyProperties());
     }
 
     @Test

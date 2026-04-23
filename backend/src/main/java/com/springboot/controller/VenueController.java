@@ -1,7 +1,8 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -18,11 +19,12 @@ import com.springboot.model.dto.venue.VenueUpdateRequest;
 import com.springboot.model.entity.Venue;
 import com.springboot.model.vo.VenueVO;
 import com.springboot.service.VenueService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,11 +37,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/venues")
 public class VenueController {
 
-    @Resource
-    private VenueService venueService;
+    @Resource private VenueService venueService;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
@@ -82,7 +82,9 @@ public class VenueController {
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Boolean> updateVenue(@RequestBody VenueUpdateRequest venueUpdateRequest) {
-        if (venueUpdateRequest == null || venueUpdateRequest.getId() == null || venueUpdateRequest.getId() <= 0) {
+        if (venueUpdateRequest == null
+                || venueUpdateRequest.getId() == null
+                || venueUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Venue venue = toVenue(venueUpdateRequest);
@@ -95,7 +97,9 @@ public class VenueController {
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Boolean> editVenue(@RequestBody VenueEditRequest venueEditRequest) {
-        if (venueEditRequest == null || venueEditRequest.getId() == null || venueEditRequest.getId() <= 0) {
+        if (venueEditRequest == null
+                || venueEditRequest.getId() == null
+                || venueEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Venue venue = new Venue();
@@ -130,37 +134,46 @@ public class VenueController {
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<Venue>> listVenueByPage(@RequestBody VenueQueryRequest venueQueryRequest) {
+    public BaseResponse<Page<Venue>> listVenueByPage(
+            @RequestBody VenueQueryRequest venueQueryRequest) {
         if (venueQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = venueQueryRequest.getCurrent();
         long size = venueQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<Venue> venuePage = venueService.page(new Page<>(current, size), venueService.getQueryWrapper(venueQueryRequest));
+        Page<Venue> venuePage =
+                venueService.page(
+                        new Page<>(current, size), venueService.getQueryWrapper(venueQueryRequest));
         return ResultUtils.success(venuePage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<VenueVO>> listVenueVOByPage(@RequestBody VenueQueryRequest venueQueryRequest) {
+    public BaseResponse<Page<VenueVO>> listVenueVOByPage(
+            @RequestBody VenueQueryRequest venueQueryRequest) {
         BaseResponse<Page<Venue>> response = listVenueByPage(venueQueryRequest);
         Page<Venue> venuePage = response.getData();
-        Page<VenueVO> venueVOPage = new Page<>(venuePage.getCurrent(), venuePage.getSize(), venuePage.getTotal());
+        Page<VenueVO> venueVOPage =
+                new Page<>(venuePage.getCurrent(), venuePage.getSize(), venuePage.getTotal());
         List<VenueVO> venueVOList = venueService.getVenueVO(venuePage.getRecords());
         venueVOPage.setRecords(venueVOList);
         return ResultUtils.success(venueVOPage);
     }
 
     @PostMapping("/list/fence/bounds")
-    public BaseResponse<Page<VenueVO>> listVenueFenceByBounds(@RequestBody VenueFenceBoundsRequest request) {
+    public BaseResponse<Page<VenueVO>> listVenueFenceByBounds(
+            @RequestBody VenueFenceBoundsRequest request) {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        if (request.getMinLng() == null || request.getMaxLng() == null
-                || request.getMinLat() == null || request.getMaxLat() == null) {
+        if (request.getMinLng() == null
+                || request.getMaxLng() == null
+                || request.getMinLat() == null
+                || request.getMaxLat() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "视野范围参数不能为空");
         }
-        if (request.getMinLng() >= request.getMaxLng() || request.getMinLat() >= request.getMaxLat()) {
+        if (request.getMinLng() >= request.getMaxLng()
+                || request.getMinLat() >= request.getMaxLat()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "视野范围参数无效");
         }
         long current = request.getCurrent() > 0 ? request.getCurrent() : 1;
@@ -184,9 +197,8 @@ public class VenueController {
         int total = matchedVenueList.size();
         int fromIndex = (int) ((current - 1) * size);
         int toIndex = Math.min(fromIndex + (int) size, total);
-        List<VenueVO> records = fromIndex >= total
-                ? List.of()
-                : matchedVenueList.subList(fromIndex, toIndex);
+        List<VenueVO> records =
+                fromIndex >= total ? List.of() : matchedVenueList.subList(fromIndex, toIndex);
         Page<VenueVO> venueVOPage = new Page<>(current, size, total);
         venueVOPage.setRecords(records);
         return ResultUtils.success(venueVOPage);
@@ -238,12 +250,13 @@ public class VenueController {
         if (fenceNode == null) {
             return false;
         }
-        double[] bounds = new double[] {
-                Double.POSITIVE_INFINITY,
-                Double.NEGATIVE_INFINITY,
-                Double.POSITIVE_INFINITY,
-                Double.NEGATIVE_INFINITY,
-        };
+        double[] bounds =
+                new double[] {
+                    Double.POSITIVE_INFINITY,
+                    Double.NEGATIVE_INFINITY,
+                    Double.POSITIVE_INFINITY,
+                    Double.NEGATIVE_INFINITY,
+                };
         mergeBoundsFromFence(fenceNode, bounds);
         if (!hasBounds(bounds)) {
             return false;
@@ -252,7 +265,10 @@ public class VenueController {
         double maxLng = request.getMaxLng();
         double minLat = request.getMinLat();
         double maxLat = request.getMaxLat();
-        return !(bounds[1] < minLng || bounds[0] > maxLng || bounds[3] < minLat || bounds[2] > maxLat);
+        return !(bounds[1] < minLng
+                || bounds[0] > maxLng
+                || bounds[3] < minLat
+                || bounds[2] > maxLat);
     }
 
     private JsonNode parseFenceNode(Object fenceValue) {

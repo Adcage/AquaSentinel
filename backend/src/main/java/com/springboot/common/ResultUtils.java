@@ -1,9 +1,6 @@
 package com.springboot.common;
 
-/**
- * 返回工具类
- *
- */
+/** 返回工具类 */
 public class ResultUtils {
 
     /**

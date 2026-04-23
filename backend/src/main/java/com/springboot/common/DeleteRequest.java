@@ -1,17 +1,14 @@
 package com.springboot.common;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
-/**
- * 删除请求
- */
+/** 删除请求 */
 @Data
 public class DeleteRequest implements Serializable {
 
-    /**
-     * id
-     */
+    /** id */
     private Long id;
 
     private static final long serialVersionUID = 1L;

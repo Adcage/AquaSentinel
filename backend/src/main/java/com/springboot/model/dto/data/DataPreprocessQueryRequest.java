@@ -1,7 +1,9 @@
 package com.springboot.model.dto.data;
 
-import com.springboot.common.PageRequest;
 import java.io.Serializable;
+
+import com.springboot.common.PageRequest;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

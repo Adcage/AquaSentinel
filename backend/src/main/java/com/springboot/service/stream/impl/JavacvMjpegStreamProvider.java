@@ -1,5 +1,12 @@
 package com.springboot.service.stream.impl;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import javax.imageio.ImageIO;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.model.entity.CameraDevice;
@@ -7,11 +14,7 @@ import com.springboot.service.stream.StreamOpenRequest;
 import com.springboot.service.stream.StreamProvider;
 import com.springboot.service.stream.StreamProviderException;
 import com.springboot.service.stream.StreamSession;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import javax.imageio.ImageIO;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -73,7 +76,8 @@ public class JavacvMjpegStreamProvider implements StreamProvider {
             Class<?> converterClass = Class.forName("org.bytedeco.javacv.Java2DFrameConverter");
 
             grabber = grabberClass.getConstructor(String.class).newInstance(source);
-            grabberClass.getMethod("setOption", String.class, String.class)
+            grabberClass
+                    .getMethod("setOption", String.class, String.class)
                     .invoke(grabber, "rtsp_transport", "tcp");
             grabberClass.getMethod("start").invoke(grabber);
             converter = converterClass.getConstructor().newInstance();
@@ -83,9 +87,11 @@ public class JavacvMjpegStreamProvider implements StreamProvider {
                 if (frame == null) {
                     continue;
                 }
-                BufferedImage bufferedImage = (BufferedImage) converterClass
-                        .getMethod("convert", frameClass)
-                        .invoke(converter, frame);
+                BufferedImage bufferedImage =
+                        (BufferedImage)
+                                converterClass
+                                        .getMethod("convert", frameClass)
+                                        .invoke(converter, frame);
                 if (bufferedImage == null) {
                     continue;
                 }

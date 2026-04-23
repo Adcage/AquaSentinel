@@ -1,29 +1,31 @@
 package com.springboot.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.springboot.common.ErrorCode;
-import com.springboot.constant.CommonConstant;
-import com.springboot.exception.BusinessException;
-import com.springboot.model.entity.AlertRecord;
-import com.springboot.model.dto.alertrecord.AlertRecordQueryRequest;
-import com.springboot.model.vo.AlertRecordVO;
-import com.springboot.service.AlertRecordService;
-import com.springboot.mapper.AlertRecordMapper;
-import com.springboot.utils.SqlUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.constant.CommonConstant;
+import com.springboot.exception.BusinessException;
+import com.springboot.mapper.AlertRecordMapper;
+import com.springboot.model.dto.alertrecord.AlertRecordQueryRequest;
+import com.springboot.model.entity.AlertRecord;
+import com.springboot.model.vo.AlertRecordVO;
+import com.springboot.service.AlertRecordService;
+import com.springboot.utils.SqlUtils;
+
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
-* @description 针对表【alert_record(报警记录表)】的数据库操作Service实现
-*/
+ * @description 针对表【alert_record(报警记录表)】的数据库操作Service实现
+ */
 @Service
 public class AlertRecordServiceImpl extends ServiceImpl<AlertRecordMapper, AlertRecord>
-    implements AlertRecordService{
+        implements AlertRecordService {
 
     @Override
     public void validAlertRecord(AlertRecord alertRecord, boolean add) {
@@ -54,36 +56,77 @@ public class AlertRecordServiceImpl extends ServiceImpl<AlertRecordMapper, Alert
     }
 
     @Override
-    public QueryWrapper<AlertRecord> getQueryWrapper(AlertRecordQueryRequest alertRecordQueryRequest) {
+    public QueryWrapper<AlertRecord> getQueryWrapper(
+            AlertRecordQueryRequest alertRecordQueryRequest) {
         if (alertRecordQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
         }
         QueryWrapper<AlertRecord> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(alertRecordQueryRequest.getId() != null, "id", alertRecordQueryRequest.getId());
-        queryWrapper.eq(StringUtils.isNotBlank(alertRecordQueryRequest.getAlertUid()), "alert_uid",
+        queryWrapper.eq(
+                alertRecordQueryRequest.getId() != null, "id", alertRecordQueryRequest.getId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(alertRecordQueryRequest.getAlertUid()),
+                "alert_uid",
                 alertRecordQueryRequest.getAlertUid());
-        queryWrapper.eq(alertRecordQueryRequest.getEventId() != null, "event_id", alertRecordQueryRequest.getEventId());
-        queryWrapper.eq(alertRecordQueryRequest.getCameraId() != null, "camera_id", alertRecordQueryRequest.getCameraId());
-        queryWrapper.eq(alertRecordQueryRequest.getVenueId() != null, "venue_id", alertRecordQueryRequest.getVenueId());
-        queryWrapper.eq(alertRecordQueryRequest.getLifeguardId() != null, "lifeguard_id", alertRecordQueryRequest.getLifeguardId());
-        queryWrapper.eq(StringUtils.isNotBlank(alertRecordQueryRequest.getAlertType()), "alert_type",
+        queryWrapper.eq(
+                alertRecordQueryRequest.getEventId() != null,
+                "event_id",
+                alertRecordQueryRequest.getEventId());
+        queryWrapper.eq(
+                alertRecordQueryRequest.getCameraId() != null,
+                "camera_id",
+                alertRecordQueryRequest.getCameraId());
+        queryWrapper.eq(
+                alertRecordQueryRequest.getVenueId() != null,
+                "venue_id",
+                alertRecordQueryRequest.getVenueId());
+        queryWrapper.eq(
+                alertRecordQueryRequest.getLifeguardId() != null,
+                "lifeguard_id",
+                alertRecordQueryRequest.getLifeguardId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(alertRecordQueryRequest.getAlertType()),
+                "alert_type",
                 alertRecordQueryRequest.getAlertType());
-        queryWrapper.eq(StringUtils.isNotBlank(alertRecordQueryRequest.getAlertStatus()), "alert_status",
+        queryWrapper.eq(
+                StringUtils.isNotBlank(alertRecordQueryRequest.getAlertStatus()),
+                "alert_status",
                 alertRecordQueryRequest.getAlertStatus());
-        queryWrapper.ge(alertRecordQueryRequest.getStartCreatedAt() != null, "created_at", alertRecordQueryRequest.getStartCreatedAt());
-        queryWrapper.le(alertRecordQueryRequest.getEndCreatedAt() != null, "created_at", alertRecordQueryRequest.getEndCreatedAt());
-        queryWrapper.ge(alertRecordQueryRequest.getStartCreatedAt() == null && alertRecordQueryRequest.getStartTime() != null,
-                "created_at", alertRecordQueryRequest.getStartTime());
-        queryWrapper.le(alertRecordQueryRequest.getEndCreatedAt() == null && alertRecordQueryRequest.getEndTime() != null,
-                "created_at", alertRecordQueryRequest.getEndTime());
+        queryWrapper.ge(
+                alertRecordQueryRequest.getStartCreatedAt() != null,
+                "created_at",
+                alertRecordQueryRequest.getStartCreatedAt());
+        queryWrapper.le(
+                alertRecordQueryRequest.getEndCreatedAt() != null,
+                "created_at",
+                alertRecordQueryRequest.getEndCreatedAt());
+        queryWrapper.ge(
+                alertRecordQueryRequest.getStartCreatedAt() == null
+                        && alertRecordQueryRequest.getStartTime() != null,
+                "created_at",
+                alertRecordQueryRequest.getStartTime());
+        queryWrapper.le(
+                alertRecordQueryRequest.getEndCreatedAt() == null
+                        && alertRecordQueryRequest.getEndTime() != null,
+                "created_at",
+                alertRecordQueryRequest.getEndTime());
         if (StringUtils.isNotBlank(alertRecordQueryRequest.getKeyword())) {
-            queryWrapper.and(wrapper -> wrapper.like("incident_location", alertRecordQueryRequest.getKeyword())
-                    .or().like("emergency_contact_name", alertRecordQueryRequest.getKeyword())
-                    .or().like("alert_uid", alertRecordQueryRequest.getKeyword()));
+            queryWrapper.and(
+                    wrapper ->
+                            wrapper.like("incident_location", alertRecordQueryRequest.getKeyword())
+                                    .or()
+                                    .like(
+                                            "emergency_contact_name",
+                                            alertRecordQueryRequest.getKeyword())
+                                    .or()
+                                    .like("alert_uid", alertRecordQueryRequest.getKeyword()));
         }
         String sortField = alertRecordQueryRequest.getSortField();
         String sortOrder = alertRecordQueryRequest.getSortOrder();
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), CommonConstant.SORT_ORDER_ASC.equals(sortOrder), sortField);
+        queryWrapper.orderBy(
+                SqlUtils.validSortField(sortField),
+                CommonConstant.SORT_ORDER_ASC.equals(sortOrder),
+                sortField);
         return queryWrapper;
     }
 
@@ -123,7 +166,3 @@ public class AlertRecordServiceImpl extends ServiceImpl<AlertRecordMapper, Alert
         return alertRecordList.stream().map(this::getAlertRecordVO).collect(Collectors.toList());
     }
 }
-
-
-
-

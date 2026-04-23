@@ -5,8 +5,7 @@ import java.security.MessageDigest;
 
 public final class TokenHashUtils {
 
-    private TokenHashUtils() {
-    }
+    private TokenHashUtils() {}
 
     public static String sha256(String plainText) {
         try {

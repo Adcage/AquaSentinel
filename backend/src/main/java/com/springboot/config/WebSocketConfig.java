@@ -1,10 +1,12 @@
 package com.springboot.config;
 
+import java.util.List;
+
 import com.springboot.websocket.AiPushHandshakeInterceptor;
 import com.springboot.websocket.AiPushWebSocketHandler;
 import com.springboot.websocket.AlertWebSocketHandler;
 import com.springboot.websocket.AuthHandshakeInterceptor;
-import java.util.List;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -24,11 +26,12 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final AppSecurityProperties appSecurityProperties;
 
-    public WebSocketConfig(AlertWebSocketHandler alertWebSocketHandler,
-                           AuthHandshakeInterceptor authHandshakeInterceptor,
-                           AiPushWebSocketHandler aiPushWebSocketHandler,
-                           AiPushHandshakeInterceptor aiPushHandshakeInterceptor,
-                           AppSecurityProperties appSecurityProperties) {
+    public WebSocketConfig(
+            AlertWebSocketHandler alertWebSocketHandler,
+            AuthHandshakeInterceptor authHandshakeInterceptor,
+            AiPushWebSocketHandler aiPushWebSocketHandler,
+            AiPushHandshakeInterceptor aiPushHandshakeInterceptor,
+            AppSecurityProperties appSecurityProperties) {
         this.alertWebSocketHandler = alertWebSocketHandler;
         this.authHandshakeInterceptor = authHandshakeInterceptor;
         this.aiPushWebSocketHandler = aiPushWebSocketHandler;

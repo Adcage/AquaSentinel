@@ -6,7 +6,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.mapper.SysRoleMapper;
@@ -22,6 +21,8 @@ import com.springboot.service.LifeguardLocationLogService;
 import com.springboot.service.LifeguardService;
 import com.springboot.service.VenueService;
 import com.springboot.service.impl.LifeguardOffPostAlertService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,29 +33,21 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class LifeguardControllerBindingTest {
 
-    @Mock
-    private LifeguardService lifeguardService;
+    @Mock private LifeguardService lifeguardService;
 
-    @Mock
-    private LifeguardLocationLogService lifeguardLocationLogService;
+    @Mock private LifeguardLocationLogService lifeguardLocationLogService;
 
-    @Mock
-    private LifeguardOffPostAlertService lifeguardOffPostAlertService;
+    @Mock private LifeguardOffPostAlertService lifeguardOffPostAlertService;
 
-    @Mock
-    private AuthService authService;
+    @Mock private AuthService authService;
 
-    @Mock
-    private SysUserMapper sysUserMapper;
+    @Mock private SysUserMapper sysUserMapper;
 
-    @Mock
-    private SysRoleMapper sysRoleMapper;
+    @Mock private SysRoleMapper sysRoleMapper;
 
-    @Mock
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Mock private SysUserRoleMapper sysUserRoleMapper;
 
-    @Mock
-    private VenueService venueService;
+    @Mock private VenueService venueService;
 
     private LifeguardController controller;
 
@@ -62,14 +55,17 @@ class LifeguardControllerBindingTest {
     void setUp() {
         controller = new LifeguardController();
         ReflectionTestUtils.setField(controller, "lifeguardService", lifeguardService);
-        ReflectionTestUtils.setField(controller, "lifeguardLocationLogService", lifeguardLocationLogService);
-        ReflectionTestUtils.setField(controller, "lifeguardOffPostAlertService", lifeguardOffPostAlertService);
+        ReflectionTestUtils.setField(
+                controller, "lifeguardLocationLogService", lifeguardLocationLogService);
+        ReflectionTestUtils.setField(
+                controller, "lifeguardOffPostAlertService", lifeguardOffPostAlertService);
         ReflectionTestUtils.setField(controller, "authService", authService);
         ReflectionTestUtils.setField(controller, "sysUserMapper", sysUserMapper);
         ReflectionTestUtils.setField(controller, "sysRoleMapper", sysRoleMapper);
         ReflectionTestUtils.setField(controller, "sysUserRoleMapper", sysUserRoleMapper);
         ReflectionTestUtils.setField(controller, "venueService", venueService);
-        ReflectionTestUtils.setField(controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
+        ReflectionTestUtils.setField(
+                controller, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
     }
 
     @Test
@@ -88,8 +84,10 @@ class LifeguardControllerBindingTest {
         when(sysUserMapper.selectById(10001L)).thenReturn(user);
         when(lifeguardService.count(any(QueryWrapper.class))).thenReturn(1L);
 
-        BusinessException exception = assertThrows(BusinessException.class, () -> controller.addLifeguard(request));
-        org.junit.jupiter.api.Assertions.assertEquals(ErrorCode.PARAMS_ERROR.getCode(), exception.getCode());
+        BusinessException exception =
+                assertThrows(BusinessException.class, () -> controller.addLifeguard(request));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                ErrorCode.PARAMS_ERROR.getCode(), exception.getCode());
         verify(lifeguardService, never()).save(any(Lifeguard.class));
     }
 
@@ -114,11 +112,13 @@ class LifeguardControllerBindingTest {
         when(sysRoleMapper.selectOne(any(QueryWrapper.class))).thenReturn(lifeguardRole);
         when(sysUserRoleMapper.selectCount(any(QueryWrapper.class))).thenReturn(0L);
         when(sysUserRoleMapper.insert(any(SysUserRole.class))).thenReturn(1);
-        when(lifeguardService.save(any(Lifeguard.class))).thenAnswer(invocation -> {
-            Lifeguard entity = invocation.getArgument(0);
-            entity.setId(9001L);
-            return true;
-        });
+        when(lifeguardService.save(any(Lifeguard.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Lifeguard entity = invocation.getArgument(0);
+                            entity.setId(9001L);
+                            return true;
+                        });
 
         controller.addLifeguard(request);
 
@@ -144,11 +144,13 @@ class LifeguardControllerBindingTest {
         lifeguardRole.setId(3L);
         when(sysRoleMapper.selectOne(any(QueryWrapper.class))).thenReturn(lifeguardRole);
         when(sysUserRoleMapper.selectCount(any(QueryWrapper.class))).thenReturn(1L);
-        when(lifeguardService.save(any(Lifeguard.class))).thenAnswer(invocation -> {
-            Lifeguard entity = invocation.getArgument(0);
-            entity.setId(9002L);
-            return true;
-        });
+        when(lifeguardService.save(any(Lifeguard.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Lifeguard entity = invocation.getArgument(0);
+                            entity.setId(9002L);
+                            return true;
+                        });
 
         controller.addLifeguard(request);
 
@@ -167,8 +169,10 @@ class LifeguardControllerBindingTest {
 
         when(sysUserMapper.selectCount(any(QueryWrapper.class))).thenReturn(0L).thenReturn(1L);
 
-        BusinessException exception = assertThrows(BusinessException.class, () -> controller.addLifeguard(request));
-        org.junit.jupiter.api.Assertions.assertEquals(ErrorCode.PARAMS_ERROR.getCode(), exception.getCode());
+        BusinessException exception =
+                assertThrows(BusinessException.class, () -> controller.addLifeguard(request));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                ErrorCode.PARAMS_ERROR.getCode(), exception.getCode());
         verify(sysUserMapper, never()).insert(any(SysUser.class));
         verify(lifeguardService, never()).save(any(Lifeguard.class));
     }

@@ -1,6 +1,5 @@
 package com.springboot.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,6 +7,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,8 @@ public class AlertWebSocketHandler extends TextWebSocketHandler {
 
     private static final String ACTION_SUBSCRIBE_MONITOR_REALTIME = "SUBSCRIBE_MONITOR_REALTIME";
 
-    private static final String ACTION_UNSUBSCRIBE_MONITOR_REALTIME = "UNSUBSCRIBE_MONITOR_REALTIME";
+    private static final String ACTION_UNSUBSCRIBE_MONITOR_REALTIME =
+            "UNSUBSCRIBE_MONITOR_REALTIME";
 
     private final Map<String, WebSocketSession> sessionMap = new ConcurrentHashMap<>();
 
@@ -37,14 +39,18 @@ public class AlertWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessionMap.put(session.getId(), session);
-        log.info("ws alerts connected, sessionId={}, online={}", session.getId(), sessionMap.size());
+        log.info(
+                "ws alerts connected, sessionId={}, online={}", session.getId(), sessionMap.size());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessionMap.remove(session.getId());
         sessionRealtimeSubscriptions.remove(session.getId());
-        log.info("ws alerts disconnected, sessionId={}, online={}", session.getId(), sessionMap.size());
+        log.info(
+                "ws alerts disconnected, sessionId={}, online={}",
+                session.getId(),
+                sessionMap.size());
     }
 
     @Override
@@ -64,7 +70,8 @@ public class AlertWebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
             Map<String, Object> payload = objectMapper.readValue(message.getPayload(), Map.class);
-            String action = StringUtils.upperCase(StringUtils.trimToEmpty((String) payload.get("action")));
+            String action =
+                    StringUtils.upperCase(StringUtils.trimToEmpty((String) payload.get("action")));
             Set<Long> cameraIds = parseCameraIds(payload.get("cameraIds"));
             if (StringUtils.equals(action, ACTION_SUBSCRIBE_MONITOR_REALTIME)) {
                 sessionRealtimeSubscriptions.put(session.getId(), cameraIds);

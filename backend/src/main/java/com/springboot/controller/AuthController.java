@@ -12,6 +12,7 @@ import com.springboot.model.vo.LoginResultVO;
 import com.springboot.security.AuthContextHolder;
 import com.springboot.security.AuthUserContext;
 import com.springboot.service.AuthService;
+
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,17 +25,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Resource
-    private AuthService authService;
+    @Resource private AuthService authService;
 
     @PostMapping("/login")
-    public BaseResponse<LoginResultVO> login(@RequestBody LoginRequest request, HttpServletRequest httpServletRequest) {
+    public BaseResponse<LoginResultVO> login(
+            @RequestBody LoginRequest request, HttpServletRequest httpServletRequest) {
         return ResultUtils.success(authService.login(request, httpServletRequest));
     }
 
     @PostMapping("/admin/login")
-    public BaseResponse<LoginResultVO> adminLogin(@RequestBody AdminLoginRequest request,
-                                                   HttpServletRequest httpServletRequest) {
+    public BaseResponse<LoginResultVO> adminLogin(
+            @RequestBody AdminLoginRequest request, HttpServletRequest httpServletRequest) {
         return ResultUtils.success(authService.adminLogin(request, httpServletRequest));
     }
 
@@ -44,8 +45,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public BaseResponse<LoginResultVO> refresh(@RequestBody RefreshTokenRequest request,
-                                                HttpServletRequest httpServletRequest) {
+    public BaseResponse<LoginResultVO> refresh(
+            @RequestBody RefreshTokenRequest request, HttpServletRequest httpServletRequest) {
         return ResultUtils.success(authService.refreshToken(request, httpServletRequest));
     }
 

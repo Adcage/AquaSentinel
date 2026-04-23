@@ -1,7 +1,8 @@
 package com.springboot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import java.util.Date;
+import java.util.List;
+
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
 import com.springboot.mapper.AiStreamTaskMapper;
@@ -11,14 +12,16 @@ import com.springboot.model.entity.SystemNoticeConfig;
 import com.springboot.model.vo.NoticeSettingsVO;
 import com.springboot.service.AiEngineClient;
 import com.springboot.service.SystemNoticeConfigService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
-import java.util.Date;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class SystemNoticeConfigServiceImpl extends ServiceImpl<SystemNoticeConfigMapper, SystemNoticeConfig>
+public class SystemNoticeConfigServiceImpl
+        extends ServiceImpl<SystemNoticeConfigMapper, SystemNoticeConfig>
         implements SystemNoticeConfigService {
 
     private static final int DEFAULT_OFF_DUTY_THRESHOLD_SEC = 60;
@@ -31,11 +34,9 @@ public class SystemNoticeConfigServiceImpl extends ServiceImpl<SystemNoticeConfi
 
     private volatile NoticeSettingsVO cachedSettings;
 
-    @Resource
-    private AiStreamTaskMapper aiStreamTaskMapper;
+    @Resource private AiStreamTaskMapper aiStreamTaskMapper;
 
-    @Resource
-    private AiEngineClient aiEngineClient;
+    @Resource private AiEngineClient aiEngineClient;
 
     @Override
     public NoticeSettingsVO getNoticeSettings() {
@@ -59,8 +60,10 @@ public class SystemNoticeConfigServiceImpl extends ServiceImpl<SystemNoticeConfi
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public NoticeSettingsVO updateNoticeSettings(Integer offDutyThresholdSec,
-            Integer deviceOfflineThresholdSec, Integer drowningAlertThresholdSec) {
+    public NoticeSettingsVO updateNoticeSettings(
+            Integer offDutyThresholdSec,
+            Integer deviceOfflineThresholdSec,
+            Integer drowningAlertThresholdSec) {
         validateThreshold(offDutyThresholdSec, "脱岗告警阈值");
         validateThreshold(deviceOfflineThresholdSec, "设备离线阈值");
         validateThreshold(drowningAlertThresholdSec, "溺水持续判定阈值");
@@ -106,12 +109,18 @@ public class SystemNoticeConfigServiceImpl extends ServiceImpl<SystemNoticeConfi
 
     private NoticeSettingsVO toNoticeSettingsVO(SystemNoticeConfig config) {
         NoticeSettingsVO vo = new NoticeSettingsVO();
-        vo.setOffDutyThreshold(config == null || config.getOff_duty_threshold_sec() == null
-                ? DEFAULT_OFF_DUTY_THRESHOLD_SEC : config.getOff_duty_threshold_sec());
-        vo.setDeviceOfflineThreshold(config == null || config.getDevice_offline_threshold_sec() == null
-                ? DEFAULT_DEVICE_OFFLINE_THRESHOLD_SEC : config.getDevice_offline_threshold_sec());
-        vo.setDrowningAlertThreshold(config == null || config.getDrowning_alert_threshold_sec() == null
-                ? DEFAULT_DROWNING_ALERT_THRESHOLD_SEC : config.getDrowning_alert_threshold_sec());
+        vo.setOffDutyThreshold(
+                config == null || config.getOff_duty_threshold_sec() == null
+                        ? DEFAULT_OFF_DUTY_THRESHOLD_SEC
+                        : config.getOff_duty_threshold_sec());
+        vo.setDeviceOfflineThreshold(
+                config == null || config.getDevice_offline_threshold_sec() == null
+                        ? DEFAULT_DEVICE_OFFLINE_THRESHOLD_SEC
+                        : config.getDevice_offline_threshold_sec());
+        vo.setDrowningAlertThreshold(
+                config == null || config.getDrowning_alert_threshold_sec() == null
+                        ? DEFAULT_DROWNING_ALERT_THRESHOLD_SEC
+                        : config.getDrowning_alert_threshold_sec());
         return vo;
     }
 
@@ -124,7 +133,8 @@ public class SystemNoticeConfigServiceImpl extends ServiceImpl<SystemNoticeConfi
                 continue;
             }
             try {
-                aiEngineClient.updateTaskConfig(task.getTask_code(), drowningAlertThresholdSec.doubleValue());
+                aiEngineClient.updateTaskConfig(
+                        task.getTask_code(), drowningAlertThresholdSec.doubleValue());
             } catch (Exception ignored) {
             }
         }
@@ -132,8 +142,8 @@ public class SystemNoticeConfigServiceImpl extends ServiceImpl<SystemNoticeConfi
 
     private void validateThreshold(Integer value, String fieldName) {
         if (value == null || value <= 0 || value > MAX_THRESHOLD_SEC) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, fieldName + "取值范围应在1~" + MAX_THRESHOLD_SEC + "秒");
+            throw new BusinessException(
+                    ErrorCode.PARAMS_ERROR, fieldName + "取值范围应在1~" + MAX_THRESHOLD_SEC + "秒");
         }
     }
-
 }

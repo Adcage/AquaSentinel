@@ -1,9 +1,17 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
@@ -22,18 +30,12 @@ import com.springboot.service.CameraDeviceService;
 import com.springboot.service.EnvSensorSampleService;
 import com.springboot.service.MonitoringEventService;
 import com.springboot.service.StatsSnapshotService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,28 +50,23 @@ public class DataPipelineController {
 
     private static final String METRIC_TYPE_ANALYSIS_REPORT = "ANALYSIS_REPORT";
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private AiStreamTaskService aiStreamTaskService;
+    @Resource private AiStreamTaskService aiStreamTaskService;
 
-    @Resource
-    private EnvSensorSampleService envSensorSampleService;
+    @Resource private EnvSensorSampleService envSensorSampleService;
 
-    @Resource
-    private MonitoringEventService monitoringEventService;
+    @Resource private MonitoringEventService monitoringEventService;
 
-    @Resource
-    private StatsSnapshotService statsSnapshotService;
+    @Resource private StatsSnapshotService statsSnapshotService;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
     @GetMapping("/collect/status")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Map<String, Object>> getCollectStatus(@RequestParam(required = false) Long cameraId,
-                                                               @RequestParam(required = false) Long venueId) {
+    public BaseResponse<Map<String, Object>> getCollectStatus(
+            @RequestParam(required = false) Long cameraId,
+            @RequestParam(required = false) Long venueId) {
         if (cameraId == null && venueId == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "cameraId和venueId不能同时为空");
         }
@@ -122,7 +119,10 @@ public class DataPipelineController {
             long staleSeconds = 300;
             long nowEpochMillis = System.currentTimeMillis();
             long sampleEpochMillis = latestSampleTime == null ? 0L : latestSampleTime.getTime();
-            sensorCollectStatus = (nowEpochMillis - sampleEpochMillis) <= staleSeconds * 1000L ? "RUNNING" : "STALE";
+            sensorCollectStatus =
+                    (nowEpochMillis - sampleEpochMillis) <= staleSeconds * 1000L
+                            ? "RUNNING"
+                            : "STALE";
         }
 
         QueryWrapper<EnvSensorSample> sampleCountQuery = new QueryWrapper<>();
@@ -140,21 +140,28 @@ public class DataPipelineController {
         data.put("lastSensorSampleTime", latestSampleTime);
         data.put("latestSensorQuality", latestQuality);
         data.put("sensorSampleCount30m", sensorSamplesIn30Minutes);
-        data.put("cameraDeviceStatus", cameraDevice == null ? null : cameraDevice.getDevice_status());
-        data.put("cameraHealthStatus", cameraDevice == null ? null : cameraDevice.getHealth_status());
+        data.put(
+                "cameraDeviceStatus",
+                cameraDevice == null ? null : cameraDevice.getDevice_status());
+        data.put(
+                "cameraHealthStatus",
+                cameraDevice == null ? null : cameraDevice.getHealth_status());
         return ResultUtils.success(data);
     }
 
     @PostMapping("/preprocess/list/page")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Map<String, Object>> listPreprocessByPage(@RequestBody(required = false) DataPreprocessQueryRequest request) {
-        DataPreprocessQueryRequest queryRequest = request == null ? new DataPreprocessQueryRequest() : request;
+    public BaseResponse<Map<String, Object>> listPreprocessByPage(
+            @RequestBody(required = false) DataPreprocessQueryRequest request) {
+        DataPreprocessQueryRequest queryRequest =
+                request == null ? new DataPreprocessQueryRequest() : request;
         long current = Math.max(1, queryRequest.getCurrent());
         long pageSize = Math.min(Math.max(1, queryRequest.getPageSize()), 100);
 
         QueryWrapper<MonitoringEvent> pageQuery = buildPreprocessEventQuery(queryRequest);
         pageQuery.orderByDesc("event_time");
-        Page<MonitoringEvent> eventPage = monitoringEventService.page(new Page<>(current, pageSize), pageQuery);
+        Page<MonitoringEvent> eventPage =
+                monitoringEventService.page(new Page<>(current, pageSize), pageQuery);
 
         QueryWrapper<MonitoringEvent> processedCountQuery = buildPreprocessEventQuery(queryRequest);
         processedCountQuery.isNotNull("bbox_json");
@@ -193,12 +200,18 @@ public class DataPipelineController {
 
     @PostMapping("/analysis/report/list")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<List<Map<String, Object>>> listAnalysisReport(@RequestBody(required = false) DataAnalysisReportQueryRequest request) {
-        DataAnalysisReportQueryRequest queryRequest = request == null ? new DataAnalysisReportQueryRequest() : request;
-        Date startAt = queryRequest.getStartTime() == null
-                ? Date.from(Instant.now().minusSeconds(7L * 24 * 60 * 60))
-                : new Date(queryRequest.getStartTime());
-        Date endAt = queryRequest.getEndTime() == null ? new Date() : new Date(queryRequest.getEndTime());
+    public BaseResponse<List<Map<String, Object>>> listAnalysisReport(
+            @RequestBody(required = false) DataAnalysisReportQueryRequest request) {
+        DataAnalysisReportQueryRequest queryRequest =
+                request == null ? new DataAnalysisReportQueryRequest() : request;
+        Date startAt =
+                queryRequest.getStartTime() == null
+                        ? Date.from(Instant.now().minusSeconds(7L * 24 * 60 * 60))
+                        : new Date(queryRequest.getStartTime());
+        Date endAt =
+                queryRequest.getEndTime() == null
+                        ? new Date()
+                        : new Date(queryRequest.getEndTime());
         if (!startAt.before(endAt)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "时间范围不合法");
         }
@@ -212,15 +225,17 @@ public class DataPipelineController {
         if (queryRequest.getVenueId() != null) {
             List<Long> cameraIds = resolveCameraIds(null, queryRequest.getVenueId());
             if (cameraIds.isEmpty()) {
-                List<Map<String, Object>> emptyReports = List.of(buildAnalysisReport(
-                        queryRequest.getVenueId(),
-                        startAt,
-                        endAt,
-                        queryRequest.getType(),
-                        List.of(),
-                        Map.of(),
-                        Map.of(),
-                        List.of()));
+                List<Map<String, Object>> emptyReports =
+                        List.of(
+                                buildAnalysisReport(
+                                        queryRequest.getVenueId(),
+                                        startAt,
+                                        endAt,
+                                        queryRequest.getType(),
+                                        List.of(),
+                                        Map.of(),
+                                        Map.of(),
+                                        List.of()));
                 return ResultUtils.success(emptyReports);
             }
             eventQuery.in("camera_id", cameraIds);
@@ -257,35 +272,40 @@ public class DataPipelineController {
             }
         }
 
-        List<Map<String, Object>> topIncidentLocations = locationCount.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
-                .limit(10)
-                .map(entry -> {
-                    Map<String, Object> locationItem = new LinkedHashMap<>();
-                    locationItem.put("incidentLocation", entry.getKey());
-                    locationItem.put("count", entry.getValue());
-                    return locationItem;
-                })
-                .toList();
+        List<Map<String, Object>> topIncidentLocations =
+                locationCount.entrySet().stream()
+                        .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+                        .limit(10)
+                        .map(
+                                entry -> {
+                                    Map<String, Object> locationItem = new LinkedHashMap<>();
+                                    locationItem.put("incidentLocation", entry.getKey());
+                                    locationItem.put("count", entry.getValue());
+                                    return locationItem;
+                                })
+                        .toList();
 
         persistAnalysisMetric(queryRequest.getVenueId(), "analysisTotal", events.size());
         persistAnalysisMetric(queryRequest.getVenueId(), "analysisHighRisk", highRiskCount);
 
-        Map<String, Object> report = buildAnalysisReport(
-                queryRequest.getVenueId(),
-                startAt,
-                endAt,
-                queryRequest.getType(),
-                events,
-                riskLevelCount,
-                typeCount,
-                heatmapData);
-        ((Map<String, Object>) report.get("patternSummary")).put("topIncidentLocations", topIncidentLocations);
+        Map<String, Object> report =
+                buildAnalysisReport(
+                        queryRequest.getVenueId(),
+                        startAt,
+                        endAt,
+                        queryRequest.getType(),
+                        events,
+                        riskLevelCount,
+                        typeCount,
+                        heatmapData);
+        ((Map<String, Object>) report.get("patternSummary"))
+                .put("topIncidentLocations", topIncidentLocations);
 
         return ResultUtils.success(List.of(report));
     }
 
-    private QueryWrapper<MonitoringEvent> buildPreprocessEventQuery(DataPreprocessQueryRequest request) {
+    private QueryWrapper<MonitoringEvent> buildPreprocessEventQuery(
+            DataPreprocessQueryRequest request) {
         QueryWrapper<MonitoringEvent> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(request.getTaskId() != null, "task_id", request.getTaskId());
         if (request.getVenueId() != null) {
@@ -329,11 +349,15 @@ public class DataPipelineController {
         return cameras.stream().map(CameraDevice::getId).toList();
     }
 
-    private Map<String, Object> buildAnalysisReport(Long venueId, Date startAt, Date endAt, String type,
-                                                    List<MonitoringEvent> events,
-                                                    Map<String, Long> riskLevelCount,
-                                                    Map<String, Long> typeCount,
-                                                    List<Map<String, Object>> heatmapData) {
+    private Map<String, Object> buildAnalysisReport(
+            Long venueId,
+            Date startAt,
+            Date endAt,
+            String type,
+            List<MonitoringEvent> events,
+            Map<String, Long> riskLevelCount,
+            Map<String, Long> typeCount,
+            List<Map<String, Object>> heatmapData) {
         Map<String, Object> patternSummary = new LinkedHashMap<>();
         patternSummary.put("totalEvents", events.size());
         patternSummary.put("byRiskLevel", riskLevelCount);
@@ -373,7 +397,10 @@ public class DataPipelineController {
             double yMin = node.path("yMin").asDouble(Double.NaN);
             double xMax = node.path("xMax").asDouble(Double.NaN);
             double yMax = node.path("yMax").asDouble(Double.NaN);
-            if (Double.isNaN(xMin) || Double.isNaN(yMin) || Double.isNaN(xMax) || Double.isNaN(yMax)) {
+            if (Double.isNaN(xMin)
+                    || Double.isNaN(yMin)
+                    || Double.isNaN(xMax)
+                    || Double.isNaN(yMax)) {
                 return null;
             }
             Map<String, Double> center = new HashMap<>();

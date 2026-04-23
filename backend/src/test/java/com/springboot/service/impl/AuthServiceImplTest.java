@@ -14,6 +14,7 @@ import com.springboot.mapper.SysUserRoleMapper;
 import com.springboot.model.dto.auth.RegisterRequest;
 import com.springboot.model.entity.SysUser;
 import com.springboot.model.vo.CaptchaVO;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -23,14 +24,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
 
-    @Mock
-    private SysUserMapper sysUserMapper;
+    @Mock private SysUserMapper sysUserMapper;
 
-    @Mock
-    private SysRoleMapper sysRoleMapper;
+    @Mock private SysRoleMapper sysRoleMapper;
 
-    @Mock
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Mock private SysUserRoleMapper sysUserRoleMapper;
 
     @Test
     void registerShouldRequireCaptcha() {

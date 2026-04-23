@@ -2,6 +2,7 @@ package com.springboot.model.dto.user;
 
 import java.io.Serializable;
 import java.util.List;
+
 import lombok.Data;
 
 @Data

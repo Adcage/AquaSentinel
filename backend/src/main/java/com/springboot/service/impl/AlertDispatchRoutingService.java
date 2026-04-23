@@ -1,8 +1,9 @@
 package com.springboot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 import com.springboot.model.entity.AlertRecord;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.model.entity.Lifeguard;
@@ -13,35 +14,31 @@ import com.springboot.service.CameraDeviceService;
 import com.springboot.service.LifeguardLocationLogService;
 import com.springboot.service.LifeguardService;
 import com.springboot.service.VenueZoneService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AlertDispatchRoutingService {
 
-    private static final List<String> ACTIVE_ALERT_STATUSES = List.of("PENDING", "ASSIGNED", "CONFIRMED");
+    private static final List<String> ACTIVE_ALERT_STATUSES =
+            List.of("PENDING", "ASSIGNED", "CONFIRMED");
 
-    @Resource
-    private LifeguardService lifeguardService;
+    @Resource private LifeguardService lifeguardService;
 
-    @Resource
-    private LifeguardLocationLogService lifeguardLocationLogService;
+    @Resource private LifeguardLocationLogService lifeguardLocationLogService;
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private VenueZoneService venueZoneService;
+    @Resource private VenueZoneService venueZoneService;
 
-    @Resource
-    private AlertRecordService alertRecordService;
+    @Resource private AlertRecordService alertRecordService;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
     public Lifeguard resolveAssignee(Long venueId, Long cameraId) {
         if (venueId == null || venueId <= 0) {
@@ -67,8 +64,12 @@ public class AlertDispatchRoutingService {
             boolean inFence = latest != null && Integer.valueOf(1).equals(latest.getIn_fence());
             boolean inZone = isInCameraZone(latest, zonePolygons);
             long activeAlertCount = countActiveAlerts(lifeguard.getId());
-            long reportTime = latest == null || latest.getReported_at() == null ? 0L : latest.getReported_at().getTime();
-            scoredCandidates.add(new ScoredCandidate(lifeguard, inZone, inFence, activeAlertCount, reportTime));
+            long reportTime =
+                    latest == null || latest.getReported_at() == null
+                            ? 0L
+                            : latest.getReported_at().getTime();
+            scoredCandidates.add(
+                    new ScoredCandidate(lifeguard, inZone, inFence, activeAlertCount, reportTime));
         }
         if (scoredCandidates.isEmpty()) {
             return null;
@@ -78,7 +79,9 @@ public class AlertDispatchRoutingService {
                 Comparator.comparing(ScoredCandidate::inZone, Comparator.reverseOrder())
                         .thenComparing(ScoredCandidate::inFence, Comparator.reverseOrder())
                         .thenComparingLong(ScoredCandidate::activeAlertCount)
-                        .thenComparing(Comparator.comparingLong(ScoredCandidate::reportTimeMillis).reversed())
+                        .thenComparing(
+                                Comparator.comparingLong(ScoredCandidate::reportTimeMillis)
+                                        .reversed())
                         .thenComparingLong(item -> item.lifeguard().getId()));
         return scoredCandidates.get(0).lifeguard();
     }
@@ -92,7 +95,8 @@ public class AlertDispatchRoutingService {
     }
 
     private LifeguardLocationLog fetchLatestLocation(Long lifeguardId) {
-        List<LifeguardLocationLog> locations = lifeguardLocationLogService.recentLocations(lifeguardId, 1);
+        List<LifeguardLocationLog> locations =
+                lifeguardLocationLogService.recentLocations(lifeguardId, 1);
         if (locations == null || locations.isEmpty()) {
             return null;
         }
@@ -118,8 +122,11 @@ public class AlertDispatchRoutingService {
         return extractPolygons(geoNode);
     }
 
-    private boolean isInCameraZone(LifeguardLocationLog latestLocation, List<List<double[]>> polygons) {
-        if (latestLocation == null || latestLocation.getLongitude() == null || latestLocation.getLatitude() == null) {
+    private boolean isInCameraZone(
+            LifeguardLocationLog latestLocation, List<List<double[]>> polygons) {
+        if (latestLocation == null
+                || latestLocation.getLongitude() == null
+                || latestLocation.getLatitude() == null) {
             return false;
         }
         if (polygons == null || polygons.isEmpty()) {
@@ -222,8 +229,8 @@ public class AlertDispatchRoutingService {
             double yi = polygon.get(i)[1];
             double xj = polygon.get(j)[0];
             double yj = polygon.get(j)[1];
-            boolean intersects = ((yi > y) != (yj > y))
-                    && (x < (xj - xi) * (y - yi) / ((yj - yi) + 1e-9) + xi);
+            boolean intersects =
+                    ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) + 1e-9) + xi);
             if (intersects) {
                 inside = !inside;
             }
@@ -236,6 +243,5 @@ public class AlertDispatchRoutingService {
             boolean inZone,
             boolean inFence,
             long activeAlertCount,
-            long reportTimeMillis) {
-    }
+            long reportTimeMillis) {}
 }

@@ -1,39 +1,41 @@
 package com.springboot.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.springboot.common.ErrorCode;
-import com.springboot.config.AppAiEngineProperties;
-import com.springboot.constant.CommonConstant;
-import com.springboot.exception.BusinessException;
-import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
-import com.springboot.model.entity.AiStreamTask;
-import com.springboot.model.entity.CameraDevice;
-import com.springboot.model.dto.aistreamtask.AiStreamTaskQueryRequest;
-import com.springboot.model.vo.AiStreamTaskVO;
-import com.springboot.service.AiEngineClient;
-import com.springboot.service.AiStreamTaskService;
-import com.springboot.service.CameraDeviceService;
-import com.springboot.service.SystemNoticeConfigService;
-import com.springboot.mapper.AiStreamTaskMapper;
-import com.springboot.utils.SqlUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.springboot.common.ErrorCode;
+import com.springboot.config.AppAiEngineProperties;
+import com.springboot.constant.CommonConstant;
+import com.springboot.exception.BusinessException;
+import com.springboot.mapper.AiStreamTaskMapper;
+import com.springboot.model.dto.aistreamtask.AiStreamTaskQueryRequest;
+import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
+import com.springboot.model.entity.AiStreamTask;
+import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.vo.AiStreamTaskVO;
+import com.springboot.service.AiEngineClient;
+import com.springboot.service.AiStreamTaskService;
+import com.springboot.service.CameraDeviceService;
+import com.springboot.service.SystemNoticeConfigService;
+import com.springboot.utils.SqlUtils;
+
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
-* @description 针对表【ai_stream_task(AI流任务表)】的数据库操作Service实现
-*/
+ * @description 针对表【ai_stream_task(AI流任务表)】的数据库操作Service实现
+ */
 @Service
 public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiStreamTask>
-    implements AiStreamTaskService{
+        implements AiStreamTaskService {
 
     private final CameraDeviceService cameraDeviceService;
 
@@ -43,9 +45,11 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
 
     private final SystemNoticeConfigService systemNoticeConfigService;
 
-    public AiStreamTaskServiceImpl(CameraDeviceService cameraDeviceService, AiEngineClient aiEngineClient,
-                                   AppAiEngineProperties appAiEngineProperties,
-                                   SystemNoticeConfigService systemNoticeConfigService) {
+    public AiStreamTaskServiceImpl(
+            CameraDeviceService cameraDeviceService,
+            AiEngineClient aiEngineClient,
+            AppAiEngineProperties appAiEngineProperties,
+            SystemNoticeConfigService systemNoticeConfigService) {
         this.cameraDeviceService = cameraDeviceService;
         this.aiEngineClient = aiEngineClient;
         this.appAiEngineProperties = appAiEngineProperties;
@@ -66,7 +70,8 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
         if (add && StringUtils.isBlank(aiStreamTask.getStream_url())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "流地址不能为空");
         }
-        if (StringUtils.isNotBlank(aiStreamTask.getTask_code()) && aiStreamTask.getTask_code().length() > 64) {
+        if (StringUtils.isNotBlank(aiStreamTask.getTask_code())
+                && aiStreamTask.getTask_code().length() > 64) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "任务编码过长");
         }
         if (StringUtils.isNotBlank(aiStreamTask.getTask_code())) {
@@ -81,20 +86,32 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
     }
 
     @Override
-    public QueryWrapper<AiStreamTask> getQueryWrapper(AiStreamTaskQueryRequest aiStreamTaskQueryRequest) {
+    public QueryWrapper<AiStreamTask> getQueryWrapper(
+            AiStreamTaskQueryRequest aiStreamTaskQueryRequest) {
         if (aiStreamTaskQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
         }
         QueryWrapper<AiStreamTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(aiStreamTaskQueryRequest.getId() != null, "id", aiStreamTaskQueryRequest.getId());
-        queryWrapper.eq(StringUtils.isNotBlank(aiStreamTaskQueryRequest.getTaskCode()), "task_code",
+        queryWrapper.eq(
+                aiStreamTaskQueryRequest.getId() != null, "id", aiStreamTaskQueryRequest.getId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(aiStreamTaskQueryRequest.getTaskCode()),
+                "task_code",
                 aiStreamTaskQueryRequest.getTaskCode());
-        queryWrapper.eq(aiStreamTaskQueryRequest.getCameraId() != null, "camera_id", aiStreamTaskQueryRequest.getCameraId());
-        queryWrapper.eq(StringUtils.isNotBlank(aiStreamTaskQueryRequest.getTaskStatus()), "task_status",
+        queryWrapper.eq(
+                aiStreamTaskQueryRequest.getCameraId() != null,
+                "camera_id",
+                aiStreamTaskQueryRequest.getCameraId());
+        queryWrapper.eq(
+                StringUtils.isNotBlank(aiStreamTaskQueryRequest.getTaskStatus()),
+                "task_status",
                 aiStreamTaskQueryRequest.getTaskStatus());
         String sortField = aiStreamTaskQueryRequest.getSortField();
         String sortOrder = aiStreamTaskQueryRequest.getSortOrder();
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), CommonConstant.SORT_ORDER_ASC.equals(sortOrder), sortField);
+        queryWrapper.orderBy(
+                SqlUtils.validSortField(sortField),
+                CommonConstant.SORT_ORDER_ASC.equals(sortOrder),
+                sortField);
         return queryWrapper;
     }
 
@@ -163,7 +180,9 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
 
         String taskCode = StringUtils.trimToEmpty(request.getTaskCode());
         if (StringUtils.isBlank(taskCode)) {
-            taskCode = String.format("TASK_CAM_%s_%d", request.getCameraId(), System.currentTimeMillis());
+            taskCode =
+                    String.format(
+                            "TASK_CAM_%s_%d", request.getCameraId(), System.currentTimeMillis());
         }
 
         QueryWrapper<AiStreamTask> queryWrapper = new QueryWrapper<>();
@@ -177,14 +196,18 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "任务已在运行中");
         }
 
-        Integer frameIntervalMs = request.getFrameIntervalMs() == null ? 200 : request.getFrameIntervalMs();
-        Double drowningAlertThresholdSec = Double.valueOf(systemNoticeConfigService.getDrowningAlertThresholdSec());
+        Integer frameIntervalMs =
+                request.getFrameIntervalMs() == null ? 200 : request.getFrameIntervalMs();
+        Double drowningAlertThresholdSec =
+                Double.valueOf(systemNoticeConfigService.getDrowningAlertThresholdSec());
         String engineStreamUrl = resolveEngineStreamUrl(cameraDevice);
         String displayStreamUrl = resolveDisplayStreamUrl(request.getCameraId());
         aiStreamTask.setCamera_id(request.getCameraId());
         aiStreamTask.setStream_url(engineStreamUrl);
         aiStreamTask.setFrame_interval_ms(frameIntervalMs);
-        aiStreamTask.setCallback_url(StringUtils.defaultIfBlank(request.getCallbackUrl(), aiEngineClient.getDefaultCallbackUrl()));
+        aiStreamTask.setCallback_url(
+                StringUtils.defaultIfBlank(
+                        request.getCallbackUrl(), aiEngineClient.getDefaultCallbackUrl()));
         aiStreamTask.setTask_status("STARTING");
         aiStreamTask.setUpdated_at(new Date());
 
@@ -195,13 +218,14 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
         }
 
         try {
-            Map<String, Object> engineResult = aiEngineClient.startTask(
-                    taskCode,
-                    cameraDevice.getCamera_code(),
-                    aiStreamTask.getStream_url(),
-                    frameIntervalMs,
-                    displayStreamUrl,
-                    drowningAlertThresholdSec);
+            Map<String, Object> engineResult =
+                    aiEngineClient.startTask(
+                            taskCode,
+                            cameraDevice.getCamera_code(),
+                            aiStreamTask.getStream_url(),
+                            frameIntervalMs,
+                            displayStreamUrl,
+                            drowningAlertThresholdSec);
             Object statusValue = engineResult.get("status");
             String statusText = statusValue == null ? null : statusValue.toString();
             Date now = new Date();
@@ -225,14 +249,19 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
 
     private String resolveEngineStreamUrl(CameraDevice cameraDevice) {
         String sourceStreamUrl = StringUtils.trimToEmpty(cameraDevice.getStream_url());
-        String mode = StringUtils.defaultIfBlank(appAiEngineProperties.getInputStreamMode(), "source")
-                .trim()
-                .toLowerCase();
+        String mode =
+                StringUtils.defaultIfBlank(appAiEngineProperties.getInputStreamMode(), "source")
+                        .trim()
+                        .toLowerCase();
         if ("proxy".equals(mode)) {
-            return buildProxyUrl(cameraDevice.getId(), appAiEngineProperties.getInternalPreviewPathTemplate());
+            return buildProxyUrl(
+                    cameraDevice.getId(), appAiEngineProperties.getInternalPreviewPathTemplate());
         }
         if ("auto".equals(mode)) {
-            String proxyUrl = buildProxyUrl(cameraDevice.getId(), appAiEngineProperties.getInternalPreviewPathTemplate());
+            String proxyUrl =
+                    buildProxyUrl(
+                            cameraDevice.getId(),
+                            appAiEngineProperties.getInternalPreviewPathTemplate());
             return StringUtils.defaultIfBlank(proxyUrl, sourceStreamUrl);
         }
         return sourceStreamUrl;
@@ -246,7 +275,9 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
         if (cameraId == null || cameraId <= 0) {
             return "";
         }
-        String baseUrl = StringUtils.removeEnd(StringUtils.trimToEmpty(appAiEngineProperties.getProxyBaseUrl()), "/");
+        String baseUrl =
+                StringUtils.removeEnd(
+                        StringUtils.trimToEmpty(appAiEngineProperties.getProxyBaseUrl()), "/");
         String path = StringUtils.defaultIfBlank(pathTemplate, "");
         path = StringUtils.replace(path, "{cameraId}", String.valueOf(cameraId));
         if (StringUtils.isBlank(path)) {
@@ -295,5 +326,4 @@ public class AiStreamTaskServiceImpl extends ServiceImpl<AiStreamTaskMapper, AiS
         updateWrapper.set("updated_at", new Date());
         return this.update(updateWrapper);
     }
-
 }

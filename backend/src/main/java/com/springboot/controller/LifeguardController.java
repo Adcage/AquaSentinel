@@ -1,9 +1,11 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -12,44 +14,45 @@ import com.springboot.common.ResultUtils;
 import com.springboot.constant.RoleConstant;
 import com.springboot.exception.BusinessException;
 import com.springboot.exception.ThrowUtils;
+import com.springboot.mapper.SysRoleMapper;
+import com.springboot.mapper.SysUserMapper;
+import com.springboot.mapper.SysUserRoleMapper;
 import com.springboot.model.dto.auth.LoginRequest;
 import com.springboot.model.dto.lifeguard.LifeguardAddRequest;
 import com.springboot.model.dto.lifeguard.LifeguardAuditRequest;
 import com.springboot.model.dto.lifeguard.LifeguardDutyUpdateRequest;
 import com.springboot.model.dto.lifeguard.LifeguardEditRequest;
-import com.springboot.model.dto.lifeguard.LifeguardOffPostCheckRequest;
 import com.springboot.model.dto.lifeguard.LifeguardLeaveReportRequest;
+import com.springboot.model.dto.lifeguard.LifeguardOffPostCheckRequest;
 import com.springboot.model.dto.lifeguard.LifeguardQueryRequest;
 import com.springboot.model.dto.lifeguard.LifeguardUpdateRequest;
 import com.springboot.model.dto.lifeguardlocationlog.LifeguardLocationReportRequest;
 import com.springboot.model.entity.Lifeguard;
 import com.springboot.model.entity.LifeguardLocationLog;
-import com.springboot.model.entity.Venue;
 import com.springboot.model.entity.SysRole;
 import com.springboot.model.entity.SysUser;
 import com.springboot.model.entity.SysUserRole;
+import com.springboot.model.entity.Venue;
 import com.springboot.model.vo.LifeguardLocationLogVO;
-import com.springboot.model.vo.LoginResultVO;
 import com.springboot.model.vo.LifeguardVO;
-import com.springboot.service.AuthService;
+import com.springboot.model.vo.LoginResultVO;
 import com.springboot.security.AuthContextHolder;
 import com.springboot.security.AuthUserContext;
+import com.springboot.service.AuthService;
 import com.springboot.service.LifeguardLocationLogService;
 import com.springboot.service.LifeguardService;
 import com.springboot.service.VenueService;
 import com.springboot.service.impl.LifeguardOffPostAlertService;
-import com.springboot.mapper.SysRoleMapper;
-import com.springboot.mapper.SysUserMapper;
-import com.springboot.mapper.SysUserRoleMapper;
 import com.springboot.utils.PasswordHashUtils;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Date;
-import java.math.BigDecimal;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,38 +60,28 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/lifeguards")
 public class LifeguardController {
 
-    @Resource
-    private LifeguardService lifeguardService;
+    @Resource private LifeguardService lifeguardService;
 
-    @Resource
-    private LifeguardLocationLogService lifeguardLocationLogService;
+    @Resource private LifeguardLocationLogService lifeguardLocationLogService;
 
-    @Resource
-    private LifeguardOffPostAlertService lifeguardOffPostAlertService;
+    @Resource private LifeguardOffPostAlertService lifeguardOffPostAlertService;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
-    @Resource
-    private AuthService authService;
+    @Resource private AuthService authService;
 
-    @Resource
-    private SysUserMapper sysUserMapper;
+    @Resource private SysUserMapper sysUserMapper;
 
-    @Resource
-    private SysRoleMapper sysRoleMapper;
+    @Resource private SysRoleMapper sysRoleMapper;
 
-    @Resource
-    private SysUserRoleMapper sysUserRoleMapper;
+    @Resource private SysUserRoleMapper sysUserRoleMapper;
 
-    @Resource
-    private VenueService venueService;
+    @Resource private VenueService venueService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
@@ -99,8 +92,10 @@ public class LifeguardController {
         }
         Lifeguard lifeguard = toLifeguard(lifeguardAddRequest);
         lifeguard.setUser_id(resolveOrCreateLifeguardUserId(lifeguardAddRequest));
-        lifeguard.setAudit_status(lifeguard.getAudit_status() == null ? "PENDING" : lifeguard.getAudit_status());
-        lifeguard.setDuty_status(lifeguard.getDuty_status() == null ? "OFF_DUTY" : lifeguard.getDuty_status());
+        lifeguard.setAudit_status(
+                lifeguard.getAudit_status() == null ? "PENDING" : lifeguard.getAudit_status());
+        lifeguard.setDuty_status(
+                lifeguard.getDuty_status() == null ? "OFF_DUTY" : lifeguard.getDuty_status());
         if (StringUtils.isBlank(lifeguard.getLifeguard_code())) {
             lifeguard.setLifeguard_code("LG-" + System.currentTimeMillis());
         }
@@ -126,8 +121,11 @@ public class LifeguardController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateLifeguard(@RequestBody LifeguardUpdateRequest lifeguardUpdateRequest) {
-        if (lifeguardUpdateRequest == null || lifeguardUpdateRequest.getId() == null || lifeguardUpdateRequest.getId() <= 0) {
+    public BaseResponse<Boolean> updateLifeguard(
+            @RequestBody LifeguardUpdateRequest lifeguardUpdateRequest) {
+        if (lifeguardUpdateRequest == null
+                || lifeguardUpdateRequest.getId() == null
+                || lifeguardUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Lifeguard lifeguard = toLifeguard(lifeguardUpdateRequest);
@@ -139,8 +137,11 @@ public class LifeguardController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editLifeguard(@RequestBody LifeguardEditRequest lifeguardEditRequest) {
-        if (lifeguardEditRequest == null || lifeguardEditRequest.getId() == null || lifeguardEditRequest.getId() <= 0) {
+    public BaseResponse<Boolean> editLifeguard(
+            @RequestBody LifeguardEditRequest lifeguardEditRequest) {
+        if (lifeguardEditRequest == null
+                || lifeguardEditRequest.getId() == null
+                || lifeguardEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Lifeguard lifeguard = new Lifeguard();
@@ -177,85 +178,108 @@ public class LifeguardController {
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<Lifeguard>> listLifeguardByPage(@RequestBody LifeguardQueryRequest lifeguardQueryRequest) {
+    public BaseResponse<Page<Lifeguard>> listLifeguardByPage(
+            @RequestBody LifeguardQueryRequest lifeguardQueryRequest) {
         if (lifeguardQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = lifeguardQueryRequest.getCurrent();
         long size = lifeguardQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<Lifeguard> lifeguardPage = lifeguardService.page(new Page<>(current, size),
-                lifeguardService.getQueryWrapper(lifeguardQueryRequest));
+        Page<Lifeguard> lifeguardPage =
+                lifeguardService.page(
+                        new Page<>(current, size),
+                        lifeguardService.getQueryWrapper(lifeguardQueryRequest));
         return ResultUtils.success(lifeguardPage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<LifeguardVO>> listLifeguardVOByPage(@RequestBody LifeguardQueryRequest lifeguardQueryRequest) {
+    public BaseResponse<Page<LifeguardVO>> listLifeguardVOByPage(
+            @RequestBody LifeguardQueryRequest lifeguardQueryRequest) {
         BaseResponse<Page<Lifeguard>> response = listLifeguardByPage(lifeguardQueryRequest);
         Page<Lifeguard> lifeguardPage = response.getData();
-        Page<LifeguardVO> lifeguardVOPage = new Page<>(lifeguardPage.getCurrent(), lifeguardPage.getSize(),
-                lifeguardPage.getTotal());
-        List<LifeguardVO> lifeguardVOList = lifeguardService.getLifeguardVO(lifeguardPage.getRecords());
+        Page<LifeguardVO> lifeguardVOPage =
+                new Page<>(
+                        lifeguardPage.getCurrent(),
+                        lifeguardPage.getSize(),
+                        lifeguardPage.getTotal());
+        List<LifeguardVO> lifeguardVOList =
+                lifeguardService.getLifeguardVO(lifeguardPage.getRecords());
         lifeguardVOPage.setRecords(lifeguardVOList);
         return ResultUtils.success(lifeguardVOPage);
     }
 
     @PostMapping("/audit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> auditLifeguard(@RequestBody LifeguardAuditRequest lifeguardAuditRequest) {
+    public BaseResponse<Boolean> auditLifeguard(
+            @RequestBody LifeguardAuditRequest lifeguardAuditRequest) {
         if (lifeguardAuditRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = lifeguardService.audit(lifeguardAuditRequest.getLifeguardId(),
-                lifeguardAuditRequest.getAuditStatus(), lifeguardAuditRequest.getApprovedBy());
+        boolean result =
+                lifeguardService.audit(
+                        lifeguardAuditRequest.getLifeguardId(),
+                        lifeguardAuditRequest.getAuditStatus(),
+                        lifeguardAuditRequest.getApprovedBy());
         return ResultUtils.success(result);
     }
 
     @PostMapping("/{id}/audit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> auditLifeguardByPath(@PathVariable("id") Long id,
-            @RequestBody LifeguardAuditRequest request) {
-        LifeguardAuditRequest auditRequest = request == null ? new LifeguardAuditRequest() : request;
+    public BaseResponse<Boolean> auditLifeguardByPath(
+            @PathVariable("id") Long id, @RequestBody LifeguardAuditRequest request) {
+        LifeguardAuditRequest auditRequest =
+                request == null ? new LifeguardAuditRequest() : request;
         auditRequest.setLifeguardId(id);
         return auditLifeguard(auditRequest);
     }
 
     @PostMapping("/duty/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN + "," + RoleConstant.LIFEGUARD)
-    public BaseResponse<Boolean> updateDutyStatus(@RequestBody LifeguardDutyUpdateRequest lifeguardDutyUpdateRequest) {
+    public BaseResponse<Boolean> updateDutyStatus(
+            @RequestBody LifeguardDutyUpdateRequest lifeguardDutyUpdateRequest) {
         if (lifeguardDutyUpdateRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = lifeguardService.updateDutyStatus(lifeguardDutyUpdateRequest.getLifeguardId(),
-                lifeguardDutyUpdateRequest.getDutyStatus(), lifeguardDutyUpdateRequest.getOperatorId());
+        boolean result =
+                lifeguardService.updateDutyStatus(
+                        lifeguardDutyUpdateRequest.getLifeguardId(),
+                        lifeguardDutyUpdateRequest.getDutyStatus(),
+                        lifeguardDutyUpdateRequest.getOperatorId());
         return ResultUtils.success(result);
     }
 
     @PostMapping("/{id}/duty")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN + "," + RoleConstant.LIFEGUARD)
-    public BaseResponse<Boolean> updateDutyStatusByPath(@PathVariable("id") Long id,
-            @RequestBody LifeguardDutyUpdateRequest request) {
-        LifeguardDutyUpdateRequest dutyRequest = request == null ? new LifeguardDutyUpdateRequest() : request;
+    public BaseResponse<Boolean> updateDutyStatusByPath(
+            @PathVariable("id") Long id, @RequestBody LifeguardDutyUpdateRequest request) {
+        LifeguardDutyUpdateRequest dutyRequest =
+                request == null ? new LifeguardDutyUpdateRequest() : request;
         dutyRequest.setLifeguardId(id);
         return updateDutyStatus(dutyRequest);
     }
 
     @PostMapping("/leave-report")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN + "," + RoleConstant.LIFEGUARD)
-    public BaseResponse<Boolean> submitLeaveReport(@RequestBody LifeguardLeaveReportRequest lifeguardLeaveReportRequest) {
+    public BaseResponse<Boolean> submitLeaveReport(
+            @RequestBody LifeguardLeaveReportRequest lifeguardLeaveReportRequest) {
         if (lifeguardLeaveReportRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = lifeguardService.submitLeaveReport(lifeguardLeaveReportRequest.getLifeguardId(),
-                lifeguardLeaveReportRequest.getLeaveReason(), lifeguardLeaveReportRequest.getPlannedReturnAt());
+        boolean result =
+                lifeguardService.submitLeaveReport(
+                        lifeguardLeaveReportRequest.getLifeguardId(),
+                        lifeguardLeaveReportRequest.getLeaveReason(),
+                        lifeguardLeaveReportRequest.getPlannedReturnAt());
         return ResultUtils.success(result);
     }
 
     @PostMapping("/{id}/leave-report")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN + "," + RoleConstant.LIFEGUARD)
-    public BaseResponse<Boolean> submitLeaveReportByPath(@PathVariable("id") Long id,
-            @RequestBody LifeguardLeaveReportRequest request) {
-        LifeguardLeaveReportRequest leaveRequest = request == null ? new LifeguardLeaveReportRequest() : request;
+    public BaseResponse<Boolean> submitLeaveReportByPath(
+            @PathVariable("id") Long id, @RequestBody LifeguardLeaveReportRequest request) {
+        LifeguardLeaveReportRequest leaveRequest =
+                request == null ? new LifeguardLeaveReportRequest() : request;
         leaveRequest.setLifeguardId(id);
         return submitLeaveReport(leaveRequest);
     }
@@ -267,7 +291,8 @@ public class LifeguardController {
         if (lifeguardLocationReportRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Lifeguard lifeguard = lifeguardService.getById(lifeguardLocationReportRequest.getLifeguardId());
+        Lifeguard lifeguard =
+                lifeguardService.getById(lifeguardLocationReportRequest.getLifeguardId());
         if (lifeguard == null || Integer.valueOf(1).equals(lifeguard.getIs_delete())) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "救生员不存在");
         }
@@ -280,37 +305,42 @@ public class LifeguardController {
         lifeguardLocationLog.setVenue_id(venueId);
         lifeguardLocationLog.setLongitude(lifeguardLocationReportRequest.getLongitude());
         lifeguardLocationLog.setLatitude(lifeguardLocationReportRequest.getLatitude());
-        lifeguardLocationLog.setIn_fence(resolveInFence(
-                venueId,
-                lifeguardLocationReportRequest.getLongitude(),
-                lifeguardLocationReportRequest.getLatitude()));
+        lifeguardLocationLog.setIn_fence(
+                resolveInFence(
+                        venueId,
+                        lifeguardLocationReportRequest.getLongitude(),
+                        lifeguardLocationReportRequest.getLatitude()));
         lifeguardLocationLog.setReport_source(lifeguardLocationReportRequest.getReportSource());
         lifeguardLocationLog.setReported_at(lifeguardLocationReportRequest.getReportedAt());
         boolean result = lifeguardLocationLogService.reportLocation(lifeguardLocationLog);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        Map<String, Object> response = new HashMap<>(
-                lifeguardOffPostAlertService.checkAfterLocationReport(lifeguardLocationLog));
+        Map<String, Object> response =
+                new HashMap<>(
+                        lifeguardOffPostAlertService.checkAfterLocationReport(
+                                lifeguardLocationLog));
         response.put("saved", true);
         return ResultUtils.success(response);
     }
 
     @PostMapping("/{id}/locations")
-    public BaseResponse<Map<String, Object>> reportLocationByPath(@PathVariable("id") Long id,
-            @RequestBody LifeguardLocationReportRequest request) {
-        LifeguardLocationReportRequest locationRequest = request == null ? new LifeguardLocationReportRequest() : request;
+    public BaseResponse<Map<String, Object>> reportLocationByPath(
+            @PathVariable("id") Long id, @RequestBody LifeguardLocationReportRequest request) {
+        LifeguardLocationReportRequest locationRequest =
+                request == null ? new LifeguardLocationReportRequest() : request;
         locationRequest.setLifeguardId(id);
         return reportLocation(locationRequest);
     }
 
     @PostMapping("/login")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<LoginResultVO> lifeguardLogin(@RequestBody LoginRequest request,
-            HttpServletRequest httpServletRequest) {
+    public BaseResponse<LoginResultVO> lifeguardLogin(
+            @RequestBody LoginRequest request, HttpServletRequest httpServletRequest) {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         }
         LoginResultVO loginResultVO = authService.login(request, httpServletRequest);
-        if (loginResultVO.getUser() == null || loginResultVO.getUser().getId() == null
+        if (loginResultVO.getUser() == null
+                || loginResultVO.getUser().getId() == null
                 || loginResultVO.getUser().getRoles() == null
                 || !loginResultVO.getUser().getRoles().contains(RoleConstant.LIFEGUARD)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "当前账号不是救生员账号");
@@ -325,17 +355,21 @@ public class LifeguardController {
         if (!"APPROVED".equalsIgnoreCase(lifeguard.getAudit_status())) {
             throw new BusinessException(ErrorCode.FORBIDDEN_ERROR, "救生员账号未审核通过");
         }
-        lifeguardService.updateDutyStatus(lifeguard.getId(), "ON_DUTY", loginResultVO.getUser().getId());
+        lifeguardService.updateDutyStatus(
+                lifeguard.getId(), "ON_DUTY", loginResultVO.getUser().getId());
         return ResultUtils.success(loginResultVO);
     }
 
     @PostMapping("/offpost/check")
-    public BaseResponse<Map<String, Object>> offPostCheck(@RequestBody LifeguardOffPostCheckRequest request) {
+    public BaseResponse<Map<String, Object>> offPostCheck(
+            @RequestBody LifeguardOffPostCheckRequest request) {
         ensureLocationPermission();
         if (request == null || request.getLifeguardId() == null || request.getLifeguardId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "lifeguardId不能为空");
         }
-        Map<String, Object> data = new HashMap<>(lifeguardOffPostAlertService.checkByLifeguard(request.getLifeguardId()));
+        Map<String, Object> data =
+                new HashMap<>(
+                        lifeguardOffPostAlertService.checkByLifeguard(request.getLifeguardId()));
         if (request.getLeaveReason() != null) {
             data.put("leaveReason", request.getLeaveReason());
         }
@@ -346,10 +380,13 @@ public class LifeguardController {
     }
 
     @GetMapping("/location/recent")
-    public BaseResponse<List<LifeguardLocationLogVO>> recentLocations(@RequestParam("lifeguardId") Long lifeguardId,
+    public BaseResponse<List<LifeguardLocationLogVO>> recentLocations(
+            @RequestParam("lifeguardId") Long lifeguardId,
             @RequestParam(value = "limit", required = false) Integer limit) {
-        List<LifeguardLocationLog> lifeguardLocationLogs = lifeguardLocationLogService.recentLocations(lifeguardId, limit);
-        return ResultUtils.success(lifeguardLocationLogService.getLifeguardLocationLogVO(lifeguardLocationLogs));
+        List<LifeguardLocationLog> lifeguardLocationLogs =
+                lifeguardLocationLogService.recentLocations(lifeguardId, limit);
+        return ResultUtils.success(
+                lifeguardLocationLogService.getLifeguardLocationLogVO(lifeguardLocationLogs));
     }
 
     private Lifeguard toLifeguard(LifeguardAddRequest request) {
@@ -399,7 +436,8 @@ public class LifeguardController {
         SysUser sysUser = new SysUser();
         sysUser.setUsername(request.getUsername().trim());
         sysUser.setPassword_hash(PasswordHashUtils.md5WithSalt(request.getPassword()));
-        sysUser.setDisplay_name(StringUtils.defaultIfBlank(request.getFullName(), request.getUsername().trim()));
+        sysUser.setDisplay_name(
+                StringUtils.defaultIfBlank(request.getFullName(), request.getUsername().trim()));
         sysUser.setPhone(request.getPhone());
         sysUser.setEmail(request.getEmail());
         sysUser.setStatus(1);
@@ -433,7 +471,8 @@ public class LifeguardController {
         QueryWrapper<Lifeguard> lifeguardQuery = new QueryWrapper<>();
         lifeguardQuery.eq("user_id", userId);
         lifeguardQuery.eq("is_delete", 0);
-        lifeguardQuery.ne(ignoreLifeguardId != null && ignoreLifeguardId > 0, "id", ignoreLifeguardId);
+        lifeguardQuery.ne(
+                ignoreLifeguardId != null && ignoreLifeguardId > 0, "id", ignoreLifeguardId);
         Long count = lifeguardService.count(lifeguardQuery);
         if (count != null && count > 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "该用户已绑定其他救生员");
@@ -479,9 +518,10 @@ public class LifeguardController {
 
     private void ensureLocationPermission() {
         AuthUserContext authUserContext = AuthContextHolder.getRequired();
-        boolean hasPermission = authUserContext.hasRole(RoleConstant.SUPER_ADMIN)
-                || authUserContext.hasRole(RoleConstant.VENUE_ADMIN)
-                || authUserContext.hasRole(RoleConstant.LIFEGUARD);
+        boolean hasPermission =
+                authUserContext.hasRole(RoleConstant.SUPER_ADMIN)
+                        || authUserContext.hasRole(RoleConstant.VENUE_ADMIN)
+                        || authUserContext.hasRole(RoleConstant.LIFEGUARD);
         if (!hasPermission) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "当前角色无定位/脱岗操作权限");
         }
@@ -518,8 +558,14 @@ public class LifeguardController {
         if (polygons.isEmpty()) {
             return fallback;
         }
-        boolean inFence = polygons.stream()
-                .anyMatch(polygon -> isPointInPolygon(longitude.doubleValue(), latitude.doubleValue(), polygon));
+        boolean inFence =
+                polygons.stream()
+                        .anyMatch(
+                                polygon ->
+                                        isPointInPolygon(
+                                                longitude.doubleValue(),
+                                                latitude.doubleValue(),
+                                                polygon));
         return inFence ? 1 : 0;
     }
 
@@ -597,7 +643,7 @@ public class LifeguardController {
             if (!point.get(0).isNumber() || !point.get(1).isNumber()) {
                 continue;
             }
-            points.add(new double[] { point.get(0).asDouble(), point.get(1).asDouble() });
+            points.add(new double[] {point.get(0).asDouble(), point.get(1).asDouble()});
         }
         return points;
     }
@@ -609,8 +655,8 @@ public class LifeguardController {
             double yi = polygon.get(i)[1];
             double xj = polygon.get(j)[0];
             double yj = polygon.get(j)[1];
-            boolean intersect = ((yi > y) != (yj > y))
-                    && (x < (xj - xi) * (y - yi) / ((yj - yi) + 1e-12) + xi);
+            boolean intersect =
+                    ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) + 1e-12) + xi);
             if (intersect) {
                 inside = !inside;
             }

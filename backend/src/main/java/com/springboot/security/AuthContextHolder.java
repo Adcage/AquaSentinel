@@ -7,8 +7,7 @@ public final class AuthContextHolder {
 
     private static final ThreadLocal<AuthUserContext> CONTEXT = new ThreadLocal<>();
 
-    private AuthContextHolder() {
-    }
+    private AuthContextHolder() {}
 
     public static void set(AuthUserContext authUserContext) {
         CONTEXT.set(authUserContext);

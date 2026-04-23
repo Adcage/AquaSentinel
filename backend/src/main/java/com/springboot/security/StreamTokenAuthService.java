@@ -3,6 +3,7 @@ package com.springboot.security;
 import com.springboot.common.ErrorCode;
 import com.springboot.config.AppStreamProxyProperties;
 import com.springboot.exception.BusinessException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +14,8 @@ public class StreamTokenAuthService {
 
     private final AppStreamProxyProperties appStreamProxyProperties;
 
-    public StreamTokenAuthService(JwtTokenProvider jwtTokenProvider, AppStreamProxyProperties appStreamProxyProperties) {
+    public StreamTokenAuthService(
+            JwtTokenProvider jwtTokenProvider, AppStreamProxyProperties appStreamProxyProperties) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.appStreamProxyProperties = appStreamProxyProperties;
     }

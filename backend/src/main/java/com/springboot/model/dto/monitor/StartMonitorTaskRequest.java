@@ -1,6 +1,7 @@
 package com.springboot.model.dto.monitor;
 
 import java.io.Serializable;
+
 import lombok.Data;
 
 @Data

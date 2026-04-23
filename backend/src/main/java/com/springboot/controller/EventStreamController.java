@@ -1,8 +1,11 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
@@ -15,12 +18,11 @@ import com.springboot.model.entity.VenueZone;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.service.MonitoringEventService;
 import com.springboot.service.VenueZoneService;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,17 +33,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/events")
 public class EventStreamController {
 
-    @Resource
-    private CameraDeviceService cameraDeviceService;
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    @Resource
-    private VenueZoneService venueZoneService;
+    @Resource private VenueZoneService venueZoneService;
 
-    @Resource
-    private MonitoringEventService monitoringEventService;
+    @Resource private MonitoringEventService monitoringEventService;
 
-    @Resource
-    private ObjectMapper objectMapper;
+    @Resource private ObjectMapper objectMapper;
 
     @GetMapping("/annotated-stream")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
@@ -114,7 +112,8 @@ public class EventStreamController {
     }
 
     @GetMapping
-    public BaseResponse<List<Map<String, Object>>> listEvents(@RequestParam(required = false) Long cameraId,
+    public BaseResponse<List<Map<String, Object>>> listEvents(
+            @RequestParam(required = false) Long cameraId,
             @RequestParam(required = false) String eventType,
             @RequestParam(required = false) Long startTime,
             @RequestParam(required = false) Long endTime,
@@ -122,7 +121,8 @@ public class EventStreamController {
         QueryWrapper<MonitoringEvent> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(cameraId != null, "camera_id", cameraId);
         queryWrapper.eq(StringUtils.isNotBlank(eventType), "event_type", eventType);
-        queryWrapper.ge(startTime != null, "event_time", new Date(startTime == null ? 0L : startTime));
+        queryWrapper.ge(
+                startTime != null, "event_time", new Date(startTime == null ? 0L : startTime));
         queryWrapper.le(endTime != null, "event_time", new Date(endTime == null ? 0L : endTime));
         queryWrapper.orderByDesc("event_time", "id");
         int queryLimit = Math.max(1, Math.min(limit == null ? 20 : limit, 200));

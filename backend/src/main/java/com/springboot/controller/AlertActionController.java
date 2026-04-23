@@ -1,6 +1,11 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.ResultUtils;
@@ -19,12 +24,9 @@ import com.springboot.service.AlertDisposalService;
 import com.springboot.service.AlertRecordService;
 import com.springboot.service.MonitoringEventService;
 import com.springboot.websocket.AlertWsPublisher;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,26 +40,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/alerts")
 public class AlertActionController {
 
-    @Resource
-    private AlertRecordService alertRecordService;
+    @Resource private AlertRecordService alertRecordService;
 
-    @Resource
-    private AlertDisposalService alertDisposalService;
+    @Resource private AlertDisposalService alertDisposalService;
 
-    @Resource
-    private MonitoringEventService monitoringEventService;
+    @Resource private MonitoringEventService monitoringEventService;
 
-    @Resource
-    private AlertWsPublisher alertWsPublisher;
+    @Resource private AlertWsPublisher alertWsPublisher;
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<AlertRecordVO>> listByPage(@RequestBody(required = false) AlertRecordQueryRequest request) {
-        AlertRecordQueryRequest queryRequest = request == null ? new AlertRecordQueryRequest() : request;
+    public BaseResponse<Page<AlertRecordVO>> listByPage(
+            @RequestBody(required = false) AlertRecordQueryRequest request) {
+        AlertRecordQueryRequest queryRequest =
+                request == null ? new AlertRecordQueryRequest() : request;
         long current = Math.max(1, queryRequest.getCurrent());
         long pageSize = Math.min(100, Math.max(1, queryRequest.getPageSize()));
-        Page<AlertRecord> page = alertRecordService.page(
-                new Page<>(current, pageSize),
-                alertRecordService.getQueryWrapper(queryRequest));
+        Page<AlertRecord> page =
+                alertRecordService.page(
+                        new Page<>(current, pageSize),
+                        alertRecordService.getQueryWrapper(queryRequest));
         Page<AlertRecordVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         voPage.setRecords(alertRecordService.getAlertRecordVO(page.getRecords()));
         return ResultUtils.success(voPage);
@@ -79,8 +80,8 @@ public class AlertActionController {
     }
 
     @PostMapping("/{id}/assign")
-    public BaseResponse<Map<String, Object>> assign(@PathVariable("id") Long id,
-            @RequestBody AlertActionRequest request) {
+    public BaseResponse<Map<String, Object>> assign(
+            @PathVariable("id") Long id, @RequestBody AlertActionRequest request) {
         AlertActionRequest actionRequest = request == null ? new AlertActionRequest() : request;
         actionRequest.setAlertId(id);
         actionRequest.setActionType("ASSIGN");
@@ -88,8 +89,8 @@ public class AlertActionController {
     }
 
     @PostMapping("/{id}/actions")
-    public BaseResponse<Map<String, Object>> actions(@PathVariable("id") Long id,
-            @RequestBody AlertActionRequest request) {
+    public BaseResponse<Map<String, Object>> actions(
+            @PathVariable("id") Long id, @RequestBody AlertActionRequest request) {
         AlertActionRequest actionRequest = request == null ? new AlertActionRequest() : request;
         actionRequest.setAlertId(id);
         return action(actionRequest);
@@ -108,13 +109,16 @@ public class AlertActionController {
     @PostMapping("/action")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Map<String, Object>> action(@RequestBody AlertActionRequest request) {
-        if (request == null || request.getAlertId() == null || StringUtils.isBlank(request.getActionType())) {
+        if (request == null
+                || request.getAlertId() == null
+                || StringUtils.isBlank(request.getActionType())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "alertId/actionType不能为空");
         }
         AuthUserContext authUserContext = AuthContextHolder.getRequired();
-        boolean hasPermission = authUserContext.hasRole(RoleConstant.VENUE_ADMIN)
-                || authUserContext.hasRole(RoleConstant.LIFEGUARD)
-                || authUserContext.hasRole(RoleConstant.SUPER_ADMIN);
+        boolean hasPermission =
+                authUserContext.hasRole(RoleConstant.VENUE_ADMIN)
+                        || authUserContext.hasRole(RoleConstant.LIFEGUARD)
+                        || authUserContext.hasRole(RoleConstant.SUPER_ADMIN);
         if (!hasPermission) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "当前角色无报警处置权限");
         }
@@ -140,7 +144,8 @@ public class AlertActionController {
                 break;
             case "ASSIGN":
                 if (request.getAssigneeLifeguardId() == null) {
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "ASSIGN动作必须提供assigneeLifeguardId");
+                    throw new BusinessException(
+                            ErrorCode.PARAMS_ERROR, "ASSIGN动作必须提供assigneeLifeguardId");
                 }
                 update.setAlert_status("ASSIGNED");
                 update.setLifeguard_id(request.getAssigneeLifeguardId());
@@ -163,15 +168,20 @@ public class AlertActionController {
         alertDisposalService.save(alertDisposal);
 
         AlertRecord latestAlert = alertRecordService.getById(alertRecord.getId());
-        MonitoringEvent monitoringEvent = latestAlert == null ? null : monitoringEventService.getById(latestAlert.getEvent_id());
+        MonitoringEvent monitoringEvent =
+                latestAlert == null
+                        ? null
+                        : monitoringEventService.getById(latestAlert.getEvent_id());
         Map<String, Object> wsData = new HashMap<>();
         wsData.put("alertId", alertRecord.getId());
         wsData.put("alertUid", alertRecord.getAlert_uid());
         wsData.put("actionType", actionType);
         wsData.put("alertStatus", latestAlert == null ? null : latestAlert.getAlert_status());
         wsData.put("updatedAt", now);
-        alertWsPublisher.publishAlertUpdated(monitoringEvent == null ? null : monitoringEvent.getEvent_uid(),
-                alertRecord.getAlert_uid(), wsData);
+        alertWsPublisher.publishAlertUpdated(
+                monitoringEvent == null ? null : monitoringEvent.getEvent_uid(),
+                alertRecord.getAlert_uid(),
+                wsData);
 
         Map<String, Object> data = new HashMap<>();
         data.put("alertId", alertRecord.getId());

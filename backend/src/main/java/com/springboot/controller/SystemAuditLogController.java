@@ -1,6 +1,8 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.Date;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -16,9 +18,9 @@ import com.springboot.model.dto.systemauditlog.SystemAuditLogUpdateRequest;
 import com.springboot.model.entity.SystemAuditLog;
 import com.springboot.model.vo.SystemAuditLogVO;
 import com.springboot.service.SystemAuditLogService;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.Date;
-import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,12 +31,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/system-audit-logs")
 public class SystemAuditLogController {
 
-    @Resource
-    private SystemAuditLogService systemAuditLogService;
+    @Resource private SystemAuditLogService systemAuditLogService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Long> addSystemAuditLog(@RequestBody SystemAuditLogAddRequest systemAuditLogAddRequest) {
+    public BaseResponse<Long> addSystemAuditLog(
+            @RequestBody SystemAuditLogAddRequest systemAuditLogAddRequest) {
         if (systemAuditLogAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -59,8 +61,11 @@ public class SystemAuditLogController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> updateSystemAuditLog(@RequestBody SystemAuditLogUpdateRequest systemAuditLogUpdateRequest) {
-        if (systemAuditLogUpdateRequest == null || systemAuditLogUpdateRequest.getId() == null || systemAuditLogUpdateRequest.getId() <= 0) {
+    public BaseResponse<Boolean> updateSystemAuditLog(
+            @RequestBody SystemAuditLogUpdateRequest systemAuditLogUpdateRequest) {
+        if (systemAuditLogUpdateRequest == null
+                || systemAuditLogUpdateRequest.getId() == null
+                || systemAuditLogUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         SystemAuditLog systemAuditLog = toSystemAuditLog(systemAuditLogUpdateRequest);
@@ -72,8 +77,11 @@ public class SystemAuditLogController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editSystemAuditLog(@RequestBody SystemAuditLogEditRequest systemAuditLogEditRequest) {
-        if (systemAuditLogEditRequest == null || systemAuditLogEditRequest.getId() == null || systemAuditLogEditRequest.getId() <= 0) {
+    public BaseResponse<Boolean> editSystemAuditLog(
+            @RequestBody SystemAuditLogEditRequest systemAuditLogEditRequest) {
+        if (systemAuditLogEditRequest == null
+                || systemAuditLogEditRequest.getId() == null
+                || systemAuditLogEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         SystemAuditLog systemAuditLog = new SystemAuditLog();
@@ -104,39 +112,53 @@ public class SystemAuditLogController {
     }
 
     @PostMapping("/list")
-    public BaseResponse<List<SystemAuditLog>> listSystemAuditLog(@RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
+    public BaseResponse<List<SystemAuditLog>> listSystemAuditLog(
+            @RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
         if (systemAuditLogQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return ResultUtils.success(systemAuditLogService.list(systemAuditLogService.getQueryWrapper(systemAuditLogQueryRequest)));
+        return ResultUtils.success(
+                systemAuditLogService.list(
+                        systemAuditLogService.getQueryWrapper(systemAuditLogQueryRequest)));
     }
 
     @PostMapping("/list/vo")
-    public BaseResponse<List<SystemAuditLogVO>> listSystemAuditLogVO(@RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
-        BaseResponse<List<SystemAuditLog>> response = listSystemAuditLog(systemAuditLogQueryRequest);
+    public BaseResponse<List<SystemAuditLogVO>> listSystemAuditLogVO(
+            @RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
+        BaseResponse<List<SystemAuditLog>> response =
+                listSystemAuditLog(systemAuditLogQueryRequest);
         return ResultUtils.success(systemAuditLogService.getSystemAuditLogVO(response.getData()));
     }
 
     @PostMapping("/list/page")
-    public BaseResponse<Page<SystemAuditLog>> listSystemAuditLogByPage(@RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
+    public BaseResponse<Page<SystemAuditLog>> listSystemAuditLogByPage(
+            @RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
         if (systemAuditLogQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = systemAuditLogQueryRequest.getCurrent();
         long size = systemAuditLogQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<SystemAuditLog> systemAuditLogPage = systemAuditLogService.page(new Page<>(current, size),
-                systemAuditLogService.getQueryWrapper(systemAuditLogQueryRequest));
+        Page<SystemAuditLog> systemAuditLogPage =
+                systemAuditLogService.page(
+                        new Page<>(current, size),
+                        systemAuditLogService.getQueryWrapper(systemAuditLogQueryRequest));
         return ResultUtils.success(systemAuditLogPage);
     }
 
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<SystemAuditLogVO>> listSystemAuditLogVOByPage(@RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
-        BaseResponse<Page<SystemAuditLog>> response = listSystemAuditLogByPage(systemAuditLogQueryRequest);
+    public BaseResponse<Page<SystemAuditLogVO>> listSystemAuditLogVOByPage(
+            @RequestBody SystemAuditLogQueryRequest systemAuditLogQueryRequest) {
+        BaseResponse<Page<SystemAuditLog>> response =
+                listSystemAuditLogByPage(systemAuditLogQueryRequest);
         Page<SystemAuditLog> systemAuditLogPage = response.getData();
-        Page<SystemAuditLogVO> systemAuditLogVOPage = new Page<>(systemAuditLogPage.getCurrent(), systemAuditLogPage.getSize(),
-                systemAuditLogPage.getTotal());
-        systemAuditLogVOPage.setRecords(systemAuditLogService.getSystemAuditLogVO(systemAuditLogPage.getRecords()));
+        Page<SystemAuditLogVO> systemAuditLogVOPage =
+                new Page<>(
+                        systemAuditLogPage.getCurrent(),
+                        systemAuditLogPage.getSize(),
+                        systemAuditLogPage.getTotal());
+        systemAuditLogVOPage.setRecords(
+                systemAuditLogService.getSystemAuditLogVO(systemAuditLogPage.getRecords()));
         return ResultUtils.success(systemAuditLogVOPage);
     }
 

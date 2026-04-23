@@ -1,77 +1,55 @@
 package com.springboot.model.entity;
 
+import java.io.Serializable;
+import java.util.Date;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
-/**
- * 场馆区域表
- * @TableName venue_zone
- */
-@TableName(value ="venue_zone")
+/** 场馆区域表 @TableName venue_zone */
+@TableName(value = "venue_zone")
 @Data
 public class VenueZone implements Serializable {
-    /**
-     * 主键
-     */
+    /** 主键 */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 场馆ID
-     */
+    /** 场馆ID */
     @TableField(value = "venue_id")
     private Long venue_id;
 
-    /**
-     * 区域编码
-     */
+    /** 区域编码 */
     @TableField(value = "zone_code")
     private String zone_code;
 
-    /**
-     * 区域名称
-     */
+    /** 区域名称 */
     @TableField(value = "zone_name")
     private String zone_name;
 
-    /**
-     * 区域类型
-     */
+    /** 区域类型 */
     @TableField(value = "zone_type")
     private String zone_type;
 
-    /**
-     * 区域GeoJSON
-     */
+    /** 区域GeoJSON */
     @TableField(value = "geo_json")
     private Object geo_json;
 
-    /**
-     * 风险等级
-     */
+    /** 风险等级 */
     @TableField(value = "risk_level")
     private String risk_level;
 
-    /**
-     * 创建时间
-     */
+    /** 创建时间 */
     @TableField(value = "created_at")
     private Date created_at;
 
-    /**
-     * 更新时间
-     */
+    /** 更新时间 */
     @TableField(value = "updated_at")
     private Date updated_at;
 
-    /**
-     * 逻辑删除
-     */
+    /** 逻辑删除 */
     @TableField(value = "is_delete")
     private Integer is_delete;
 
@@ -91,15 +69,33 @@ public class VenueZone implements Serializable {
         }
         VenueZone other = (VenueZone) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
-            && (this.getVenue_id() == null ? other.getVenue_id() == null : this.getVenue_id().equals(other.getVenue_id()))
-            && (this.getZone_code() == null ? other.getZone_code() == null : this.getZone_code().equals(other.getZone_code()))
-            && (this.getZone_name() == null ? other.getZone_name() == null : this.getZone_name().equals(other.getZone_name()))
-            && (this.getZone_type() == null ? other.getZone_type() == null : this.getZone_type().equals(other.getZone_type()))
-            && (this.getGeo_json() == null ? other.getGeo_json() == null : this.getGeo_json().equals(other.getGeo_json()))
-            && (this.getRisk_level() == null ? other.getRisk_level() == null : this.getRisk_level().equals(other.getRisk_level()))
-            && (this.getCreated_at() == null ? other.getCreated_at() == null : this.getCreated_at().equals(other.getCreated_at()))
-            && (this.getUpdated_at() == null ? other.getUpdated_at() == null : this.getUpdated_at().equals(other.getUpdated_at()))
-            && (this.getIs_delete() == null ? other.getIs_delete() == null : this.getIs_delete().equals(other.getIs_delete()));
+                && (this.getVenue_id() == null
+                        ? other.getVenue_id() == null
+                        : this.getVenue_id().equals(other.getVenue_id()))
+                && (this.getZone_code() == null
+                        ? other.getZone_code() == null
+                        : this.getZone_code().equals(other.getZone_code()))
+                && (this.getZone_name() == null
+                        ? other.getZone_name() == null
+                        : this.getZone_name().equals(other.getZone_name()))
+                && (this.getZone_type() == null
+                        ? other.getZone_type() == null
+                        : this.getZone_type().equals(other.getZone_type()))
+                && (this.getGeo_json() == null
+                        ? other.getGeo_json() == null
+                        : this.getGeo_json().equals(other.getGeo_json()))
+                && (this.getRisk_level() == null
+                        ? other.getRisk_level() == null
+                        : this.getRisk_level().equals(other.getRisk_level()))
+                && (this.getCreated_at() == null
+                        ? other.getCreated_at() == null
+                        : this.getCreated_at().equals(other.getCreated_at()))
+                && (this.getUpdated_at() == null
+                        ? other.getUpdated_at() == null
+                        : this.getUpdated_at().equals(other.getUpdated_at()))
+                && (this.getIs_delete() == null
+                        ? other.getIs_delete() == null
+                        : this.getIs_delete().equals(other.getIs_delete()));
     }
 
     @Override

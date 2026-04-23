@@ -2,10 +2,7 @@ package com.springboot.exception;
 
 import com.springboot.common.ErrorCode;
 
-/**
- * 抛异常工具类
-*
- */
+/** 抛异常工具类 */
 public class ThrowUtils {
 
     /**

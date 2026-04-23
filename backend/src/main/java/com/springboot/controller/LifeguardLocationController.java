@@ -1,6 +1,7 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
+
 import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.DeleteRequest;
@@ -16,8 +17,9 @@ import com.springboot.model.dto.lifeguardlocationlog.LifeguardLocationLogUpdateR
 import com.springboot.model.entity.LifeguardLocationLog;
 import com.springboot.model.vo.LifeguardLocationLogVO;
 import com.springboot.service.LifeguardLocationLogService;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
-import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,16 +30,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/lifeguards/location-logs")
 public class LifeguardLocationController {
 
-    @Resource
-    private LifeguardLocationLogService lifeguardLocationLogService;
+    @Resource private LifeguardLocationLogService lifeguardLocationLogService;
 
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Long> addLifeguardLocationLog(@RequestBody LifeguardLocationLogAddRequest lifeguardLocationLogAddRequest) {
+    public BaseResponse<Long> addLifeguardLocationLog(
+            @RequestBody LifeguardLocationLogAddRequest lifeguardLocationLogAddRequest) {
         if (lifeguardLocationLogAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        LifeguardLocationLog lifeguardLocationLog = toLifeguardLocationLog(lifeguardLocationLogAddRequest);
+        LifeguardLocationLog lifeguardLocationLog =
+                toLifeguardLocationLog(lifeguardLocationLogAddRequest);
         lifeguardLocationLogService.validLifeguardLocationLog(lifeguardLocationLog, true);
         boolean result = lifeguardLocationLogService.save(lifeguardLocationLog);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -46,7 +49,8 @@ public class LifeguardLocationController {
 
     @PostMapping("/delete")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> deleteLifeguardLocationLog(@RequestBody DeleteRequest deleteRequest) {
+    public BaseResponse<Boolean> deleteLifeguardLocationLog(
+            @RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -58,11 +62,13 @@ public class LifeguardLocationController {
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Boolean> updateLifeguardLocationLog(
             @RequestBody LifeguardLocationLogUpdateRequest lifeguardLocationLogUpdateRequest) {
-        if (lifeguardLocationLogUpdateRequest == null || lifeguardLocationLogUpdateRequest.getId() == null
+        if (lifeguardLocationLogUpdateRequest == null
+                || lifeguardLocationLogUpdateRequest.getId() == null
                 || lifeguardLocationLogUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        LifeguardLocationLog lifeguardLocationLog = toLifeguardLocationLog(lifeguardLocationLogUpdateRequest);
+        LifeguardLocationLog lifeguardLocationLog =
+                toLifeguardLocationLog(lifeguardLocationLogUpdateRequest);
         lifeguardLocationLogService.validLifeguardLocationLog(lifeguardLocationLog, false);
         boolean result = lifeguardLocationLogService.updateById(lifeguardLocationLog);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -71,8 +77,10 @@ public class LifeguardLocationController {
 
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
-    public BaseResponse<Boolean> editLifeguardLocationLog(@RequestBody LifeguardLocationLogEditRequest lifeguardLocationLogEditRequest) {
-        if (lifeguardLocationLogEditRequest == null || lifeguardLocationLogEditRequest.getId() == null
+    public BaseResponse<Boolean> editLifeguardLocationLog(
+            @RequestBody LifeguardLocationLogEditRequest lifeguardLocationLogEditRequest) {
+        if (lifeguardLocationLogEditRequest == null
+                || lifeguardLocationLogEditRequest.getId() == null
                 || lifeguardLocationLogEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -102,7 +110,8 @@ public class LifeguardLocationController {
     @GetMapping("/get/vo")
     public BaseResponse<LifeguardLocationLogVO> getLifeguardLocationLogVOById(long id) {
         BaseResponse<LifeguardLocationLog> response = getLifeguardLocationLogById(id);
-        return ResultUtils.success(lifeguardLocationLogService.getLifeguardLocationLogVO(response.getData()));
+        return ResultUtils.success(
+                lifeguardLocationLogService.getLifeguardLocationLogVO(response.getData()));
     }
 
     @PostMapping("/list/page")
@@ -114,20 +123,28 @@ public class LifeguardLocationController {
         long current = lifeguardLocationLogQueryRequest.getCurrent();
         long size = lifeguardLocationLogQueryRequest.getPageSize();
         ThrowUtils.throwIf(size > 100, ErrorCode.PARAMS_ERROR, "分页大小不能超过100");
-        Page<LifeguardLocationLog> lifeguardLocationLogPage = lifeguardLocationLogService.page(new Page<>(current, size),
-                lifeguardLocationLogService.getQueryWrapper(lifeguardLocationLogQueryRequest));
+        Page<LifeguardLocationLog> lifeguardLocationLogPage =
+                lifeguardLocationLogService.page(
+                        new Page<>(current, size),
+                        lifeguardLocationLogService.getQueryWrapper(
+                                lifeguardLocationLogQueryRequest));
         return ResultUtils.success(lifeguardLocationLogPage);
     }
 
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<LifeguardLocationLogVO>> listLifeguardLocationLogVOByPage(
             @RequestBody LifeguardLocationLogQueryRequest lifeguardLocationLogQueryRequest) {
-        BaseResponse<Page<LifeguardLocationLog>> response = listLifeguardLocationLogByPage(lifeguardLocationLogQueryRequest);
+        BaseResponse<Page<LifeguardLocationLog>> response =
+                listLifeguardLocationLogByPage(lifeguardLocationLogQueryRequest);
         Page<LifeguardLocationLog> lifeguardLocationLogPage = response.getData();
-        Page<LifeguardLocationLogVO> lifeguardLocationLogVOPage = new Page<>(lifeguardLocationLogPage.getCurrent(),
-                lifeguardLocationLogPage.getSize(), lifeguardLocationLogPage.getTotal());
-        List<LifeguardLocationLogVO> lifeguardLocationLogVOList = lifeguardLocationLogService.getLifeguardLocationLogVO(
-                lifeguardLocationLogPage.getRecords());
+        Page<LifeguardLocationLogVO> lifeguardLocationLogVOPage =
+                new Page<>(
+                        lifeguardLocationLogPage.getCurrent(),
+                        lifeguardLocationLogPage.getSize(),
+                        lifeguardLocationLogPage.getTotal());
+        List<LifeguardLocationLogVO> lifeguardLocationLogVOList =
+                lifeguardLocationLogService.getLifeguardLocationLogVO(
+                        lifeguardLocationLogPage.getRecords());
         lifeguardLocationLogVOPage.setRecords(lifeguardLocationLogVOList);
         return ResultUtils.success(lifeguardLocationLogVOPage);
     }
