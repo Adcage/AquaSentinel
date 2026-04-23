@@ -13,6 +13,8 @@ from app.api.engine_tasks import blp as engine_tasks_blp
 from app.api.test_trigger_api import blp as test_trigger_blp
 from app.services.ai_ws_push_service import ai_ws_push_service
 from app.services.model_inference_service import warmup_model
+from app.services.rabbitmq_publisher_service import rabbitmq_publisher_service
+from app.metrics.inference_metrics import *
 
 
 def _ensure_sqlite_parent_dir(uri: str):
@@ -133,5 +135,24 @@ def create_app(config_overrides: dict | None = None) -> Flask:
         )
         ai_ws_push_service.start(ws_url)
 
+        rabbitmq_url = str(app.config.get("RABBITMQ_URL", "")).strip()
+        if rabbitmq_url:
+            rabbitmq_exchange = str(
+                app.config.get("RABBITMQ_EXCHANGE", "alert.topic")
+            ).strip()
+            rabbitmq_publisher_service.start(rabbitmq_url, exchange=rabbitmq_exchange)
+
     register_error_handlers(app)
+
+    if app.config.get("METRICS_ENABLED", True) and not app.config.get("TESTING", False):
+        from prometheus_client import start_http_server
+
+        metrics_port = int(app.config.get("METRICS_PORT", 9091))
+        try:
+            start_http_server(metrics_port)
+            app.logger.info(
+                "Prometheus metrics server started on port %d", metrics_port
+            )
+        except Exception as exc:
+            app.logger.warning("Failed to start metrics server: %s", exc)
     return app

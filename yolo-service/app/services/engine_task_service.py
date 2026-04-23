@@ -8,6 +8,7 @@ import re
 import threading
 import time
 from typing import Any
+import uuid
 
 from flask import current_app
 
@@ -15,7 +16,14 @@ from app.core.errors import BusinessError
 from app.services.ai_ws_push_service import ai_ws_push_service
 from app.services.callback_client_service import post_task_callback
 from app.services.drowning_rule_service import DrowningDecision, DrowningRuleEvaluator
+from app.metrics.inference_metrics import record_inference
+from app.metrics.task_metrics import (
+    record_alert_published,
+    record_task_started,
+    record_task_stopped,
+)
 from app.services.model_inference_service import infer_stream_frame, warmup_model
+from app.services.rabbitmq_publisher_service import rabbitmq_publisher_service
 from app.services.tracker_service import DeepSortTracker, TrackedObject
 from app.services.video_overlay_service import video_frame_push_service
 
@@ -419,6 +427,18 @@ def _post_detection_event_if_needed(
         )
     if event_payload is not None:
         post_task_callback(event_payload)
+        if rabbitmq_publisher_service.is_connected():
+            msg_payload = {
+                "messageId": str(uuid.uuid4()),
+                "version": 1,
+                "source": "yolo-service",
+                "publishedAt": time.time(),
+            }
+            msg_payload.update(event_payload)
+            rabbitmq_publisher_service.publish_alert(
+                msg_payload, routing_key="alert.record"
+            )
+            record_alert_published(channel="rabbitmq", status="success")
 
 
 def _push_realtime_ws(
@@ -708,7 +728,14 @@ def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float
                 continue
 
             frame_height, frame_width = frame.shape[:2]
+            _t0 = time.monotonic()
             detections = infer_stream_frame(frame, model_version=model_version)
+            _infer_latency = time.monotonic() - _t0
+            record_inference(
+                model_version=model_version,
+                latency_sec=_infer_latency,
+                status="success",
+            )
             tracked_objects = tracker.update(detections, frame=frame, timestamp=now)
             drowning_objects = [
                 obj for obj in tracked_objects if _is_drowning_label(obj.label)
@@ -850,6 +877,7 @@ def start_task(
         task.thread = thread
 
     thread.start()
+    record_task_started()
     return _serialize_task(task)
 
 
@@ -881,6 +909,7 @@ def stop_task(task_code: str):
             }
         task.stop_event.set()
         task.updated_at = _utc_now()
+        record_task_stopped()
         payload = _serialize_task(task)
     return payload
 
@@ -1000,7 +1029,14 @@ def _run_loop_with_pyav(task_code: str, stream_url: str, frame_interval: float):
 
             image = frame.to_ndarray(format="bgr24")
             frame_height, frame_width = image.shape[:2]
+            _t0 = time.monotonic()
             detections = infer_stream_frame(image, model_version=model_version)
+            _infer_latency = time.monotonic() - _t0
+            record_inference(
+                model_version=model_version,
+                latency_sec=_infer_latency,
+                status="success",
+            )
             tracked_objects = tracker.update(detections, frame=image, timestamp=now)
             drowning_objects = [
                 obj for obj in tracked_objects if _is_drowning_label(obj.label)

@@ -8,6 +8,8 @@ import time
 import requests
 from flask import current_app
 
+from app.metrics.task_metrics import record_alert_published
+
 
 def _build_signature(secret: str, timestamp: str, body: str) -> str:
     message = f"{timestamp}\n{body}".encode("utf-8")
@@ -45,6 +47,7 @@ def post_task_callback(payload: dict) -> bool:
                 timeout=timeout_sec,
             )
             if response.ok:
+                record_alert_published(channel="http_callback", status="success")
                 return True
             current_app.logger.warning(
                 "Callback failed, status=%s, attempt=%s/%s",
@@ -63,4 +66,5 @@ def post_task_callback(payload: dict) -> bool:
         if attempt < retry_times:
             time.sleep(min(2.0, 0.2 * attempt))
 
+    record_alert_published(channel="http_callback", status="failed")
     return False
