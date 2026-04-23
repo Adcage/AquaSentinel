@@ -1,6 +1,5 @@
 package com.springboot.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
@@ -12,6 +11,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,21 +34,32 @@ public class AlertWsPublisher {
 
     private final Map<String, Long> eventDedupMap = new ConcurrentHashMap<>();
 
-    public AlertWsPublisher(AlertWebSocketHandler alertWebSocketHandler, ObjectMapper objectMapper) {
+    private final Counter wsMessagesSentCounter;
+
+    public AlertWsPublisher(
+            AlertWebSocketHandler alertWebSocketHandler,
+            ObjectMapper objectMapper,
+            MeterRegistry meterRegistry) {
         this.alertWebSocketHandler = alertWebSocketHandler;
         this.objectMapper = objectMapper;
+        this.wsMessagesSentCounter =
+                Counter.builder("ws.messages.sent")
+                        .description("WebSocket推送消息数")
+                        .register(meterRegistry);
     }
 
-    public boolean publish(WsMessageType messageType, String eventUid, String alertUid, Object data) {
+    public boolean publish(
+            WsMessageType messageType, String eventUid, String alertUid, Object data) {
         return publish(messageType, eventUid, alertUid, data, null, null);
     }
 
-    public boolean publish(WsMessageType messageType,
-                           String eventUid,
-                           String alertUid,
-                           Object data,
-                           Set<Long> targetUserIds,
-                           Set<String> targetRoleCodes) {
+    public boolean publish(
+            WsMessageType messageType,
+            String eventUid,
+            String alertUid,
+            Object data,
+            Set<Long> targetUserIds,
+            Set<String> targetRoleCodes) {
         if (StringUtils.isNotBlank(eventUid)) {
             long now = System.currentTimeMillis();
             Long old = eventDedupMap.putIfAbsent(eventUid, now);
@@ -68,12 +82,19 @@ public class AlertWsPublisher {
         publish(WsMessageType.ALERT_CREATED, eventUid, alertUid, data);
     }
 
-    public void publishAlertCreated(String eventUid,
-                                    String alertUid,
-                                    Object data,
-                                    Set<Long> targetUserIds,
-                                    Set<String> targetRoleCodes) {
-        publish(WsMessageType.ALERT_CREATED, eventUid, alertUid, data, targetUserIds, targetRoleCodes);
+    public void publishAlertCreated(
+            String eventUid,
+            String alertUid,
+            Object data,
+            Set<Long> targetUserIds,
+            Set<String> targetRoleCodes) {
+        publish(
+                WsMessageType.ALERT_CREATED,
+                eventUid,
+                alertUid,
+                data,
+                targetUserIds,
+                targetRoleCodes);
     }
 
     public void publishAlertUpdated(String eventUid, String alertUid, Object data) {
@@ -108,7 +129,8 @@ public class AlertWsPublisher {
         }
     }
 
-    private void broadcast(WsPayload wsPayload, Set<Long> targetUserIds, Set<String> targetRoleCodes) {
+    private void broadcast(
+            WsPayload wsPayload, Set<Long> targetUserIds, Set<String> targetRoleCodes) {
         String messageText;
         try {
             messageText = objectMapper.writeValueAsString(wsPayload);
@@ -129,6 +151,7 @@ public class AlertWsPublisher {
             try {
                 synchronized (session) {
                     session.sendMessage(textMessage);
+                    wsMessagesSentCounter.increment();
                 }
             } catch (IOException e) {
                 log.warn("send ws message failed, sessionId={}", session.getId(), e);
@@ -136,9 +159,8 @@ public class AlertWsPublisher {
         }
     }
 
-    private boolean shouldSendToSession(WebSocketSession session,
-                                        Set<Long> targetUserIds,
-                                        Set<String> targetRoleCodes) {
+    private boolean shouldSendToSession(
+            WebSocketSession session, Set<Long> targetUserIds, Set<String> targetRoleCodes) {
         boolean hasUserFilter = targetUserIds != null && !targetUserIds.isEmpty();
         boolean hasRoleFilter = targetRoleCodes != null && !targetRoleCodes.isEmpty();
         if (!hasUserFilter && !hasRoleFilter) {
@@ -194,7 +216,8 @@ public class AlertWsPublisher {
         if (rawRoles instanceof Collection<?> collection) {
             Set<String> roleCodes = new LinkedHashSet<>();
             for (Object item : collection) {
-                String roleCode = StringUtils.upperCase(StringUtils.trimToEmpty(Objects.toString(item, "")));
+                String roleCode =
+                        StringUtils.upperCase(StringUtils.trimToEmpty(Objects.toString(item, "")));
                 if (StringUtils.isNotBlank(roleCode)) {
                     roleCodes.add(roleCode);
                 }

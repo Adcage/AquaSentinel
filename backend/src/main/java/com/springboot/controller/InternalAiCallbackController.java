@@ -1,12 +1,24 @@
 package com.springboot.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.ResultUtils;
 import com.springboot.constant.RoleConstant;
 import com.springboot.exception.BusinessException;
+import com.springboot.metrics.event.AlertEventReceivedEvent;
+import com.springboot.metrics.event.AlertProcessingCompletedEvent;
 import com.springboot.model.dto.internalai.InternalAiEventRequest;
 import com.springboot.model.entity.AiStreamTask;
 import com.springboot.model.entity.AlertRecord;
@@ -22,18 +34,10 @@ import com.springboot.service.MonitoringEventService;
 import com.springboot.service.impl.AlertDispatchRoutingService;
 import com.springboot.service.impl.AlertPushService;
 import com.springboot.websocket.AlertWsPublisher;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.UUID;
-import java.util.List;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,35 +50,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/ai")
 public class InternalAiCallbackController {
 
-    @Resource
-    private HmacSignatureVerifier hmacSignatureVerifier;
+    @Resource private HmacSignatureVerifier hmacSignatureVerifier;
+
+    @Resource private ObjectMapper objectMapper;
+
+    @Resource private MonitoringEventService monitoringEventService;
+
+    @Resource private AlertRecordService alertRecordService;
+
+    @Resource private AiStreamTaskService aiStreamTaskService;
+
+    @Resource private CameraDeviceService cameraDeviceService;
+
+    @Resource private AlertWsPublisher alertWsPublisher;
+
+    @Resource private AlertPushService alertPushService;
+
+    @Resource private AlertDispatchRoutingService alertDispatchRoutingService;
+
+    @Resource private LifeguardService lifeguardService;
 
     @Resource
-    private ObjectMapper objectMapper;
-
-    @Resource
-    private MonitoringEventService monitoringEventService;
-
-    @Resource
-    private AlertRecordService alertRecordService;
-
-    @Resource
-    private AiStreamTaskService aiStreamTaskService;
-
-    @Resource
-    private CameraDeviceService cameraDeviceService;
-
-    @Resource
-    private AlertWsPublisher alertWsPublisher;
-
-    @Resource
-    private AlertPushService alertPushService;
-
-    @Resource
-    private AlertDispatchRoutingService alertDispatchRoutingService;
-
-    @Resource
-    private LifeguardService lifeguardService;
+    private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
 
     @PostMapping("/events")
     @Transactional(rollbackFor = Exception.class)
@@ -83,17 +80,24 @@ public class InternalAiCallbackController {
             @RequestHeader("X-AI-Timestamp") String timestamp,
             @RequestHeader("X-AI-Signature") String signature,
             @RequestBody String requestBody) {
+        long startTime = System.currentTimeMillis();
         boolean verified = hmacSignatureVerifier.verify(key, timestamp, signature, requestBody);
         if (!verified) {
+            applicationEventPublisher.publishEvent(
+                    new AlertEventReceivedEvent(false, "HMAC_VERIFY_FAILED"));
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "回调签名校验失败");
         }
         InternalAiEventRequest request;
         try {
             request = objectMapper.readValue(requestBody, InternalAiEventRequest.class);
         } catch (Exception e) {
+            applicationEventPublisher.publishEvent(
+                    new AlertEventReceivedEvent(false, "DESERIALIZE_FAILED"));
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "回调报文格式错误");
         }
         if (request == null) {
+            applicationEventPublisher.publishEvent(
+                    new AlertEventReceivedEvent(false, "NULL_REQUEST"));
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "回调报文不能为空");
         }
         Long cameraId = request.getCameraId();
@@ -105,10 +109,14 @@ public class InternalAiCallbackController {
                 cameraId = cameraDevice.getId();
             }
         }
-        String eventType = StringUtils.defaultIfBlank(request.getEventType(), request.getRiskType());
-        if (StringUtils.isBlank(request.getEventUid()) || cameraId == null
+        String eventType =
+                StringUtils.defaultIfBlank(request.getEventType(), request.getRiskType());
+        if (StringUtils.isBlank(request.getEventUid())
+                || cameraId == null
                 || StringUtils.isBlank(eventType)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "eventUid/cameraId(or cameraCode)/eventType(or riskType)不能为空");
+            throw new BusinessException(
+                    ErrorCode.PARAMS_ERROR,
+                    "eventUid/cameraId(or cameraCode)/eventType(or riskType)不能为空");
         }
 
         QueryWrapper<MonitoringEvent> existsQuery = new QueryWrapper<>();
@@ -217,7 +225,8 @@ public class InternalAiCallbackController {
             Set<String> targetRoleCodes = new LinkedHashSet<>();
             targetRoleCodes.add(RoleConstant.SUPER_ADMIN);
             targetRoleCodes.add(RoleConstant.VENUE_ADMIN);
-            alertWsPublisher.publishAlertCreated(request.getEventUid(), alertUid, wsData, targetUserIds, targetRoleCodes);
+            alertWsPublisher.publishAlertCreated(
+                    request.getEventUid(), alertUid, wsData, targetUserIds, targetRoleCodes);
         } else {
             alertWsPublisher.publishAlertCreated(request.getEventUid(), alertUid, wsData);
         }
@@ -226,6 +235,12 @@ public class InternalAiCallbackController {
         data.put("eventId", monitoringEvent.getId());
         data.put("alertId", alertRecord.getId());
         data.put("alertUid", alertUid);
+
+        applicationEventPublisher.publishEvent(new AlertEventReceivedEvent(true, eventType));
+        applicationEventPublisher.publishEvent(
+                new AlertProcessingCompletedEvent(
+                        true, System.currentTimeMillis() - startTime, request.getEventUid()));
+
         return ResultUtils.success(data);
     }
 
@@ -243,7 +258,8 @@ public class InternalAiCallbackController {
         } catch (Exception ignored) {
         }
         try {
-            OffsetDateTime offsetDateTime = OffsetDateTime.parse(detectTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            OffsetDateTime offsetDateTime =
+                    OffsetDateTime.parse(detectTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
             return Date.from(offsetDateTime.toInstant());
         } catch (Exception ignored) {
         }
@@ -358,12 +374,12 @@ public class InternalAiCallbackController {
 
     private String buildDetectionResult(InternalAiEventRequest request) {
         StringBuilder sb = new StringBuilder();
-        
+
         // 添加位置描述
         if (StringUtils.isNotBlank(request.getPositionDesc())) {
             sb.append(request.getPositionDesc());
         }
-        
+
         // 从 extJson 中提取规则命中信息
         Map<String, Object> extMap = toMapObject(request.getExtJson());
         if (extMap != null) {
@@ -381,7 +397,7 @@ public class InternalAiCallbackController {
                 }
                 sb.append(String.join("、", rules));
             }
-            
+
             // 添加风险等级
             Object riskLevel = extMap.get("riskLevel");
             if (riskLevel != null) {
@@ -390,14 +406,14 @@ public class InternalAiCallbackController {
                 }
                 sb.append("风险等级：").append(riskLevel);
             }
-            
+
             // 添加持续时间
             Object durationSec = extMap.get("durationSec");
             if (durationSec != null) {
                 sb.append("，持续：").append(durationSec).append("秒");
             }
         }
-        
+
         if (sb.length() == 0) {
             return "AI检测到异常行为，请及时查看视频流确认现场情况";
         }
