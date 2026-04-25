@@ -1,6 +1,6 @@
 # 阶段一改造总结：消息可靠投递 + 系统可观测 + 代码规范化
 
-> 实施日期：2026-04-23
+> 实施日期：2026-04-24
 >
 > 对应规划文档：`docs/规划文档/backend-tech-upgrade-plan.md` 第 2 节
 
@@ -382,3 +382,59 @@ docker compose -f docker-compose.monitoring.yml up -d
 |------|------|
 | `docker-compose.monitoring.yml` | Prometheus + Grafana Docker Compose |
 | `monitoring/prometheus.yml` | Prometheus 抓取配置 |
+
+---
+
+## 九、端到端测试验证结果
+
+### 9.1 测试环境
+
+- RabbitMQ 3.12.13（本地安装，已运行）
+- Backend Spring Boot 3.2.3（本地启动）
+- Python 3.10 + pika（本地安装）
+
+### 9.2 测试步骤与结果
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| RabbitMQ 连接 | ✅ 通过 | Backend 成功连接到 127.0.0.1:5672 |
+| Exchange/Queue 声明 | ✅ 通过 | `alert.topic` Exchange + 3 个 Queue + 死信队列自动声明 |
+| Python 发布消息 | ✅ 通过 | pika 发布消息到 `alert.topic` Exchange，routing_key=`alert.record` |
+| 消息路由 | ✅ 通过 | 消息正确路由到 `alert.record.queue` |
+| Backend 消费消息 | ✅ 通过 | `AlertRecordConsumer` 成功从 Queue 消费，队列消息数降为 0 |
+| Prometheus 端点 | ✅ 通过 | `GET /api/actuator/prometheus` 正常暴露指标 |
+| 指标采集 | ✅ 通过 | `alert_events_dropped_total`、`ws_connections_active`、`rabbitmq_consumed_total` 等指标正常 |
+
+### 9.3 测试中发现并修复的问题
+
+| 问题 | 原因 | 修复 |
+|------|------|------|
+| RabbitMQ 认证失败 | `application.yml` 中 `localhost` 解析为 IPv6 地址，且密码默认值为 `change_me` | host 改为 `127.0.0.1`，密码默认值改为 `guest` |
+| 消息序列化失败 | `Jackson2JsonMessageConverter` 与 `String` 参数类型不兼容 | 移除全局 `Jackson2JsonMessageConverter`，消费者使用 `Message` 对象手动提取 body |
+| 消费者 ack 模式 | `acknowledge-mode=manual` 但消费者未手动 ack | 改为 `acknowledge-mode=auto`，与 Spring retry 机制配合 |
+
+### 9.4 2026-04-24 复测补充（前后端与数据库已启动）
+
+1. **前端到后端链路**：通过 `http://localhost:5173/api/actuator/health`（Vite 代理）成功返回 Backend 健康信息，确认前端代理链路正常。
+2. **Python→RabbitMQ→Java 消费链路**：
+   - 发送测试消息 `eventUid=evt_retest2_1777040470`
+   - `alert.record.queue` 消息数回到 `0`
+   - `alert_events_received_total{source="rabbitmq"}` 增量 `+1`
+   - `alert_events_dropped_total` 增量 `0`
+   说明消息被 Java 消费者成功反序列化并处理。
+3. **消息格式注意事项**：`publishedAt` 建议使用 ISO 时间字符串或可被 Java `Date` 正确解析的格式，避免使用 Python `time.time()` 产生的小数秒浮点格式。
+4. **通知/分析消费者状态**：仍保持默认禁用（配置开关控制），这是阶段化设计，后续阶段启用并接入真实业务处理。
+
+### 9.5 2026-04-24 二次复核（针对“是否真实端到端”）
+
+1. **使用 YOLO 侧真实发布器复测**：通过 `app/services/rabbitmq_publisher_service.py` 发布消息，不再使用临时脚本直接 publish。
+2. **修复并验证发布器兼容性问题**：
+   - 问题：YOLO 发布器声明队列时只带 `x-message-ttl`，与 Backend 已声明队列（包含死信参数）不一致，触发 `PRECONDITION_FAILED`。
+   - 修复：在 YOLO 发布器中补齐队列参数（`x-dead-letter-exchange`、`x-dead-letter-routing-key`）并先声明对应 `.dlq`。
+   - 效果：发布器 `connected=true`、`published=true`，可稳定连上并发送到 `alert.record`。
+3. **数据库落库证据**（最新一次复测）：
+   - `monitoring_event.event_uid = evt_yolo_e2e_1777046285`
+   - `monitoring_event.id = 13045`
+   - `alert_record.id = 14042`，`alert_uid = ALERT-c05c63ee618d4607ab746c0b6092b8fe`
+   - 说明“消息消费→写监控事件→写报警记录”链路已完整打通。
+4. **消息队列状态**：`alert.record.queue = 0`、`alert.notification.queue = 0`、`alert.analytics.queue = 0`，无积压。
