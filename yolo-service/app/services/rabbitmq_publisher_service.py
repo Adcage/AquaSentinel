@@ -137,8 +137,16 @@ class RabbitmqPublisherService:
             ("alert.notification", "alert.notification.queue"),
             ("alert.analytics", "alert.analytics.queue"),
         ]:
+            dlq_name = f"{queue_name}.dlq"
+            channel.queue_declare(queue=dlq_name, durable=True)
             channel.queue_declare(
-                queue=queue_name, durable=True, arguments={"x-message-ttl": 86400000}
+                queue=queue_name,
+                durable=True,
+                arguments={
+                    "x-message-ttl": 86400000,
+                    "x-dead-letter-exchange": "",
+                    "x-dead-letter-routing-key": dlq_name,
+                },
             )
             channel.queue_bind(
                 queue=queue_name, exchange=self._exchange, routing_key=rk

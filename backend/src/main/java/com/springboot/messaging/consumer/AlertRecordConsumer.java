@@ -27,6 +27,7 @@ import com.springboot.websocket.AlertWsPublisher;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -54,13 +55,14 @@ public class AlertRecordConsumer {
     @Resource private ApplicationEventPublisher eventPublisher;
 
     @RabbitListener(queues = "${app.messaging.rabbitmq.alert-record-queue:alert.record.queue}")
-    public void onMessage(String message) {
+    public void onMessage(Message message) {
         long startTime = System.currentTimeMillis();
+        String messageBody = new String(message.getBody(), java.nio.charset.StandardCharsets.UTF_8);
         AlertEventMessage eventMsg;
         try {
-            eventMsg = messageSerializer.deserialize(message, AlertEventMessage.class);
+            eventMsg = messageSerializer.deserialize(messageBody, AlertEventMessage.class);
         } catch (Exception e) {
-            log.error("报警消息反序列化失败: {}", message, e);
+            log.error("报警消息反序列化失败: {}", messageBody, e);
             eventPublisher.publishEvent(new AlertEventReceivedEvent(false, "DESERIALIZE_FAILED"));
             return;
         }

@@ -1,9 +1,12 @@
 package com.springboot.messaging.consumer;
 
+import java.nio.charset.StandardCharsets;
+
 import com.springboot.messaging.model.AlertEventMessage;
 import com.springboot.messaging.serializer.MessageSerializer;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,10 +31,11 @@ public class AlertAnalyticsConsumer {
 
     @RabbitListener(
             queues = "${app.messaging.rabbitmq.alert-analytics-queue:alert.analytics.queue}")
-    public void onMessage(String message) {
+    public void onMessage(Message message) {
+        String body = new String(message.getBody(), StandardCharsets.UTF_8);
         AlertEventMessage eventMsg;
         try {
-            eventMsg = messageSerializer.deserialize(message, AlertEventMessage.class);
+            eventMsg = messageSerializer.deserialize(body, AlertEventMessage.class);
         } catch (Exception e) {
             log.error("分析消息反序列化失败", e);
             return;
