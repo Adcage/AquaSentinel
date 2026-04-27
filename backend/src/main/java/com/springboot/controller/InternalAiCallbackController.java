@@ -25,6 +25,7 @@ import com.springboot.model.entity.AlertRecord;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.model.entity.Lifeguard;
 import com.springboot.model.entity.MonitoringEvent;
+import com.springboot.ratelimit.RateLimit;
 import com.springboot.security.HmacSignatureVerifier;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.AlertRecordService;
@@ -37,6 +38,7 @@ import com.springboot.websocket.AlertWsPublisher;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +75,13 @@ public class InternalAiCallbackController {
     @Resource
     private org.springframework.context.ApplicationEventPublisher applicationEventPublisher;
 
+    @RateLimiter(name = "yoloCallback")
+    @RateLimit(
+            capacity = 60,
+            refillRate = 60,
+            refillPeriodSeconds = 60,
+            keyType = "IP",
+            fallbackMessage = "AI回调请求过于频繁")
     @PostMapping("/events")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Map<String, Object>> receiveEvent(

@@ -20,6 +20,7 @@ import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
 import com.springboot.model.entity.AiStreamTask;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.model.vo.CameraDeviceVO;
+import com.springboot.ratelimit.RateLimit;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.websocket.AlertWsPublisher;
@@ -44,6 +45,12 @@ public class CameraDeviceController {
 
     @Resource private AiStreamTaskService aiStreamTaskService;
 
+    @RateLimit(
+            capacity = 10,
+            refillRate = 10,
+            refillPeriodSeconds = 60,
+            keyType = "USER",
+            fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/add")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Long> addCameraDevice(
@@ -70,6 +77,12 @@ public class CameraDeviceController {
         return ResultUtils.success(cameraDevice.getId());
     }
 
+    @RateLimit(
+            capacity = 10,
+            refillRate = 10,
+            refillPeriodSeconds = 60,
+            keyType = "USER",
+            fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/delete")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Boolean> deleteCameraDevice(@RequestBody DeleteRequest deleteRequest) {
@@ -94,6 +107,12 @@ public class CameraDeviceController {
         return ResultUtils.success(true);
     }
 
+    @RateLimit(
+            capacity = 10,
+            refillRate = 10,
+            refillPeriodSeconds = 60,
+            keyType = "USER",
+            fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/update")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Boolean> updateCameraDevice(
@@ -124,6 +143,12 @@ public class CameraDeviceController {
         return ResultUtils.success(true);
     }
 
+    @RateLimit(
+            capacity = 10,
+            refillRate = 10,
+            refillPeriodSeconds = 60,
+            keyType = "USER",
+            fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/edit")
     @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
     public BaseResponse<Boolean> editCameraDevice(

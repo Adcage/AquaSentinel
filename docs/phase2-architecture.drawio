@@ -1,0 +1,255 @@
+<mxfile host="opencode">
+  <diagram name="AquaSentinel 阶段二架构 - 限流与容错" id="phase2-arch">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1400" math="0" shadow="1">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ===== 标题 ===== -->
+        <mxCell id="title" value="AquaSentinel 阶段二架构 — 限流与容错双层防护" style="text;html=1;fontSize=22;fontStyle=1;fontColor=#333333;align=center;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="800" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 客户端层 ===== -->
+        <mxCell id="client-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="550" y="80" width="400" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="client-label" value="客户端（浏览器 / App / YOLO 回调）" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#666666;align=center;" vertex="1" parent="1">
+          <mxGeometry x="600" y="90" width="300" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="client-note" value="多个 IP 并发请求" style="text;html=1;fontSize=11;fontColor=#999999;align=center;" vertex="1" parent="1">
+          <mxGeometry x="650" y="120" width="200" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 第一层：全局限流 ===== -->
+        <mxCell id="layer1-title" value="第一层：全局限流（RateLimitFilter）" style="text;html=1;fontSize=15;fontStyle=1;fontColor=#FFFFFF;align=center;fillColor=#EF4444;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="190" width="300" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF5F5;strokeColor=#EF4444;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="230" width="1340" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="filter-step1" value="提取客户端 IP&lt;br&gt;（X-Forwarded-For /&lt;br&gt;X-Real-IP / remoteAddr）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#EF4444;fontSize=12;fontColor=#7F1D1D;" vertex="1" parent="1">
+          <mxGeometry x="100" y="260" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-step2" value="构建全局 Key&lt;br&gt;rate-limit:global:{ip}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#EF4444;fontSize=12;fontColor=#7F1D1D;" vertex="1" parent="1">
+          <mxGeometry x="370" y="260" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-step3" value="BucketFactory&lt;br&gt;.getLocalBucket()&lt;br&gt;★ 100 req/s/IP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#EF4444;fontSize=12;fontStyle=1;fontColor=#7F1D1D;" vertex="1" parent="1">
+          <mxGeometry x="620" y="260" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-step4a" value="✅ 放行&lt;br&gt;→ 下一层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=12;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="880" y="250" width="120" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-step4b" value="❌ 拒绝&lt;br&gt;HTTP 429&lt;br&gt;code=40301" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontSize=12;fontStyle=1;fontColor=#991B1B;" vertex="1" parent="1">
+          <mxGeometry x="880" y="295" width="120" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="filter-flow1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#EF4444;" edge="1" source="filter-step1" target="filter-step2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-flow2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#EF4444;" edge="1" source="filter-step2" target="filter-step3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-flow3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#EF4444;" edge="1" source="filter-step3" target="filter-step4a" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="filter-flow4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#EF4444;" edge="1" source="filter-step3" target="filter-step4b" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="filter-decision" value="bucket&lt;br&gt;.tryConsume(1)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontSize=11;fontColor=#7F1D1D;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="255" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 第二层：接口限流 ===== -->
+        <mxCell id="layer2-title" value="第二层：接口级限流（@RateLimit + RateLimitAspect）" style="text;html=1;fontSize=15;fontStyle=1;fontColor=#FFFFFF;align=center;fillColor=#F59E0B;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="370" width="380" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="410" width="1340" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="aspect-aop" value="AOP 拦截&lt;br&gt;@RateLimit 注解" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=12;fontColor=#78350F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="440" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-buildkey" value="buildKey()&lt;br&gt;keyType=USER/IP/GLOBAL&lt;br&gt;key = rate-limit:{key}:{suffix}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=12;fontColor=#78350F;" vertex="1" parent="1">
+          <mxGeometry x="330" y="435" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-bucket" value="BucketFactory&lt;br&gt;.getLocalBucket(key,&lt;br&gt;capacity, refillRate,&lt;br&gt;refillPeriodSeconds)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=12;fontColor=#78350F;" vertex="1" parent="1">
+          <mxGeometry x="640" y="435" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-pass" value="✅ 放行&lt;br&gt;执行 Controller" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=12;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="920" y="435" width="140" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-reject" value="❌ BusinessException&lt;br&gt;code=40301&lt;br&gt;HTTP 429" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontSize=12;fontStyle=1;fontColor=#991B1B;" vertex="1" parent="1">
+          <mxGeometry x="920" y="490" width="140" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- 示例注解 -->
+        <mxCell id="annotation-example" value="@RateLimit(&lt;br&gt;  capacity = 5,&lt;br&gt;  refillRate = 5,&lt;br&gt;  refillPeriodSeconds = 60,&lt;br&gt;  keyType = &quot;IP&quot;,&lt;br&gt;  fallbackMessage = &quot;登录请求过于频繁&quot;&lt;br&gt;)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#EA580C;fontSize=11;fontColor=#9A3412;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="430" width="270" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="aspect-flow1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F59E0B;" edge="1" source="aspect-aop" target="aspect-buildkey" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-flow2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F59E0B;" edge="1" source="aspect-buildkey" target="aspect-bucket" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-flow3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#16A34A;" edge="1" source="aspect-bucket" target="aspect-pass" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="aspect-flow4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#EF4444;" edge="1" source="aspect-bucket" target="aspect-reject" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 第三层：Resilience4j 容错 ===== -->
+        <mxCell id="layer3-title" value="第三层：Resilience4j 容错（CircuitBreaker + Retry + RateLimiter）" style="text;html=1;fontSize=15;fontStyle=1;fontColor=#FFFFFF;align=center;fillColor=#3366CC;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="570" width="420" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="resilience-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3366CC;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="610" width="1340" height="340" as="geometry"/>
+        </mxCell>
+
+        <!-- 熔断器 -->
+        <mxCell id="cb-title" value="CircuitBreaker 熔断器" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#3366CC;align=center;" vertex="1" parent="1">
+          <mxGeometry x="100" y="620" width="200" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="cb-closed" value="CLOSED&lt;br&gt;（正常放行）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=11;fontColor=#14532D;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="655" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cb-open" value="OPEN&lt;br&gt;（直接拒绝）&lt;br&gt;HTTP 503" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontSize=11;fontStyle=1;fontColor=#991B1B;" vertex="1" parent="1">
+          <mxGeometry x="340" y="655" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cb-half-open" value="HALF-OPEN&lt;br&gt;（试探放行）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=11;fontColor=#78350F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="720" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cb-fail-rate" value="FailureRate ≥ 50%&lt;br&gt;（近 10 次调用）&lt;br&gt;→ OPEN" style="text;html=1;fontSize=11;fontColor=#EF4444;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="710" width="160" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cb-flow1" value="失败率超阈值" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#EF4444;fontColor=#EF4444;" edge="1" source="cb-closed" target="cb-open" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="cb-flow2" value="等待30s" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F59E0B;fontColor=#F59E0B;" edge="1" source="cb-open" target="cb-half-open" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="cb-flow3" value="成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#16A34A;fontColor=#16A34A;" edge="1" source="cb-half-open" target="cb-closed" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- 重试 -->
+        <mxCell id="retry-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F9FF;strokeColor=#3366CC;" vertex="1" parent="1">
+          <mxGeometry x="530" y="640" width="260" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="retry-title" value="Retry 重试" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#3366CC;align=center;" vertex="1" parent="1">
+          <mxGeometry x="560" y="645" width="200" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="retry-detail" value="max-attempts = 3&lt;br&gt;wait-duration = 500ms&lt;br&gt;retry-exceptions:&lt;br&gt;  IOException&lt;br&gt;  TimeoutException&lt;br&gt;  ConnectException" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#3366CC;fontSize=11;fontColor=#1E40AF;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="540" y="675" width="240" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- Resilience4j RateLimiter -->
+        <mxCell id="rl-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F9FF;strokeColor=#3366CC;" vertex="1" parent="1">
+          <mxGeometry x="830" y="640" width="260" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="rl-title" value="Resilience4j RateLimiter" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#3366CC;align=center;" vertex="1" parent="1">
+          <mxGeometry x="850" y="645" width="220" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="rl-yolo-detail" value="yoloCallback:&lt;br&gt;  limitForPeriod = 10&lt;br&gt;  limitRefreshPeriod = 1s&lt;br&gt;  timeoutDuration = 5s" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#3366CC;fontSize=11;fontColor=#1E40AF;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="840" y="675" width="130" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="rl-device-detail" value="deviceControl:&lt;br&gt;  limitForPeriod = 2&lt;br&gt;  limitRefreshPeriod = 1s&lt;br&gt;  timeoutDuration = 5s" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#3366CC;fontSize=11;fontColor=#1E40AF;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="980" y="675" width="100" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- Fallback -->
+        <mxCell id="fallback-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F9FF;strokeColor=#3366CC;" vertex="1" parent="1">
+          <mxGeometry x="530" y="780" width="560" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="fallback-title" value="Fallback 降级处理（FallbackHandlers）" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#3366CC;align=center;" vertex="1" parent="1">
+          <mxGeometry x="600" y="785" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="fallback-yolo" value="onYoloCallbackFailure()&lt;br&gt;onStartTaskFailure()&lt;br&gt;onStopTaskFailure()&lt;br&gt;onGetTaskFailure()&lt;br&gt;onHealthCheckFailure()&lt;br&gt;onUpdateConfigFailure()&lt;br&gt;&lt;br&gt;→ 抛出 BusinessException&lt;br&gt;  &quot;AI引擎服务暂时不可用&quot;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#3366CC;fontSize=11;fontColor=#1E40AF;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="540" y="815" width="270" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="fallback-device" value="onDeviceControlFailure()&lt;br&gt;&lt;br&gt;→ 抛出 BusinessException&lt;br&gt;  &quot;设备控制服务暂时不可用&quot;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#3366CC;fontSize=11;fontColor=#1E40AF;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="830" y="815" width="250" height="105" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 降级到 GlobalExceptionHandler ===== -->
+        <mxCell id="exception-title" value="全局异常处理（GlobalExceptionHandler）" style="text;html=1;fontSize=15;fontStyle=1;fontColor=#FFFFFF;align=center;fillColor=#8B5CF6;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="970" width="340" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="exception-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1010" width="1340" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="exc-40301" value="BusinessException(40301)&lt;br&gt;→ HTTP 429&lt;br&gt;Too Many Requests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=12;fontColor=#78350F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="1030" width="200" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="exc-503" value="CallNotPermittedException&lt;br&gt;→ HTTP 503&lt;br&gt;Service Unavailable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontSize=12;fontColor=#991B1B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1030" width="210" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="exc-50000" value="BusinessException(50000)&lt;br&gt;→ HTTP 500&lt;br&gt;降级兜底" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#3366CC;fontSize=12;fontColor=#1E40AF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1030" width="200" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="exc-40000" value="BusinessException(40000)&lt;br&gt;→ HTTP 400&lt;br&gt;参数/业务错误" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#3366CC;fontSize=12;fontColor=#1E40AF;" vertex="1" parent="1">
+          <mxGeometry x="860" y="1030" width="210" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="exc-more" value="40100→401&lt;br&gt;40101/40300→403&lt;br&gt;..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#9CA3AF;fontSize=11;fontColor=#6B7280;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="1030" width="270" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 箭头连接各层 ===== -->
+        <mxCell id="arrow-client-to-filter" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=2;" edge="1" source="client-box" target="filter-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow-filter-to-aspect" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=2;" edge="1" source="filter-box" target="aspect-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow-aspect-to-resilience" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=2;" edge="1" source="aspect-box" target="resilience-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow-resilience-to-exception" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=2;" edge="1" source="resilience-box" target="exception-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 右侧：Bucket4j 令牌桶工厂 ===== -->
+        <mxCell id="bucket-title" value="Bucket4j 令牌桶工厂（BucketFactory）" style="text;html=1;fontSize=13;fontStyle=1;fontColor=#27BC9F;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="230" width="300" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="bucket-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#27BC9F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="260" width="300" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="bucket-local" value="本地桶（Local）&lt;br&gt;ConcurrentHashMap&lt;br&gt;★ 当前启用" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=12;fontColor=#14532D;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1450" y="290" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="bucket-local-detail" value="Bandwidth.builder()&lt;br&gt;  .capacity(capacity)&lt;br&gt;  .refillGreedy(refillRate,&lt;br&gt;    Duration.ofSeconds(refillPeriod))&lt;br&gt;  .initialTokens(capacity)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=10;fontColor=#14532D;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="1450" y="370" width="260" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="bucket-remote" value="分布式桶（Redis）&lt;br&gt;Bucket4j-redis&lt;br&gt;✗ 当前未启用" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#9CA3AF;fontSize=12;fontColor=#6B7280;" vertex="1" parent="1">
+          <mxGeometry x="1450" y="460" width="260" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- key 结构说明 -->
+        <mxCell id="key-title" value="限流 Key 结构" style="text;html=1;fontSize=13;fontStyle=1;fontColor=#27BC9F;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="530" width="300" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="key-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#27BC9F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="560" width="300" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="key-example-1" value="rate-limit:global:{ip}&lt;br&gt;（全局 IP 限流）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=11;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="1445" y="575" width="270" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="key-example-2" value="rate-limit:auth-login:{ip}&lt;br&gt;（IP 限流）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=11;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="1445" y="615" width="270" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="key-example-3" value="rate-limit:camera-edit:{userId}&lt;br&gt;（用户限流）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=11;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="1445" y="655" width="270" height="30" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

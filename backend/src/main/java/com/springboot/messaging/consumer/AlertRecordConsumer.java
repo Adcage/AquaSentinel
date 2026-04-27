@@ -171,8 +171,18 @@ public class AlertRecordConsumer {
         alertRecordService.validAlertRecord(alertRecord, true);
         alertRecordService.save(alertRecord);
 
-        boolean appPushed = alertPushService.pushToApp(alertRecord);
-        boolean pcPushed = alertPushService.pushToPc(alertRecord);
+        boolean appPushed = false;
+        boolean pcPushed = false;
+        try {
+            appPushed = alertPushService.pushToApp(alertRecord);
+        } catch (Exception e) {
+            log.error("APP推送失败, alertUid={}, 不影响报警写入", alertUid, e);
+        }
+        try {
+            pcPushed = alertPushService.pushToPc(alertRecord);
+        } catch (Exception e) {
+            log.error("PC推送失败, alertUid={}, 不影响报警写入", alertUid, e);
+        }
         AlertRecord pushUpdate = new AlertRecord();
         pushUpdate.setId(alertRecord.getId());
         pushUpdate.setPushed_to_app(appPushed ? 1 : 0);
@@ -204,14 +214,18 @@ public class AlertRecordConsumer {
         wsData.put("emergencyContactPhone", eventMsg.getEmergencyContactPhone());
 
         Set<Long> targetUserIds = resolveVenueTargetUserIds(venueId, assignee);
-        if (!targetUserIds.isEmpty()) {
-            Set<String> targetRoleCodes = new LinkedHashSet<>();
-            targetRoleCodes.add("SUPER_ADMIN");
-            targetRoleCodes.add("VENUE_ADMIN");
-            alertWsPublisher.publishAlertCreated(
-                    eventUid, alertUid, wsData, targetUserIds, targetRoleCodes);
-        } else {
-            alertWsPublisher.publishAlertCreated(eventUid, alertUid, wsData);
+        try {
+            if (!targetUserIds.isEmpty()) {
+                Set<String> targetRoleCodes = new LinkedHashSet<>();
+                targetRoleCodes.add("SUPER_ADMIN");
+                targetRoleCodes.add("VENUE_ADMIN");
+                alertWsPublisher.publishAlertCreated(
+                        eventUid, alertUid, wsData, targetUserIds, targetRoleCodes);
+            } else {
+                alertWsPublisher.publishAlertCreated(eventUid, alertUid, wsData);
+            }
+        } catch (Exception e) {
+            log.warn("WebSocket广播失败, alertUid={}, 不影响报警写入", alertUid, e);
         }
 
         log.info(
