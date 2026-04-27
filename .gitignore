@@ -4,8 +4,8 @@ Thumbs.db
 *.swp
 *.swo
 .idea/
-.vscode/*
-!.vscode/extensions.json
+**/.vscode/*
+!**/.vscode/extensions.json
 *.iml
 
 # ===== Logs / Temp =====
