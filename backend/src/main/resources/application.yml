@@ -1,4 +1,74 @@
 # 公共配置文件
+
+# Resilience4j 容错配置
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 3s
+        slow-call-rate-threshold: 50
+        permitted-number-of-calls-in-half-open-state: 3
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - java.net.ConnectException
+          - org.springframework.web.client.ResourceAccessException
+    instances:
+      yoloCallback:
+        base-config: default
+      deviceControl:
+        base-config: default
+        failure-rate-threshold: 60
+        slow-call-duration-threshold: 2s
+        wait-duration-in-open-state: 20s
+  retry:
+    instances:
+      yoloCallback:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - java.net.ConnectException
+      deviceControl:
+        max-attempts: 3
+        wait-duration: 300ms
+        retry-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - java.net.ConnectException
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+    instances:
+      yoloCallback:
+        base-config: default
+        timeout-duration: 5s
+      slowQuery:
+        base-config: default
+        timeout-duration: 3s
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 0
+    instances:
+      yoloCallback:
+        base-config: default
+        limit-for-period: 10
+      deviceControl:
+        base-config: default
+        limit-for-period: 2
+
 spring:
   application:
     name: springboot
@@ -43,6 +113,16 @@ spring:
       port: 6379
       connect-timeout: 5s
       password: 123456
+  # Redisson 配置 (分布式限流后端)
+  redisson:
+    config: |
+      singleServerConfig:
+        address: "redis://127.0.0.1:6379"
+        database: 1
+        password: "123456"
+        connectionPoolSize: 16
+        connectionMinimumIdleSize: 4
+      nettyThreads: 4
   # Elasticsearch 配置
   # todo 需替换配置，然后取消注释
 #  elasticsearch:
@@ -156,6 +236,49 @@ app:
       notification-consumer-enabled: false
       analytics-consumer-enabled: false
       message-ttl: 86400000
+  # 接口限流配置
+  rate-limit:
+    enabled: true
+    distributed: true
+    global-capacity: 100
+    global-refill-rate: 100
+    global-refill-period-seconds: 1
+    endpoints:
+      auth-login:
+        capacity: 5
+        refill-rate: 5
+        refill-period-seconds: 60
+        key-type: IP
+      auth-admin-login:
+        capacity: 3
+        refill-rate: 3
+        refill-period-seconds: 60
+        key-type: IP
+      auth-register:
+        capacity: 3
+        refill-rate: 3
+        refill-period-seconds: 60
+        key-type: IP
+      auth-refresh:
+        capacity: 10
+        refill-rate: 10
+        refill-period-seconds: 60
+        key-type: IP
+      auth-captcha:
+        capacity: 20
+        refill-rate: 20
+        refill-period-seconds: 60
+        key-type: IP
+      ai-callback:
+        capacity: 60
+        refill-rate: 60
+        refill-period-seconds: 60
+        key-type: IP
+      device-control:
+        capacity: 2
+        refill-rate: 2
+        refill-period-seconds: 1
+        key-type: USER
 # Actuator + Prometheus 指标暴露
 management:
   endpoints:
