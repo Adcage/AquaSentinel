@@ -73,3 +73,10 @@ yolo-service/model/drowning-v11-x.pt
 
 # ===== Useless =====
 nul
+
+# ===== Local workspace / EDA temp =====
+.claude/
+firmware/hardware/.history/
+firmware/hardware/*.tmp
+firmware/hardware/~*.lck
+firmware/hardware/*.kicad_prl
