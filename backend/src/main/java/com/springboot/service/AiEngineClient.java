@@ -14,9 +14,13 @@ import com.springboot.exception.BusinessException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class AiEngineClient {
 
@@ -35,6 +39,8 @@ public class AiEngineClient {
                         .build();
     }
 
+    @Retry(name = "yoloCallback", fallbackMethod = "onStartTaskFailure")
+    @CircuitBreaker(name = "yoloCallback", fallbackMethod = "onStartTaskFailure")
     public Map<String, Object> startTask(
             String taskCode,
             String cameraCode,
@@ -72,16 +78,22 @@ public class AiEngineClient {
         return startTask(taskCode, cameraCode, streamUrl, frameIntervalMs, displayStreamUrl, null);
     }
 
+    @Retry(name = "yoloCallback", fallbackMethod = "onStopTaskFailure")
+    @CircuitBreaker(name = "yoloCallback", fallbackMethod = "onStopTaskFailure")
     public Map<String, Object> stopTask(String taskCode) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("task_code", taskCode);
         return postJson(appAiEngineProperties.getStopPath(), payload);
     }
 
+    @Retry(name = "yoloCallback", fallbackMethod = "onGetTaskFailure")
+    @CircuitBreaker(name = "yoloCallback", fallbackMethod = "onGetTaskFailure")
     public Map<String, Object> getTask(String taskCode) {
         return getTask(taskCode, null);
     }
 
+    @Retry(name = "yoloCallback", fallbackMethod = "onGetTaskFailure")
+    @CircuitBreaker(name = "yoloCallback", fallbackMethod = "onGetTaskFailure")
     public Map<String, Object> getTask(String taskCode, Integer timeoutMs) {
         String url = joinUrl(appAiEngineProperties.getStatusPath() + "/" + taskCode);
         try {
@@ -111,6 +123,7 @@ public class AiEngineClient {
         }
     }
 
+    @CircuitBreaker(name = "yoloCallback", fallbackMethod = "onHealthCheckFailure")
     public Map<String, Object> healthCheck() {
         String url = joinUrl(appAiEngineProperties.getHealthPath());
         try {
@@ -140,6 +153,8 @@ public class AiEngineClient {
         return appAiEngineProperties.getCallbackUrl();
     }
 
+    @Retry(name = "yoloCallback", fallbackMethod = "onUpdateConfigFailure")
+    @CircuitBreaker(name = "yoloCallback", fallbackMethod = "onUpdateConfigFailure")
     public Map<String, Object> updateTaskConfig(String taskCode, Double drowningAlertThresholdSec) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("task_code", taskCode);
@@ -189,5 +204,49 @@ public class AiEngineClient {
         String base = StringUtils.removeEnd(appAiEngineProperties.getBaseUrl(), "/");
         String suffix = StringUtils.prependIfMissing(path, "/");
         return base + suffix;
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> onStartTaskFailure(
+            String taskCode,
+            String cameraCode,
+            String streamUrl,
+            Integer frameIntervalMs,
+            String displayStreamUrl,
+            Double drowningAlertThresholdSec,
+            Throwable t) {
+        log.error("AI引擎启动任务失败 [startTask]: {}", t.getMessage());
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI引擎服务暂时不可用，请稍后重试");
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> onStopTaskFailure(String taskCode, Throwable t) {
+        log.error("AI引擎停止任务失败 [stopTask]: {}", t.getMessage());
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI引擎服务暂时不可用，请稍后重试");
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> onGetTaskFailure(String taskCode, Throwable t) {
+        log.error("AI引擎查询任务失败 [getTask]: {}", t.getMessage());
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI引擎服务暂时不可用，请稍后重试");
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> onGetTaskFailure(String taskCode, Integer timeoutMs, Throwable t) {
+        log.error("AI引擎查询任务失败 [getTask]: {}", t.getMessage());
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI引擎服务暂时不可用，请稍后重试");
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> onHealthCheckFailure(Throwable t) {
+        log.error("AI引擎健康检查失败 [healthCheck]: {}", t.getMessage());
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI引擎服务暂时不可用，请稍后重试");
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> onUpdateConfigFailure(
+            String taskCode, Double drowningAlertThresholdSec, Throwable t) {
+        log.error("AI引擎更新配置失败 [updateTaskConfig]: {}", t.getMessage());
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI引擎服务暂时不可用，请稍后重试");
     }
 }
