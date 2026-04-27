@@ -1,0 +1,1088 @@
+{
+    "$schema": "https://schemas.kicad.org/erc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-04-27T13:35:26",
+    "ignored_checks": [
+        {
+            "description": "Global label only appears once in the schematic",
+            "key": "single_global_label"
+        },
+        {
+            "description": "Four connection points are joined together",
+            "key": "four_way_junction"
+        },
+        {
+            "description": "SPICE model issue",
+            "key": "simulation_model_issue"
+        },
+        {
+            "description": "Assigned footprint doesn't match footprint filters",
+            "key": "footprint_filter"
+        }
+    ],
+    "included_severities": [
+        "error",
+        "warning",
+        "exclusion"
+    ],
+    "kicad_version": "10.0.1",
+    "sheets": [
+        {
+            "path": "/",
+            "uuid_path": "/25f67548-b97e-48b4-8d42-b7e185000f19",
+            "violations": [
+                {
+                    "description": "Pin not connected",
+                    "items": [
+                        {
+                            "description": "引脚 9 [???, ?]",
+                            "pos": {
+                                "x": 0.7874,
+                                "y": 0.635
+                            },
+                            "uuid": "64fb287c-b5dd-4577-8294-dcf0c5b9ccdb"
+                        }
+                    ],
+                    "severity": "error",
+                    "type": "pin_not_connected"
+                },
+                {
+                    "description": "Label not connected",
+                    "items": [
+                        {
+                            "description": "标签 'UART_ESP_TX'",
+                            "pos": {
+                                "x": 0.8636,
+                                "y": 0.6604
+                            },
+                            "uuid": "09a06bb8-bf09-4746-b7af-79cf4bdd2c9f"
+                        }
+                    ],
+                    "severity": "error",
+                    "type": "label_dangling"
+                },
+                {
+                    "description": "Label not connected",
+                    "items": [
+                        {
+                            "description": "标签 'UART_ESP_RX'",
+                            "pos": {
+                                "x": 0.8636,
+                                "y": 0.6858
+                            },
+                            "uuid": "13242747-c11a-48e8-97fc-529cf036ac60"
+                        }
+                    ],
+                    "severity": "error",
+                    "type": "label_dangling"
+                },
+                {
+                    "description": "Pin not connected",
+                    "items": [
+                        {
+                            "description": "引脚 12 [???, ?]",
+                            "pos": {
+                                "x": 1.1938,
+                                "y": 0.635
+                            },
+                            "uuid": "70b963ab-3132-4665-b787-55c8bb8ec5b0"
+                        }
+                    ],
+                    "severity": "error",
+                    "type": "pin_not_connected"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 0.6858,
+                                "y": 0.6096
+                            },
+                            "uuid": "af3e6365-17a6-42dd-835c-c99afe9bca9a"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 0.6858,
+                                "y": 0.635
+                            },
+                            "uuid": "6e7a1837-8183-4bbf-a70e-f6bf52c1bde9"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.4953
+                            },
+                            "uuid": "bcc6553d-f299-4d47-a751-66b4a3d6d34c"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.5207
+                            },
+                            "uuid": "98120ae4-4566-4c39-b5ad-5b39fc0cd52a"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.1778 mm",
+                            "pos": {
+                                "x": 0.7366,
+                                "y": 0.6604
+                            },
+                            "uuid": "96345b27-c82f-4d7a-9878-876603212789"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.5461
+                            },
+                            "uuid": "2591597a-c72d-4dd6-83aa-60ff93d7d284"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.2032 mm",
+                            "pos": {
+                                "x": 0.7366,
+                                "y": 0.6858
+                            },
+                            "uuid": "f5eb667d-e841-4393-a101-a1c3ee136333"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.5715
+                            },
+                            "uuid": "3877e840-c4f6-4e71-bdae-f40545d7c718"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.5969
+                            },
+                            "uuid": "3eaf765b-a578-4947-a1fd-7ce8df7662d0"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.6223
+                            },
+                            "uuid": "7a9aa755-32ba-4f4e-b63c-fe9f75073a80"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.6477
+                            },
+                            "uuid": "c46df398-a9cf-4f43-b9dd-4f2784b8b34a"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.6731
+                            },
+                            "uuid": "7c4f3369-9c5d-4ae7-9335-c8d6a2c9d622"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.6985
+                            },
+                            "uuid": "468734ad-c23d-4495-a622-e1961fd27c6f"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.7239
+                            },
+                            "uuid": "7c17951f-e357-42d4-8a0d-b0dbdb5dcdb0"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.7493
+                            },
+                            "uuid": "9f628bac-b961-4b04-b4b0-f142dc7453c5"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 0.8382,
+                                "y": 0.7747
+                            },
+                            "uuid": "778b0f18-ec15-4ce8-a331-d55b30cf52d2"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'VCC_3V3'",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.5588
+                            },
+                            "uuid": "2094aef3-79e3-4a6b-a47b-ed253bc848f7"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.508
+                            },
+                            "uuid": "1a828d11-0443-4e9d-b53e-46be1fc8faad"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.5334
+                            },
+                            "uuid": "02bf626c-5a51-414b-be56-28407797e249"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'SERVO_PAN'",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.635
+                            },
+                            "uuid": "f0a1b725-fc3e-4d94-b058-c43d79f3303b"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.5588
+                            },
+                            "uuid": "3168bd0c-6688-4902-9a23-32b37feb7ae7"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.2794
+                            },
+                            "uuid": "6a7331ca-4a7d-4269-9f7b-2fc2b642530a"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'SERVO_TILT'",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.6604
+                            },
+                            "uuid": "20d66bb7-ae61-4ff7-8672-74b28a8c2f6b"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.3048
+                            },
+                            "uuid": "11d56303-4bb2-4631-9720-bdb2da7f8236"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.2286 mm",
+                            "pos": {
+                                "x": 0.9144,
+                                "y": 0.5842
+                            },
+                            "uuid": "8f87cf04-2352-47f3-803d-22e2328dc9d3"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.3302
+                            },
+                            "uuid": "58855551-a2e1-4463-ab91-8df3d30be9d3"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'I2C_SCL'",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.6858
+                            },
+                            "uuid": "3798af89-8b9e-41fc-8d51-d59f11ed4237"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.3556
+                            },
+                            "uuid": "0daa4db2-d94d-4683-a100-b1ac555c1be8"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.2032 mm",
+                            "pos": {
+                                "x": 0.9398,
+                                "y": 0.6096
+                            },
+                            "uuid": "970eb477-760c-4bc0-bb20-d28cb9a50c53"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.381
+                            },
+                            "uuid": "e8872acd-a7c9-4797-9838-3a0ae7268743"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'I2C_SDA'",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.7112
+                            },
+                            "uuid": "0dcb4989-bc44-4f64-9c84-0d532712eabe"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.635
+                            },
+                            "uuid": "a1b6ecb9-ad26-46c8-a1d1-1749084acfa4"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.4064
+                            },
+                            "uuid": "4b9238b2-fb7b-48ea-9e59-f4cdd514d25d"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.4318
+                            },
+                            "uuid": "9f2e714f-c4f5-4fd5-9c2d-73319a5d363d"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.6604
+                            },
+                            "uuid": "3e87bb30-8038-4701-9856-cd70d3a9fa8a"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.4572
+                            },
+                            "uuid": "69047d0f-e8bc-4517-b150-8973177c33c4"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.6858
+                            },
+                            "uuid": "ae394212-37e8-4c8f-924c-f0f3f07334b4"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.4826
+                            },
+                            "uuid": "23e87d85-aab3-4748-ad04-e2d8165db751"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.508
+                            },
+                            "uuid": "77e3d7a9-9452-47b2-bb66-1ee76d0997fd"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.7112
+                            },
+                            "uuid": "cf75cc42-91e0-4cc5-82b8-ad233b919439"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.5334
+                            },
+                            "uuid": "c9a07455-97f6-41e6-8263-ff02c4c4730b"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.7366
+                            },
+                            "uuid": "0b264dc8-965c-46c1-8b25-42794a71781b"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.5588
+                            },
+                            "uuid": "0dbbf647-1cea-4fe3-8e74-41cee1f2ced0"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "未连接的连线端点",
+                    "items": [
+                        {
+                            "description": "水平线, 长度 0.0508 mm",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.762
+                            },
+                            "uuid": "84b75621-4b11-446e-954a-7771642c11ec"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "unconnected_wire_endpoint"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.5842
+                            },
+                            "uuid": "5c13f4eb-1629-4ff5-bf89-f9f14d782fc7"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.6096
+                            },
+                            "uuid": "b39f549e-c358-46da-a99d-f1d492b6e2bc"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.635
+                            },
+                            "uuid": "ec7e204e-fab8-4296-bf5f-6eb143774f8d"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.6604
+                            },
+                            "uuid": "c2c5f9d8-3622-4f3b-a325-39bf3fcaa340"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.6858
+                            },
+                            "uuid": "7da6fa4e-91f2-4dcb-a761-eb4e1d774eb5"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.7112
+                            },
+                            "uuid": "5cc03f75-d716-4787-a575-4dd158ec9661"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'BTN_USER'",
+                            "pos": {
+                                "x": 1.0922,
+                                "y": 0.9398
+                            },
+                            "uuid": "0a05c7a6-0461-4420-baf7-a7874fa14366"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.7366
+                            },
+                            "uuid": "0d3914fd-0e18-45c9-b2c6-98515090eb04"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.762
+                            },
+                            "uuid": "6d8bb8bd-88f2-4b03-b311-0de92c2363ad"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.7874
+                            },
+                            "uuid": "9a55a2df-95ca-45dd-af84-4986359f7791"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.8128
+                            },
+                            "uuid": "f4384bde-c19e-4702-820b-91f31e9c8097"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.8382
+                            },
+                            "uuid": "08913035-e43e-43d4-b3af-56aa43fe2b3c"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.8636
+                            },
+                            "uuid": "536d41c2-b0bc-48bf-91a8-1cf8d41b65db"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.889
+                            },
+                            "uuid": "0f00f4a3-6587-4cff-875b-d84337cbe534"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.9144
+                            },
+                            "uuid": "29ec91c0-e1c8-4198-a7d8-0b42e44ad9c1"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.9652
+                            },
+                            "uuid": "cc5b84cb-d6d5-4fb5-8607-cf9882020b5c"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Unconnected \"no connection\" flag",
+                    "items": [
+                        {
+                            "description": "没有连接",
+                            "pos": {
+                                "x": 1.2446,
+                                "y": 0.9906
+                            },
+                            "uuid": "b0822aaf-ece1-40e2-ad35-a4a7de85d60a"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "no_connect_dangling"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'SERVO_PAN'",
+                            "pos": {
+                                "x": 1.5748,
+                                "y": 0.5842
+                            },
+                            "uuid": "29dfff24-8e31-4cb7-ae7c-d8218dda68b4"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'SERVO_TILT'",
+                            "pos": {
+                                "x": 1.5748,
+                                "y": 0.762
+                            },
+                            "uuid": "09f89756-7a93-4f69-a9c1-cb70b4b79d7b"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'VCC_3V3'",
+                            "pos": {
+                                "x": 1.5748,
+                                "y": 0.9652
+                            },
+                            "uuid": "1fc089fd-fe92-4b03-b3c1-810693fe9b51"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'I2C_SCL'",
+                            "pos": {
+                                "x": 1.5748,
+                                "y": 1.016
+                            },
+                            "uuid": "dbf0677e-f1f3-42d9-9611-8f68ed17e48d"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                },
+                {
+                    "description": "Label connected to only one pin",
+                    "items": [
+                        {
+                            "description": "标签 'I2C_SDA'",
+                            "pos": {
+                                "x": 1.5748,
+                                "y": 1.0414
+                            },
+                            "uuid": "66ff3fb7-ed3c-4df6-a6e1-2c099c7a3ecc"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "isolated_pin_label"
+                }
+            ]
+        }
+    ],
+    "source": "aquasentinel-hardware.kicad_sch"
+}
