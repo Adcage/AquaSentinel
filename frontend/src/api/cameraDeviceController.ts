@@ -136,3 +136,18 @@ export async function batchDisableCameraDevices(
     ...(options || {}),
   });
 }
+
+/** 此处后端没有提供注释 POST /cameras/batch/delete */
+export async function batchDeleteCameraDevices(
+  body: API.CameraDeviceBatchDeleteRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBatchOperateResultVO>("/cameras/batch/delete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

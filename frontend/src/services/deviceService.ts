@@ -1,5 +1,6 @@
 import {
   addCameraDevice,
+  batchDeleteCameraDevices,
   deleteCameraDevice,
   listCameraDeviceVoByPage,
   updateCameraDevice,
@@ -161,4 +162,13 @@ export const removeDevice = async (id: string) => {
   });
   unwrapApiData<boolean>(response, "删除设备失败");
   return true;
+};
+
+export const batchRemoveDevices = async (ids: string[]) => {
+  const response = await batchDeleteCameraDevices({ cameraIds: ids.map(Number) });
+  const result = unwrapApiData<API.BatchOperateResultVO>(response, "批量删除失败");
+  return {
+    success: (result.successIds ?? []).map(String),
+    failed: (result.failed ?? []).map((item) => ({ id: String(item.id ?? ""), reason: item.reason || "删除失败" })),
+  };
 };

@@ -69,6 +69,21 @@ export async function action(
   });
 }
 
+/** 此处后端没有提供注释 POST /alerts/batch/action */
+export async function batchAction(
+  body: API.AlertBatchActionRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBatchOperateResultVO>("/alerts/batch/action", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 此处后端没有提供注释 POST /alerts/list/page */
 export async function listByPage(
   body: API.AlertRecordQueryRequest,

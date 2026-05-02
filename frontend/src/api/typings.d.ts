@@ -98,6 +98,13 @@ declare namespace API {
     assigneeLifeguardId?: number;
   };
 
+  type AlertBatchActionRequest = {
+    alertIds?: number[];
+    actionType?: string;
+    actionNote?: string;
+    assigneeLifeguardId?: number;
+  };
+
   type AlertDisposal = {
     id?: number;
     alert_id?: number;

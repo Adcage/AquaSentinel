@@ -266,8 +266,16 @@ const handleBatchResolve = async () => {
   }
   const records = selection.value;
   try {
-    await markAlarmsResolved(records);
-    ElMessage.success(`已提交批量处理，共 ${records.length} 条记录`);
+    const result = await markAlarmsResolved(records);
+    if (result.failedCount > 0 && result.successCount > 0) {
+      ElMessage.warning(
+        `已处理 ${result.successCount} 条，${result.failedCount} 条失败`,
+      );
+    } else if (result.failedCount > 0) {
+      ElMessage.error(`批量处理失败，共 ${result.failedCount} 条失败`);
+    } else {
+      ElMessage.success(`已提交批量处理，共 ${result.successCount} 条记录`);
+    }
     await fetchTable();
   } catch (e) {
     ElMessage.error(

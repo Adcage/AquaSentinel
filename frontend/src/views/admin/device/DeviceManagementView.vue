@@ -73,6 +73,9 @@
             <el-button class="admin-round-btn" @click="handleBatchDisable"
               >批量禁用</el-button
             >
+            <el-button class="admin-round-btn" @click="handleBatchDelete"
+              >批量删除</el-button
+            >
             <el-dropdown @command="handleExportMaintenance">
               <el-button class="admin-round-btn">
                 导出维护记录
@@ -188,13 +191,14 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowDown } from "@element-plus/icons-vue";
 import { onMounted, reactive, ref } from "vue";
 import DeviceFormDialog from "@/components/business/DeviceFormDialog.vue";
 import PageTable from "@/components/business/PageTable.vue";
 import StatusTag from "@/components/common/StatusTag.vue";
 import {
+  batchRemoveDevices,
   getDevicePage,
   removeDevice,
   type DeviceQuery,
@@ -353,6 +357,39 @@ const handleBatchDisable = async () => {
     ElMessage.error(`${lines.join("；")}${rest}`);
   }
   if (successCount > 0) ElMessage.success(`已成功禁用 ${successCount} 台设备`);
+  await fetchTable();
+};
+
+const handleBatchDelete = async () => {
+  if (!selectedRows.value.length) {
+    ElMessage.warning("请先选择设备");
+    return;
+  }
+  const count = selectedRows.value.length;
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${count} 台设备吗？此操作不可恢复。`,
+      "确认删除",
+      {
+        confirmButtonText: "删除",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
+  }
+  const ids = selectedRows.value.map((row) => row.id);
+  const result = await batchRemoveDevices(ids);
+  const successCount = result.success.length;
+  const failedCount = result.failed.length;
+  if (failedCount > 0 && successCount > 0) {
+    ElMessage.warning(`删除了 ${successCount} 台设备，${failedCount} 台失败`);
+  } else if (failedCount > 0) {
+    ElMessage.error(`删除失败`);
+  } else {
+    ElMessage.success(`已成功删除 ${successCount} 台设备`);
+  }
   await fetchTable();
 };
 

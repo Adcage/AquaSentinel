@@ -1,4 +1,4 @@
-import { action, listByPage } from "@/api/alertActionController";
+import { batchAction, listByPage } from "@/api/alertActionController";
 import type {
   AlarmStatus,
   PageQuery,
@@ -129,16 +129,19 @@ export const getAlarmPage = async (
 };
 
 export const markAlarmsResolved = async (records: AlarmRecord[]) => {
-  for (const record of records) {
-    const alertId = record.dbId;
-    if (!alertId) {
-      continue;
-    }
-    const response = await action({
-      alertId,
-      actionType: "DONE",
-    });
-    unwrapApiData<Record<string, unknown>>(response, "提交报警处理失败");
+  const alertIds = records
+    .map((record) => Number(record.dbId ?? 0))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  if (!alertIds.length) {
+    return { successCount: 0, failedCount: 0 };
   }
-  return true;
+  const response = await batchAction({
+    alertIds,
+    actionType: "DONE",
+  });
+  const result = unwrapApiData<API.BatchOperateResultVO>(response, "批量处理失败");
+  return {
+    successCount: Number(result.successCount ?? 0),
+    failedCount: Number(result.failedCount ?? 0),
+  };
 };
