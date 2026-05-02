@@ -65,6 +65,10 @@
               <span>{{ isSocketConnected ? "实时连接" : "连接断开" }}</span>
             </div>
             <el-divider direction="vertical" />
+            <el-button text class="icon-button" @click="toggleAiChat">
+              <el-icon :size="18"><ChatDotRound /></el-icon>
+            </el-button>
+            <el-divider direction="vertical" />
             <el-badge :value="pendingAlarmCount" :max="99" class="alarm-badge">
               <el-button
                 text
@@ -104,11 +108,18 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <AiChatPanel
+      v-if="showAiChat"
+      class="ai-chat-sidebar"
+      :show-close="true"
+      @close="showAiChat = false"
+    />
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { Bell, Expand, Fold, User } from "@element-plus/icons-vue";
+import { Bell, Expand, Fold, User, ChatDotRound } from "@element-plus/icons-vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { Component } from "vue";
@@ -120,6 +131,7 @@ import {
   alertWsService,
   type WsConnectionStatus,
 } from "@/services/alertWsService";
+import AiChatPanel from "@/components/business/AiChatPanel.vue";
 
 interface MenuItem {
   key: string;
@@ -137,6 +149,7 @@ const pendingAlarmCount = ref(0);
 const currentUserName = ref("系统管理员");
 const isAlertDialogVisible = ref(false);
 const pendingAlertQueue = ref<Record<string, unknown>[]>([]);
+const showAiChat = ref(false);
 
 const menuItems = computed((): MenuItem[] => {
   const adminRoute = router
@@ -356,6 +369,10 @@ const handleLogout = async () => {
   await logoutCurrentUser();
   ElMessage.success("已退出登录");
   router.push("/user/login");
+};
+
+const toggleAiChat = () => {
+  showAiChat.value = !showAiChat.value;
 };
 
 onMounted(async () => {
@@ -691,5 +708,20 @@ onUnmounted(() => {
 .admin-layout :deep(.drowning-alert-dialog .el-button--primary) {
   background: #cf1322;
   border-color: #cf1322;
+}
+
+.ai-chat-sidebar {
+  position: fixed;
+  right: 24px;
+  top: 64px;
+  bottom: 24px;
+  width: 420px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
 }
 </style>

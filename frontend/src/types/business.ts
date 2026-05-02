@@ -119,3 +119,32 @@ export interface PageResult<T> {
   list: T[];
   total: number;
 }
+
+export interface AiConversation {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiChatMessageItem {
+  id: number;
+  role: "user" | "assistant" | "function";
+  content: string;
+  functionName?: string;
+  functionArgs?: string;
+  functionResult?: string;
+  tokensUsed?: number;
+  createdAt: string;
+}
+
+export interface SimilarAlertItem {
+  alertId: number;
+  alertUid: string;
+  alertType: string;
+  alertStatus: string;
+  incidentLocation: string;
+  detectionResult: string;
+  createdAt: string;
+  similarity?: number;
+}

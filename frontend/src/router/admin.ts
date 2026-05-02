@@ -7,6 +7,7 @@ import {
   User,
   UserFilled,
   Warning,
+  ChatDotRound,
 } from "@element-plus/icons-vue";
 import BackendLayout from "@/layouts/BackendLayout.vue";
 
@@ -83,6 +84,15 @@ const adminRoutes: RouteRecordRaw = {
       meta: {
         title: "统计分析",
         group: { key: "analysis-group", title: "统计分析", icon: Histogram },
+      },
+    },
+    {
+      path: "ai-chat",
+      name: "AiChat",
+      component: () => import("@/views/admin/aiChat/AiChatView.vue"),
+      meta: {
+        title: "AI 助手",
+        group: { key: "intelligence-group", title: "智能分析", icon: ChatDotRound },
       },
     },
     {
