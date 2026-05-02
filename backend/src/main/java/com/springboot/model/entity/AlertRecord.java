@@ -65,6 +65,10 @@ public class AlertRecord implements Serializable {
     @TableField(value = "detection_result")
     private String detection_result;
 
+    /** AI智能分析结果 */
+    @TableField(value = "ai_analysis")
+    private String ai_analysis;
+
     /** 是否推送到App */
     @TableField(value = "pushed_to_app")
     private Integer pushed_to_app;

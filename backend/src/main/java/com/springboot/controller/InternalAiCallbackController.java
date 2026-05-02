@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.springboot.ai.analysis.AlertAnalysisEvent;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.ResultUtils;
@@ -249,6 +250,9 @@ public class InternalAiCallbackController {
         applicationEventPublisher.publishEvent(
                 new AlertProcessingCompletedEvent(
                         true, System.currentTimeMillis() - startTime, request.getEventUid()));
+
+        applicationEventPublisher.publishEvent(
+                new AlertAnalysisEvent(this, alertRecord.getId(), alertRecord.getAlert_type()));
 
         return ResultUtils.success(data);
     }
