@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeDateTime, toLocalDateTimeString } from '@/services/serviceUtils'
+import {
+  isRateLimitError,
+  normalizeApiErrorMessage,
+  normalizeDateTime,
+  toLocalDateTimeString,
+  unwrapApiData,
+} from '@/services/serviceUtils'
 
 const toExpectedLocalDateTime = (value: string | Date) => {
   const date = value instanceof Date ? value : new Date(value)
@@ -23,5 +29,24 @@ describe('serviceUtils time formatter', () => {
     const value = new Date('2026-04-01T06:00:00.000Z')
 
     expect(toLocalDateTimeString(value)).toBe(toExpectedLocalDateTime(value))
+  })
+})
+
+describe('serviceUtils rate limit error', () => {
+  it('recognizes rate limit by business code', () => {
+    expect(isRateLimitError(40301, '任意文案')).toBe(true)
+  })
+
+  it('normalizes rate limit message when unwrap envelope failed', () => {
+    expect(() =>
+      unwrapApiData(
+        { data: { code: 40301, message: '设备操作请求过于频繁' } },
+        '批量禁用失败',
+      ),
+    ).toThrow('操作过于频繁，请稍后再试')
+  })
+
+  it('keeps non-rate-limit messages unchanged', () => {
+    expect(normalizeApiErrorMessage('普通业务异常', 50000)).toBe('普通业务异常')
   })
 })

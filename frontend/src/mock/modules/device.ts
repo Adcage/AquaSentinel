@@ -10,6 +10,7 @@ export const deviceRecordsMock: DeviceRecord[] = [
     streamUrl: 'mock://camera/a-ne',
     status: 'online',
     maintenanceCycleDays: 30,
+    enabled: 1,
   },
   {
     id: 'DEV-002',
@@ -20,6 +21,7 @@ export const deviceRecordsMock: DeviceRecord[] = [
     streamUrl: 'mock://camera/a-sw',
     status: 'offline',
     maintenanceCycleDays: 15,
+    enabled: 1,
   },
   {
     id: 'DEV-003',
@@ -30,6 +32,7 @@ export const deviceRecordsMock: DeviceRecord[] = [
     streamUrl: 'mock://camera/b-platform',
     status: 'error',
     maintenanceCycleDays: 7,
+    enabled: 1,
   },
   {
     id: 'DEV-004',
@@ -40,5 +43,6 @@ export const deviceRecordsMock: DeviceRecord[] = [
     streamUrl: 'mock://camera/c-center',
     status: 'online',
     maintenanceCycleDays: 30,
+    enabled: 1,
   },
 ]

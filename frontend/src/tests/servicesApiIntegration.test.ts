@@ -11,7 +11,7 @@ import {
   updateCameraDevice,
 } from '@/api/cameraDeviceController'
 import { listLifeguardVoByPage } from '@/api/lifeguardController'
-import { getOverview, ranking, trend } from '@/api/statsController'
+import { getOverview, ranking } from '@/api/statsController'
 import { listUserPageVo } from '@/api/userController'
 import { listVenueVoByPage } from '@/api/venueController'
 import { getAlarmPage, markAlarmsResolved } from '@/services/alarmService'
@@ -57,7 +57,6 @@ vi.mock('@/api/venueController', () => ({
 }))
 
 const mockedGetOverview = vi.mocked(getOverview)
-const mockedTrend = vi.mocked(trend)
 const mockedRanking = vi.mocked(ranking)
 const mockedListCameraDeviceVoByPage = vi.mocked(listCameraDeviceVoByPage)
 const mockedAddCameraDevice = vi.mocked(addCameraDevice)
@@ -228,6 +227,7 @@ describe('services real api integration', () => {
       streamUrl: 'rtsp://new',
       status: 'online',
       maintenanceCycleDays: 30,
+      enabled: 1,
     })
     await updateDevice('501', {
       name: '新设备2',
@@ -237,6 +237,7 @@ describe('services real api integration', () => {
       streamUrl: 'rtsp://new2',
       status: 'error',
       maintenanceCycleDays: 7,
+      enabled: 1,
     })
     await removeDevice('501')
 

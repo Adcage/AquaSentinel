@@ -121,3 +121,18 @@ export async function updateCameraDevice(
     ...(options || {}),
   });
 }
+
+/** 此处后端没有提供注释 POST /cameras/batch/disable */
+export async function batchDisableCameraDevices(
+  body: API.CameraDeviceBatchDisableRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBatchOperateResultVO>("/cameras/batch/disable", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

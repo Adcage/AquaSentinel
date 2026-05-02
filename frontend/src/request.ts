@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import router from "@/router";
+import { normalizeApiErrorMessage } from "@/services/serviceUtils";
 
 const MAX_CONSECUTIVE_ERRORS = 3;
 let consecutiveErrorCount = 0;
@@ -36,6 +37,9 @@ myAxios.interceptors.response.use(
     const backendMessage = (
       error?.response?.data as { message?: string } | undefined
     )?.message;
+    const backendCode = (error?.response?.data as { code?: number } | undefined)
+      ?.code;
+    const normalizedMessage = normalizeApiErrorMessage(backendMessage, backendCode);
 
     consecutiveErrorCount++;
 
@@ -46,7 +50,9 @@ myAxios.interceptors.response.use(
       ElMessage.error("登录已过期，请重新登录");
       router.push("/user/login");
     } else if (status === 500 && consecutiveErrorCount <= MAX_CONSECUTIVE_ERRORS) {
-      ElMessage.error(backendMessage || "服务器异常，请稍后重试");
+      ElMessage.error(normalizedMessage || "服务器异常，请稍后重试");
+    } else if (status === 429) {
+      ElMessage.warning(normalizedMessage || "操作过于频繁，请稍后再试");
     }
 
     const networkMessage = (() => {
@@ -60,7 +66,7 @@ myAxios.interceptors.response.use(
       return `请求失败（${status}）`;
     })();
 
-    return Promise.reject(new Error(backendMessage || networkMessage));
+    return Promise.reject(new Error(normalizedMessage || networkMessage));
   },
 );
 

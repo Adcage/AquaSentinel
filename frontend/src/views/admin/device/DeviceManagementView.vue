@@ -200,7 +200,10 @@ import {
   type DeviceQuery,
 } from "@/services/deviceService";
 import { getDeviceMaintenancePage } from "@/services/adminIntegrationService";
-import { updateCameraDevice } from "@/api/cameraDeviceController";
+import {
+  batchDisableCameraDevices,
+  updateCameraDevice,
+} from "@/api/cameraDeviceController";
 import { useVenueRemoteSelect } from "@/composables/useVenueRemoteSelect";
 import { unwrapApiData } from "@/services/serviceUtils";
 import type { DeviceRecord } from "@/types/business";
@@ -337,19 +340,17 @@ const handleBatchDisable = async () => {
     ElMessage.warning("请先选择设备");
     return;
   }
-  let successCount = 0;
-  for (const row of selectedRows.value) {
-    try {
-      const res = await updateCameraDevice({
-        id: Number(row.id),
-        enabled: 0,
-        deviceStatus: "OFFLINE",
-      });
-      unwrapApiData<boolean>(res, "禁用失败");
-      successCount++;
-    } catch (e) {
-      ElMessage.error(`设备 ${row.name} 禁用失败`);
-    }
+  const cameraIds = selectedRows.value.map((row) => Number(row.id));
+  const res = await batchDisableCameraDevices({ cameraIds });
+  const result = unwrapApiData<API.BatchOperateResultVO>(res, "批量禁用失败");
+  const successCount = Number(result.successCount ?? 0);
+  const failed = result.failed ?? [];
+  if (failed.length > 0) {
+    const lines = failed
+      .slice(0, 3)
+      .map((item) => `设备 ${item.id ?? "-"}：${item.reason || "禁用失败"}`);
+    const rest = failed.length > 3 ? `；另有 ${failed.length - 3} 台设备失败` : "";
+    ElMessage.error(`${lines.join("；")}${rest}`);
   }
   if (successCount > 0) ElMessage.success(`已成功禁用 ${successCount} 台设备`);
   await fetchTable();

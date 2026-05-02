@@ -2,6 +2,7 @@ interface ApiEnvelope<T> {
   code?: number;
   data?: T;
   message?: string;
+  requestId?: string;
 }
 
 interface ApiHttpResponse<T> {
@@ -9,6 +10,8 @@ interface ApiHttpResponse<T> {
 }
 
 const SUCCESS_CODE = 0;
+const RATE_LIMIT_CODE = 40301;
+const RATE_LIMIT_TEXT = /请求过于频繁|操作过于频繁/;
 
 const LOCAL_DATETIME_PATTERN =
   /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/;
@@ -27,9 +30,26 @@ export const unwrapApiData = <T>(
     throw new Error(fallbackMessage);
   }
   if (payload.code !== SUCCESS_CODE) {
+    if (isRateLimitError(payload.code, payload.message)) {
+      throw new Error("操作过于频繁，请稍后再试");
+    }
     throw new Error(payload.message || fallbackMessage);
   }
   return payload.data as T;
+};
+
+export const isRateLimitError = (code?: number, message?: string) => {
+  if (code === RATE_LIMIT_CODE) {
+    return true;
+  }
+  return RATE_LIMIT_TEXT.test((message || "").trim());
+};
+
+export const normalizeApiErrorMessage = (message?: string, code?: number) => {
+  if (isRateLimitError(code, message)) {
+    return "操作过于频繁，请稍后再试";
+  }
+  return message;
 };
 
 export const toLocalDateTimeString = (value: unknown) => {

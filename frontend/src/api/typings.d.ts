@@ -320,6 +320,13 @@ declare namespace API {
     requestId?: string;
   };
 
+  type BaseResponseBatchOperateResultVO = {
+    code?: number;
+    data?: BatchOperateResultVO;
+    message?: string;
+    requestId?: string;
+  };
+
   type BaseResponseCameraDevice = {
     code?: number;
     data?: CameraDevice;
@@ -854,6 +861,10 @@ declare namespace API {
     lastHeartbeatAt?: string;
   };
 
+  type CameraDeviceBatchDisableRequest = {
+    cameraIds?: number[];
+  };
+
   type CameraDeviceEditRequest = {
     id?: number;
     zoneId?: number;
@@ -911,6 +922,18 @@ declare namespace API {
     lastHeartbeatAt?: string;
     createdAt?: string;
     updatedAt?: string;
+  };
+
+  type BatchOperateResultVO = {
+    successIds?: number[];
+    failed?: FailedItem[];
+    successCount?: number;
+    failedCount?: number;
+  };
+
+  type FailedItem = {
+    id?: number;
+    reason?: string;
   };
 
   type CameraMaintenanceLog = {

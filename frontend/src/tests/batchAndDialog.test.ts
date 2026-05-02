@@ -1,5 +1,6 @@
 import { mount } from "@vue/test-utils";
 import ElementPlus, { ElMessage } from "element-plus";
+import { createPinia } from "pinia";
 import { nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,6 +18,7 @@ const flushPromises = async () => {
 // ─── 用 vi.hoisted 声明跨 mock 引用的 spy（vi.mock 会被提升到文件顶部）────────
 const {
   mockUpdateCameraDevice,
+  mockBatchDisableCameraDevices,
   mockAddCameraDevice,
   mockGetCameraDeviceVoById,
   mockUpdateLifeguard,
@@ -27,6 +29,17 @@ const {
 } = vi.hoisted(() => ({
   mockUpdateCameraDevice: vi.fn(async () => ({
     data: { code: 0, data: true },
+  })),
+  mockBatchDisableCameraDevices: vi.fn(async () => ({
+    data: {
+      code: 0,
+      data: {
+        successIds: [2],
+        failed: [],
+        successCount: 1,
+        failedCount: 0,
+      },
+    },
   })),
   mockAddCameraDevice: vi.fn(async () => ({ data: { code: 0, data: 1 } })),
   mockGetCameraDeviceVoById: vi.fn(async () => ({
@@ -234,6 +247,7 @@ vi.mock("@/services/authService", () => ({
 // ─── Mock API 控制器 ───────────────────────────────────────────────────────────
 vi.mock("@/api/cameraDeviceController", () => ({
   updateCameraDevice: mockUpdateCameraDevice,
+  batchDisableCameraDevices: mockBatchDisableCameraDevices,
   addCameraDevice: mockAddCameraDevice,
   getCameraDeviceVoById: mockGetCameraDeviceVoById,
   listCameraDeviceVoByPage: vi.fn(async () => ({
@@ -319,7 +333,7 @@ vi.mock("@/api/venueController", () => ({
 const findButton = (wrapper: ReturnType<typeof mount>, text: string) =>
   wrapper.findAll("button").find((b) => b.text().trim().includes(text));
 
-const globalOpts = { plugins: [ElementPlus] };
+const globalOpts = { plugins: [ElementPlus, createPinia()] };
 
 // ─── 批量操作 - 空选择警告 ─────────────────────────────────────────────────────
 describe("批量操作 - 空选择时显示警告", () => {
@@ -390,6 +404,7 @@ describe("批量操作 - 空选择时显示警告", () => {
 describe("批量操作 - 勾选行后调用正确API", () => {
   beforeEach(() => {
     mockUpdateCameraDevice.mockClear();
+    mockBatchDisableCameraDevices.mockClear();
     mockUpdateLifeguard.mockClear();
     mockUpdateUser.mockClear();
     vi.spyOn(ElMessage as any, "success").mockImplementation(() => ({
@@ -427,7 +442,7 @@ describe("批量操作 - 勾选行后调用正确API", () => {
     );
   });
 
-  it("设备管理：批量禁用以 enabled=0 调用 updateCameraDevice", async () => {
+  it("设备管理：批量禁用调用 batchDisableCameraDevices", async () => {
     const wrapper = mount(DeviceManagementView, { global: globalOpts });
     await flushPromises();
 
@@ -449,9 +464,9 @@ describe("批量操作 - 勾选行后调用正确API", () => {
     await findButton(wrapper, "批量禁用")?.trigger("click");
     await flushPromises();
 
-    expect(mockUpdateCameraDevice).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 2, enabled: 0, deviceStatus: "OFFLINE" }),
-    );
+    expect(mockBatchDisableCameraDevices).toHaveBeenCalledWith({
+      cameraIds: [2],
+    });
   });
 
   it("救生员管理：批量启用以 auditStatus=APPROVED 调用 updateLifeguard", async () => {
@@ -739,7 +754,9 @@ describe("对话框保存 - 表单验证失败显示警告", () => {
         phone: "13800000001",
       }),
     );
-    const payload = mockAddLifeguard.mock.calls[0][0];
+    const calls = mockAddLifeguard.mock.calls as unknown as [args: unknown[]][];
+    expect(calls.length).toBeGreaterThan(0);
+    const payload = calls[0][0] as { username?: string; password?: string };
     expect(payload.username).toBeUndefined();
     expect(payload.password).toBeUndefined();
   });
@@ -781,7 +798,9 @@ describe("对话框保存 - 表单验证失败显示警告", () => {
         fullName: "李四",
       }),
     );
-    const payload = mockAddLifeguard.mock.calls[0][0];
+    const calls = mockAddLifeguard.mock.calls as unknown as [args: unknown[]][];
+    expect(calls.length).toBeGreaterThan(0);
+    const payload = calls[0][0] as { userId?: number };
     expect(payload.userId).toBeUndefined();
   });
 });
