@@ -281,13 +281,6 @@ const outFenceCount = computed(
     tableData.value.filter((item) => item.dutyStatus === "out_of_fence").length,
 );
 
-const resolveTargetLifeguardId = (): string => {
-  if (currentLifeguardId.value) return currentLifeguardId.value;
-  if (selectedRows.value.length === 1) return selectedRows.value[0].id;
-  if (tableData.value.length > 0) return tableData.value[0].id;
-  return "";
-};
-
 const resolveTargetVenueId = (): string => {
   if (currentVenueId.value) return currentVenueId.value;
   if (currentLifeguardId.value) {
@@ -301,18 +294,6 @@ const resolveTargetVenueId = (): string => {
   if (selectedRows.value.length === 1) return selectedRows.value[0].venueId;
   if (tableData.value.length > 0) return tableData.value[0].venueId;
   return "";
-};
-
-const openMapTrajectory = () => {
-  const targetId = resolveTargetLifeguardId();
-  if (!targetId) {
-    ElMessage.warning("暂无可查看轨迹的救生员");
-    return;
-  }
-  currentLifeguardId.value = targetId;
-  const current = tableData.value.find((item) => item.id === targetId);
-  currentVenueId.value = current?.venueId || "";
-  trajectoryDialogVisible.value = true;
 };
 
 const openFenceConfig = () => {
@@ -382,12 +363,6 @@ const handleBatchDisable = async () => {
 const handleEdit = (row: LifeguardRecord) => {
   currentLifeguardId.value = row.id;
   editDialogVisible.value = true;
-};
-
-const handleViewTrajectory = (row: LifeguardRecord) => {
-  currentLifeguardId.value = row.id;
-  currentVenueId.value = row.venueId;
-  trajectoryDialogVisible.value = true;
 };
 
 const handleFenceConfig = (row: LifeguardRecord) => {

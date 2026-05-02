@@ -369,7 +369,6 @@ describe("admin pages ui completion", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("泳池实时总人数");
-    expect(wrapper.text()).toContain("实时来源");
     expect(wrapper.text()).not.toContain("TODO_REAL_API");
     expect(wrapper.text()).not.toContain("TODO_MOCK_DATA");
   });
@@ -416,7 +415,6 @@ describe("admin pages ui completion", () => {
 
     expect(wrapper.text()).toContain("在岗地图监控");
     expect(wrapper.text()).toContain("新增救生员");
-    expect(wrapper.text()).toContain("查看轨迹");
     expect(wrapper.find(".lifeguard-main-grid").exists()).toBe(true);
     expect(wrapper.find(".map-card").exists()).toBe(true);
     expect(wrapper.text()).toContain("在岗人数");

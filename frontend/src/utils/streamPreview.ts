@@ -40,8 +40,8 @@ const resolveWhepByTemplate = (
 
   const resolvedPath = trimLeadingSlash(
     pathTemplate
-      .replaceAll("{cameraCode}", encodeURIComponent(cameraCode || ""))
-      .replaceAll("{cameraId}", encodeURIComponent(String(cameraId || ""))),
+      .replace(/\{cameraCode\}/g, encodeURIComponent(cameraCode || ""))
+      .replace(/\{cameraId\}/g, encodeURIComponent(String(cameraId || ""))),
   );
 
   if (!resolvedPath || resolvedPath.includes("%7B") || resolvedPath.includes("%7D")) {

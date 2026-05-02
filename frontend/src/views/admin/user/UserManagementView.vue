@@ -202,14 +202,7 @@ const selectedRows = ref<UserRecord[]>([]);
 const roleTree = ref<RoleTreeNode[]>([]);
 const coreRoles = ref<CoreRoleItem[]>([]);
 const selectedRoleKey = ref<CoreRoleKey | "">("");
-const {
-  venueOptions,
-  venueLoading,
-  loadNextPage,
-  handleVenueRemoteSearch,
-  handleVenueVisibleChange,
-  handleVenuePopupScroll,
-} = useVenueRemoteSelect<string>({
+const { loadNextPage } = useVenueRemoteSelect<string>({
   valueType: "string",
   errorMessage: "获取场馆列表失败",
 });

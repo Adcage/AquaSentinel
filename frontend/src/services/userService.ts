@@ -1,4 +1,5 @@
 import { listUserPageVo } from '@/api/userController'
+import type { AxiosResponse } from 'axios'
 import type { PageQuery, PageResult, UserRecord } from '@/types/business'
 import { unwrapApiData } from '@/services/serviceUtils'
 
@@ -97,7 +98,7 @@ export const listLinkableLifeguardUsers = async (
     status: 1,
   }
 
-  const requests: Array<Promise<API.BaseResponsePageUserVO>> = []
+  const requests: Array<Promise<AxiosResponse<API.BaseResponsePageUserVO>>> = []
   if (!trimmedKeyword) {
     requests.push(listUserPageVo(baseQuery))
   } else {

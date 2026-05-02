@@ -537,33 +537,6 @@ const cameraSpan = computed(() => {
   return 8;
 });
 
-const realtimeSourceText = computed(() => {
-  if (realtimeSourceMode.value === "ws") {
-    return "WS";
-  }
-  if (realtimeSourceMode.value === "recovering") {
-    return "恢复中";
-  }
-  return "连接中";
-});
-
-const realtimeSourceClass = computed(() => {
-  if (realtimeSourceMode.value === "ws") {
-    return "is-ws";
-  }
-  if (realtimeSourceMode.value === "recovering") {
-    return "is-recovering";
-  }
-  return "is-connecting";
-});
-
-const realtimeSourceReasonText = computed(() => {
-  if (!isDev) {
-    return "";
-  }
-  return realtimeSourceReason.value;
-});
-
 onMounted(async () => {
   window.addEventListener(
     "drowning-alert-camera-focus",
