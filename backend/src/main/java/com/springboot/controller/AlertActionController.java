@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.springboot.annotation.AuthCheck;
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.ResultUtils;
@@ -13,11 +14,14 @@ import com.springboot.constant.RoleConstant;
 import com.springboot.exception.BusinessException;
 import com.springboot.exception.ThrowUtils;
 import com.springboot.model.dto.alertrecord.AlertActionRequest;
+import com.springboot.model.dto.alertrecord.AlertBatchActionRequest;
 import com.springboot.model.dto.alertrecord.AlertRecordQueryRequest;
 import com.springboot.model.entity.AlertDisposal;
 import com.springboot.model.entity.AlertRecord;
 import com.springboot.model.entity.MonitoringEvent;
 import com.springboot.model.vo.AlertRecordVO;
+import com.springboot.model.vo.BatchOperateResultVO;
+import com.springboot.ratelimit.RateLimit;
 import com.springboot.security.AuthContextHolder;
 import com.springboot.security.AuthUserContext;
 import com.springboot.service.AlertDisposalService;
@@ -189,5 +193,63 @@ public class AlertActionController {
         data.put("status", latestAlert == null ? null : latestAlert.getAlert_status());
         data.put("disposalId", alertDisposal.getId());
         return ResultUtils.success(data);
+    }
+
+    @RateLimit(
+            capacity = 5,
+            refillRate = 5,
+            refillPeriodSeconds = 60,
+            key = "alert:batch:action",
+            keyType = "USER",
+            fallbackMessage = "报警批量处置请求过于频繁")
+    @PostMapping("/batch/action")
+    @AuthCheck(
+            mustRole =
+                    RoleConstant.VENUE_ADMIN
+                            + ","
+                            + RoleConstant.LIFEGUARD
+                            + ","
+                            + RoleConstant.SUPER_ADMIN)
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResponse<BatchOperateResultVO> batchAction(
+            @RequestBody AlertBatchActionRequest request) {
+        if (request == null || request.getAlertIds() == null || request.getAlertIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "报警ID列表不能为空");
+        }
+        if (request.getAlertIds().size() > 200) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "单次最多处理200条报警");
+        }
+        String actionType = StringUtils.trimToEmpty(request.getActionType()).toUpperCase();
+        if (!"DONE".equals(actionType)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "当前仅支持批量标记已处理");
+        }
+        BatchOperateResultVO result = new BatchOperateResultVO();
+        for (Long alertId : request.getAlertIds()) {
+            if (alertId == null || alertId <= 0) {
+                appendBatchFailed(result, alertId, "报警ID无效");
+                continue;
+            }
+            AlertActionRequest singleRequest = new AlertActionRequest();
+            singleRequest.setAlertId(alertId);
+            singleRequest.setActionType(actionType);
+            singleRequest.setAssigneeLifeguardId(request.getAssigneeLifeguardId());
+            singleRequest.setActionNote(request.getActionNote());
+            try {
+                action(singleRequest);
+                result.getSuccessIds().add(alertId);
+            } catch (BusinessException ex) {
+                appendBatchFailed(result, alertId, ex.getMessage());
+            }
+        }
+        result.setSuccessCount(result.getSuccessIds().size());
+        result.setFailedCount(result.getFailed().size());
+        return ResultUtils.success(result);
+    }
+
+    private void appendBatchFailed(BatchOperateResultVO result, Long id, String reason) {
+        BatchOperateResultVO.FailedItem failedItem = new BatchOperateResultVO.FailedItem();
+        failedItem.setId(id);
+        failedItem.setReason(reason);
+        result.getFailed().add(failedItem);
     }
 }
