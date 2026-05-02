@@ -11,6 +11,7 @@ import com.springboot.exception.BusinessException;
 import com.springboot.mapper.CameraDeviceMapper;
 import com.springboot.model.dto.cameradevice.CameraDeviceQueryRequest;
 import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.vo.BatchOperateResultVO;
 import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.service.CameraDeviceService;
 import com.springboot.utils.SqlUtils;
@@ -169,5 +170,41 @@ public class CameraDeviceServiceImpl extends ServiceImpl<CameraDeviceMapper, Cam
             return new ArrayList<>();
         }
         return cameraDeviceList.stream().map(this::getCameraDeviceVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public BatchOperateResultVO batchDisableCameraDevices(List<Long> cameraIds) {
+        BatchOperateResultVO result = new BatchOperateResultVO();
+        for (Long cameraId : cameraIds) {
+            if (cameraId == null || cameraId <= 0) {
+                appendFailed(result, cameraId, "设备ID无效");
+                continue;
+            }
+            CameraDevice cameraDevice = this.getById(cameraId);
+            if (cameraDevice == null || Objects.equals(cameraDevice.getIs_delete(), 1)) {
+                appendFailed(result, cameraId, "设备不存在");
+                continue;
+            }
+            CameraDevice toUpdate = new CameraDevice();
+            toUpdate.setId(cameraId);
+            toUpdate.setEnabled(0);
+            toUpdate.setDevice_status("OFFLINE");
+            boolean updated = this.updateById(toUpdate);
+            if (!updated) {
+                appendFailed(result, cameraId, "禁用失败");
+                continue;
+            }
+            result.getSuccessIds().add(cameraId);
+        }
+        result.setSuccessCount(result.getSuccessIds().size());
+        result.setFailedCount(result.getFailed().size());
+        return result;
+    }
+
+    private void appendFailed(BatchOperateResultVO result, Long id, String reason) {
+        BatchOperateResultVO.FailedItem failedItem = new BatchOperateResultVO.FailedItem();
+        failedItem.setId(id);
+        failedItem.setReason(reason);
+        result.getFailed().add(failedItem);
     }
 }

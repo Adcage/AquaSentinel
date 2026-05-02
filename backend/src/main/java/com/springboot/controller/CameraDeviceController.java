@@ -13,12 +13,14 @@ import com.springboot.constant.RoleConstant;
 import com.springboot.exception.BusinessException;
 import com.springboot.exception.ThrowUtils;
 import com.springboot.model.dto.cameradevice.CameraDeviceAddRequest;
+import com.springboot.model.dto.cameradevice.CameraDeviceBatchDisableRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceEditRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceQueryRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceUpdateRequest;
 import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
 import com.springboot.model.entity.AiStreamTask;
 import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.vo.BatchOperateResultVO;
 import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.ratelimit.RateLimit;
 import com.springboot.service.AiStreamTaskService;
@@ -49,6 +51,7 @@ public class CameraDeviceController {
             capacity = 10,
             refillRate = 10,
             refillPeriodSeconds = 60,
+            key = "camera:add",
             keyType = "USER",
             fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/add")
@@ -81,6 +84,7 @@ public class CameraDeviceController {
             capacity = 10,
             refillRate = 10,
             refillPeriodSeconds = 60,
+            key = "camera:delete",
             keyType = "USER",
             fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/delete")
@@ -111,6 +115,7 @@ public class CameraDeviceController {
             capacity = 10,
             refillRate = 10,
             refillPeriodSeconds = 60,
+            key = "camera:update",
             keyType = "USER",
             fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/update")
@@ -147,6 +152,7 @@ public class CameraDeviceController {
             capacity = 10,
             refillRate = 10,
             refillPeriodSeconds = 60,
+            key = "camera:edit",
             keyType = "USER",
             fallbackMessage = "设备操作请求过于频繁")
     @PostMapping("/edit")
@@ -186,6 +192,38 @@ public class CameraDeviceController {
             restartAiTaskIfRunning(cameraDeviceEditRequest.getId());
         }
         return ResultUtils.success(true);
+    }
+
+    @RateLimit(
+            capacity = 5,
+            refillRate = 5,
+            refillPeriodSeconds = 60,
+            key = "camera:batch:disable",
+            keyType = "USER",
+            fallbackMessage = "设备批量禁用请求过于频繁")
+    @PostMapping("/batch/disable")
+    @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
+    public BaseResponse<BatchOperateResultVO> batchDisableCameraDevices(
+            @RequestBody CameraDeviceBatchDisableRequest request) {
+        if (request == null || request.getCameraIds() == null || request.getCameraIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "设备ID列表不能为空");
+        }
+        if (request.getCameraIds().size() > 200) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "单次最多处理200台设备");
+        }
+        BatchOperateResultVO result =
+                cameraDeviceService.batchDisableCameraDevices(request.getCameraIds());
+        for (Long successId : result.getSuccessIds()) {
+            CameraDevice latest = cameraDeviceService.getById(successId);
+            if (latest != null) {
+                publishCameraStatusChanged(
+                        latest.getId(),
+                        latest.getCamera_code(),
+                        latest.getDevice_status(),
+                        latest.getHealth_status());
+            }
+        }
+        return ResultUtils.success(result);
     }
 
     @GetMapping("/get")

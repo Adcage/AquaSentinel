@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.springboot.model.dto.cameradevice.CameraDeviceQueryRequest;
 import com.springboot.model.entity.CameraDevice;
+import com.springboot.model.vo.BatchOperateResultVO;
 import com.springboot.model.vo.CameraDeviceVO;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -21,4 +22,6 @@ public interface CameraDeviceService extends IService<CameraDevice> {
     CameraDeviceVO getCameraDeviceVO(CameraDevice cameraDevice);
 
     List<CameraDeviceVO> getCameraDeviceVO(List<CameraDevice> cameraDeviceList);
+
+    BatchOperateResultVO batchDisableCameraDevices(List<Long> cameraIds);
 }
