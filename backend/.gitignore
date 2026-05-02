@@ -143,3 +143,6 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
+# Local profile (contains secrets like API keys, database passwords)
+src/main/resources/application-local.yml
+

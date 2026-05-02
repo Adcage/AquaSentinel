@@ -72,9 +72,20 @@ resilience4j:
 spring:
   application:
     name: springboot
-  # 默认 dev 环境
   profiles:
-    active: dev
+    active: local
+  # Spring AI 配置（敏感配置在 application-local.yml 中）
+  ai:
+    openai:
+      api-key: ${AI_API_KEY:}
+      base-url: ${AI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${AI_CHAT_MODEL:gpt-4o}
+          temperature: 0.3
+      embedding:
+        options:
+          model: ${AI_EMBEDDING_MODEL:text-embedding-v4}
   # RabbitMQ 配置
   rabbitmq:
     host: 127.0.0.1
@@ -99,7 +110,6 @@ spring:
     # 30 天过期
     timeout: 2592000
   # 数据库配置
-  # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/aqua_sentinel
@@ -123,12 +133,6 @@ spring:
         connectionPoolSize: 16
         connectionMinimumIdleSize: 4
       nettyThreads: 4
-  # Elasticsearch 配置
-  # todo 需替换配置，然后取消注释
-#  elasticsearch:
-#    uris: http://localhost:9200
-#    username: root
-#    password: 123456
   # 文件上传
   servlet:
     multipart:
@@ -206,6 +210,43 @@ app:
       internal-preview-path-template: /internal/streams/cameras/{cameraId}/preview
       display-preview-path-template: /streams/cameras/{cameraId}/preview
       timeout-ms: 5000
+    intelligence:
+      enabled: true
+      chat-system-prompt: |
+        你是 AquaSentinel 水上安全智能助手。你的职责是：
+        1. 帮助管理员查询和分析报警数据
+        2. 提供水上安全相关的专业建议
+        3. 生成安全报告和趋势分析
+        
+        回答规则：
+        - 始终基于事实数据回答，不要编造信息
+        - 如果数据库中查不到相关数据，明确告知用户
+        - 涉及设备控制操作时，必须先征得用户确认
+        - 所有回复使用中文
+      alert-analysis-prompt-template: |
+        请根据以下报警信息生成一段智能分析描述：
+        
+        报警类型：{alertType}
+        报警位置：{incidentLocation}
+        检测结果：{detectionResult}
+        置信度：{confidence}
+        持续时间：{durationSec}秒
+        触发规则：{ruleHits}
+        场馆信息：{venueName}
+        历史相似报警数量：{similarAlertCount}
+        
+        请生成一段2-3句话的分析描述，包含：
+        1. 事件严重程度判断
+        2. 与历史报警的关联分析
+        3. 建议采取的措施
+      embedding:
+        enabled: true
+        similarity-threshold: 0.5
+        max-similar-results: 5
+        recent-days-limit: 30
+      chat-history:
+        max-conversations-per-user: 50
+        max-messages-per-conversation: 100
   stream:
     proxy:
       enabled: true
@@ -278,6 +319,16 @@ app:
         capacity: 2
         refill-rate: 2
         refill-period-seconds: 1
+        key-type: USER
+      ai-chat:
+        capacity: 10
+        refill-rate: 10
+        refill-period-seconds: 60
+        key-type: USER
+      ai-analyze:
+        capacity: 5
+        refill-rate: 5
+        refill-period-seconds: 60
         key-type: USER
 # Actuator + Prometheus 指标暴露
 management:
