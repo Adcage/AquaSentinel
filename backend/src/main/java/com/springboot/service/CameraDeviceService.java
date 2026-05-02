@@ -24,4 +24,6 @@ public interface CameraDeviceService extends IService<CameraDevice> {
     List<CameraDeviceVO> getCameraDeviceVO(List<CameraDevice> cameraDeviceList);
 
     BatchOperateResultVO batchDisableCameraDevices(List<Long> cameraIds);
+
+    BatchOperateResultVO batchDeleteCameraDevices(List<Long> cameraIds);
 }

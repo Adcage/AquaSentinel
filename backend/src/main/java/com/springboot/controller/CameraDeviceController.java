@@ -13,6 +13,7 @@ import com.springboot.constant.RoleConstant;
 import com.springboot.exception.BusinessException;
 import com.springboot.exception.ThrowUtils;
 import com.springboot.model.dto.cameradevice.CameraDeviceAddRequest;
+import com.springboot.model.dto.cameradevice.CameraDeviceBatchDeleteRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceBatchDisableRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceEditRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceQueryRequest;
@@ -223,6 +224,28 @@ public class CameraDeviceController {
                         latest.getHealth_status());
             }
         }
+        return ResultUtils.success(result);
+    }
+
+    @RateLimit(
+            capacity = 10,
+            refillRate = 10,
+            refillPeriodSeconds = 60,
+            key = "camera:batch:delete",
+            keyType = "USER",
+            fallbackMessage = "设备批量删除请求过于频繁")
+    @PostMapping("/batch/delete")
+    @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
+    public BaseResponse<BatchOperateResultVO> batchDeleteCameraDevices(
+            @RequestBody CameraDeviceBatchDeleteRequest request) {
+        if (request == null || request.getCameraIds() == null || request.getCameraIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "设备ID列表不能为空");
+        }
+        if (request.getCameraIds().size() > 200) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "单次最多处理200台设备");
+        }
+        BatchOperateResultVO result =
+                cameraDeviceService.batchDeleteCameraDevices(request.getCameraIds());
         return ResultUtils.success(result);
     }
 

@@ -207,4 +207,32 @@ public class CameraDeviceServiceImpl extends ServiceImpl<CameraDeviceMapper, Cam
         failedItem.setReason(reason);
         result.getFailed().add(failedItem);
     }
+
+    @Override
+    public BatchOperateResultVO batchDeleteCameraDevices(List<Long> cameraIds) {
+        BatchOperateResultVO result = new BatchOperateResultVO();
+        for (Long cameraId : cameraIds) {
+            if (cameraId == null || cameraId <= 0) {
+                appendFailed(result, cameraId, "设备ID无效");
+                continue;
+            }
+            CameraDevice cameraDevice = this.getById(cameraId);
+            if (cameraDevice == null || Objects.equals(cameraDevice.getIs_delete(), 1)) {
+                appendFailed(result, cameraId, "设备不存在");
+                continue;
+            }
+            CameraDevice toDelete = new CameraDevice();
+            toDelete.setId(cameraId);
+            toDelete.setIs_delete(1);
+            boolean updated = this.updateById(toDelete);
+            if (!updated) {
+                appendFailed(result, cameraId, "删除失败");
+                continue;
+            }
+            result.getSuccessIds().add(cameraId);
+        }
+        result.setSuccessCount(result.getSuccessIds().size());
+        result.setFailedCount(result.getFailed().size());
+        return result;
+    }
 }
