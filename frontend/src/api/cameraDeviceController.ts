@@ -151,3 +151,33 @@ export async function batchDeleteCameraDevices(
     ...(options || {}),
   });
 }
+
+/** 云台测试控制 POST /cameras/control/ptz */
+export async function controlCameraPtz(
+  body: {
+    cameraId: number;
+    action:
+      | "NUDGE"
+      | "HOME"
+      | "STATUS"
+      | "CALIB_DATA"
+      | "CALIB_START"
+      | "CALIB_SAVE"
+      | "CALIB_EXIT"
+      | "CALIB_PAN"
+      | "CALIB_TILT";
+    direction?: "LEFT" | "RIGHT" | "UP" | "DOWN";
+    step?: number;
+    pulse?: number;
+  },
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseMapStringObject>("/cameras/control/ptz", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

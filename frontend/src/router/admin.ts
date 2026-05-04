@@ -8,6 +8,7 @@ import {
   UserFilled,
   Warning,
   ChatDotRound,
+  Operation,
 } from "@element-plus/icons-vue";
 import BackendLayout from "@/layouts/BackendLayout.vue";
 
@@ -47,6 +48,15 @@ const adminRoutes: RouteRecordRaw = {
       meta: {
         title: "设备管理",
         group: { key: "business-group", title: "业务管理", icon: Warning },
+      },
+    },
+    {
+      path: "ptz-control",
+      name: "PtzControlTest",
+      component: () => import("@/views/admin/device/PtzControlTestView.vue"),
+      meta: {
+        title: "云台控制测试",
+        group: { key: "business-group", title: "业务管理", icon: Operation },
       },
     },
     {
