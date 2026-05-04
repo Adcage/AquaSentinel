@@ -18,6 +18,7 @@ import com.springboot.model.dto.cameradevice.CameraDeviceBatchDisableRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceEditRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceQueryRequest;
 import com.springboot.model.dto.cameradevice.CameraDeviceUpdateRequest;
+import com.springboot.model.dto.cameradevice.CameraPtzControlRequest;
 import com.springboot.model.dto.monitor.StartMonitorTaskRequest;
 import com.springboot.model.entity.AiStreamTask;
 import com.springboot.model.entity.CameraDevice;
@@ -26,6 +27,7 @@ import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.ratelimit.RateLimit;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.CameraDeviceService;
+import com.springboot.service.Esp32PtzControlService;
 import com.springboot.websocket.AlertWsPublisher;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -47,6 +49,8 @@ public class CameraDeviceController {
     @Resource private AlertWsPublisher alertWsPublisher;
 
     @Resource private AiStreamTaskService aiStreamTaskService;
+
+    @Resource private Esp32PtzControlService esp32PtzControlService;
 
     @RateLimit(
             capacity = 10,
@@ -246,6 +250,23 @@ public class CameraDeviceController {
         }
         BatchOperateResultVO result =
                 cameraDeviceService.batchDeleteCameraDevices(request.getCameraIds());
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/control/ptz")
+    @AuthCheck(mustRole = RoleConstant.VENUE_ADMIN)
+    public BaseResponse<Map<String, Object>> controlPtz(
+            @RequestBody CameraPtzControlRequest request) {
+        if (request == null || request.getCameraId() == null || request.getCameraId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "cameraId 不能为空");
+        }
+        CameraDevice cameraDevice = cameraDeviceService.getById(request.getCameraId());
+        ThrowUtils.throwIf(cameraDevice == null, ErrorCode.NOT_FOUND_ERROR, "设备不存在");
+        ThrowUtils.throwIf(
+                cameraDevice.getEnabled() != null && cameraDevice.getEnabled() == 0,
+                ErrorCode.OPERATION_ERROR,
+                "设备未启用，无法控制");
+        Map<String, Object> result = esp32PtzControlService.control(cameraDevice, request);
         return ResultUtils.success(result);
     }
 
