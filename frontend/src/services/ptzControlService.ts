@@ -1,8 +1,10 @@
 import { buildDeviceApiUrl } from '@/utils/ptzDirectControl'
 
 export interface PtzDeviceResponse {
+  command?: string
   action?: string
   raw?: string
+  message?: string
   ok?: boolean
   pan?: number
   tilt?: number
@@ -33,6 +35,23 @@ const normalizeCalibrationSnapshot = (payload?: Record<string, unknown>): Calibr
   tiltCenterUs: Number(payload?.tiltCenterUs ?? -1),
 })
 
+const normalizeDeviceErrorMessage = (payload: PtzDeviceResponse, fallbackMessage: string) => {
+  const message = payload.message?.trim()
+  if (message) {
+    return message
+  }
+  if (payload.raw === 'ERR:LIMIT') {
+    return '设备已触发安全限制，请回到安全位置后重试'
+  }
+  if (payload.raw === 'ERR:BAD_CMD') {
+    return '设备未识别当前控制命令，请确认固件版本是否一致'
+  }
+  if (payload.raw === 'ERR:BAD_ARG') {
+    return '设备参数不合法，请检查输入范围后重试'
+  }
+  return fallbackMessage
+}
+
 const requestDevice = async (deviceIp: string, path: string, errorMessage: string) => {
   const url = buildDeviceApiUrl(deviceIp, path)
   if (!url) {
@@ -42,7 +61,11 @@ const requestDevice = async (deviceIp: string, path: string, errorMessage: strin
   if (!response.ok) {
     throw new Error(`${errorMessage}（HTTP ${response.status}）`)
   }
-  return (await response.json()) as PtzDeviceResponse
+  const payload = (await response.json()) as PtzDeviceResponse
+  if (payload.ok === false) {
+    throw new Error(normalizeDeviceErrorMessage(payload, errorMessage))
+  }
+  return payload
 }
 
 export const controlNudge = async (
@@ -51,6 +74,10 @@ export const controlNudge = async (
   step = 5,
 ) => {
   return requestDevice(deviceIp, `/api/ptz/nudge?dir=${direction}&step=${step}`, '控制失败')
+}
+
+export const controlMoveTo = async (deviceIp: string, pan: number, tilt: number) => {
+  return requestDevice(deviceIp, `/api/ptz/move?pan=${pan}&tilt=${tilt}`, '移动到指定角度失败')
 }
 
 export const controlHome = async (deviceIp: string) => {
@@ -81,10 +108,27 @@ export const exitCalibration = async (deviceIp: string) => {
   return requestDevice(deviceIp, '/api/ptz/calib/exit', '退出校准失败')
 }
 
+export const resetCalibration = async (deviceIp: string) => {
+  return requestDevice(deviceIp, '/api/ptz/calib/reset', '重置校准失败')
+}
+
 export const setCalibrationPanPulse = async (deviceIp: string, pulse: number) => {
   return requestDevice(deviceIp, `/api/ptz/calib/pan?pulse=${pulse}`, '设置 PAN 脉宽失败')
 }
 
 export const setCalibrationTiltPulse = async (deviceIp: string, pulse: number) => {
   return requestDevice(deviceIp, `/api/ptz/calib/tilt?pulse=${pulse}`, '设置 TILT 脉宽失败')
+}
+
+export const setCalibrationValue = async (
+  deviceIp: string,
+  axis: 'PAN' | 'TILT',
+  key: 'MIN' | 'CENTER' | 'MAX',
+  pulse: number,
+) => {
+  return requestDevice(
+    deviceIp,
+    `/api/ptz/calib/set?axis=${axis}&key=${key}&pulse=${pulse}`,
+    '设置校准值失败',
+  )
 }
