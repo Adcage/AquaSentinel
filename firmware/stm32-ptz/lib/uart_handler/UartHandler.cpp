@@ -3,6 +3,18 @@
 #include "config.h"
 #include "protocol.h"
 
+namespace {
+
+bool isCalibrationPulseInRange(int pulseUs) {
+    return pulseUs >= 500 && pulseUs <= 2500;
+}
+
+bool exceedsCalibrationSafeLimit(bool panAxis, int pulseUs) {
+    return panAxis && pulseUs > ptz_config::PAN_CALIBRATION_SAFE_MAX_US;
+}
+
+}  // namespace
+
 UartHandler::UartHandler(PtzServo& servoRef) : servo(servoRef) {}
 
 void UartHandler::begin(HardwareSerial& serialRef) {
@@ -67,6 +79,14 @@ void UartHandler::handleLine(String line) {
     }
     if (line.startsWith(ptz_protocol::CMD_CALIB_PAN)) {
         const int pulseVal = line.substring(10).toInt();
+        if (!isCalibrationPulseInRange(pulseVal)) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+        if (exceedsCalibrationSafeLimit(true, pulseVal)) {
+            sendErr(ptz_protocol::ERR_LIMIT);
+            return;
+        }
         if (!servo.setCalibrationPulse(true, static_cast<uint16_t>(pulseVal))) {
             sendErr(ptz_protocol::ERR_BAD_ARG);
             return;
@@ -76,6 +96,10 @@ void UartHandler::handleLine(String line) {
     }
     if (line.startsWith(ptz_protocol::CMD_CALIB_TILT)) {
         const int pulseVal = line.substring(11).toInt();
+        if (!isCalibrationPulseInRange(pulseVal)) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
         if (!servo.setCalibrationPulse(false, static_cast<uint16_t>(pulseVal))) {
             sendErr(ptz_protocol::ERR_BAD_ARG);
             return;
@@ -83,10 +107,76 @@ void UartHandler::handleLine(String line) {
         sendCalibOk();
         return;
     }
+    if (line.startsWith(ptz_protocol::CMD_CALIB_SET)) {
+        String payload = line.substring(10);
+        const int c1 = payload.indexOf(',');
+        const int c2 = payload.indexOf(',', c1 + 1);
+        if (c1 < 0 || c2 < 0) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+
+        String axis = payload.substring(0, c1);
+        String key = payload.substring(c1 + 1, c2);
+        String pulseText = payload.substring(c2 + 1);
+        axis.trim();
+        key.trim();
+        axis.toUpperCase();
+        key.toUpperCase();
+
+        const int pulseVal = pulseText.toInt();
+        const bool isPan = axis == "PAN";
+        if (!isCalibrationPulseInRange(pulseVal)) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+        if (exceedsCalibrationSafeLimit(isPan, pulseVal)) {
+            sendErr(ptz_protocol::ERR_LIMIT);
+            return;
+        }
+
+        if (!servo.setCalibrationValue(axis, key, static_cast<uint16_t>(pulseVal))) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+        sendCalibData();
+        return;
+    }
     if (line == ptz_protocol::CMD_STATUS) {
         sendStatus();
         return;
     }
+    if (line == ptz_protocol::CMD_RESET_CALIB) {
+        // 重置校准数据为默认值
+        servo.resetCalibration();
+        sendCalibData();
+        return;
+    }
+    if (line.startsWith(ptz_protocol::CMD_MOVE)) {
+        const int commaIndex = line.indexOf(',', 5);
+        if (commaIndex < 0) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+        String panText = line.substring(5, commaIndex);
+        String tiltText = line.substring(commaIndex + 1);
+        panText.trim();
+        tiltText.trim();
+        const int panVal = panText.toInt();
+        const int tiltVal = tiltText.toInt();
+        // PAN: 0-180, TILT: 0-180（0=仰视，90=平视，180=俯视）
+        if (panVal < 0 || panVal > 180 || tiltVal < 0 || tiltVal > 180) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+        if (!servo.moveTo(panVal, tiltVal)) {
+            sendErr(ptz_protocol::ERR_BAD_ARG);
+            return;
+        }
+        sendAck();
+        return;
+    }
+
     if (!line.startsWith(ptz_protocol::CMD_NUDGE)) {
         sendErr(ptz_protocol::ERR_BAD_CMD);
         return;

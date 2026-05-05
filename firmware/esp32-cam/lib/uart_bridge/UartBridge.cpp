@@ -21,6 +21,15 @@ String UartBridge::sendNudge(const String& dir, int step) {
     return sendCommand(cmd);
 }
 
+String UartBridge::sendMove(int pan, int tilt) {
+    String cmd = "MOVE:";
+    cmd += String(pan);
+    cmd += ",";
+    cmd += String(tilt);
+    cmd += "\n";
+    return sendCommand(cmd);
+}
+
 String UartBridge::calibStart() { return sendCommand(bridge_protocol::CMD_CALIB_START); }
 
 String UartBridge::calibData() { return sendCommand(bridge_protocol::CMD_CALIB_DATA); }
@@ -28,6 +37,8 @@ String UartBridge::calibData() { return sendCommand(bridge_protocol::CMD_CALIB_D
 String UartBridge::calibSave() { return sendCommand(bridge_protocol::CMD_CALIB_SAVE); }
 
 String UartBridge::calibExit() { return sendCommand(bridge_protocol::CMD_CALIB_EXIT); }
+
+String UartBridge::resetCalibration() { return sendCommand(bridge_protocol::CMD_RESET_CALIB); }
 
 String UartBridge::calibSetPan(int pulseUs) {
     String cmd = "CALIB:PAN,";
@@ -38,6 +49,17 @@ String UartBridge::calibSetPan(int pulseUs) {
 
 String UartBridge::calibSetTilt(int pulseUs) {
     String cmd = "CALIB:TILT,";
+    cmd += String(pulseUs);
+    cmd += "\n";
+    return sendCommand(cmd);
+}
+
+String UartBridge::calibSetValue(const String& axis, const String& key, int pulseUs) {
+    String cmd = bridge_protocol::CMD_CALIB_SET;
+    cmd += axis;
+    cmd += ",";
+    cmd += key;
+    cmd += ",";
     cmd += String(pulseUs);
     cmd += "\n";
     return sendCommand(cmd);
