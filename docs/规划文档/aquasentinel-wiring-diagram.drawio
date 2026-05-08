@@ -1,0 +1,544 @@
+<mxfile host="65bd71144e">
+    <diagram name="AquaSentinel 接线图" id="wiring-002">
+        <mxGraphModel dx="2400" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1500" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+
+                <!-- ===== 标题 ===== -->
+                <mxCell id="title" value="AquaSentinel 整体接线图" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=24;fontStyle=1;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="15" width="400" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="参数与网络以 aquasentinel-hardware.kicad_sch 为准 | 虚线框 = 可选件(optional)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#888888;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="52" width="600" height="22" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== VCC_5V 电源总线 (水平粗红线) ===== -->
+                <mxCell id="vcc5v_bus" value="" style="shape=line;strokeColor=#EF4444;strokeWidth=4;fillColor=none;align=center;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="100" width="1700" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="vcc5v_label" value="VCC_5V 总线 (+5V)" style="text;html=1;strokeColor=#EF4444;fillColor=#FFEEEE;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;fontColor=#EF4444;rounded=1;spacingLeft=4;spacingRight=4;" parent="1" vertex="1">
+                    <mxGeometry x="920" y="82" width="180" height="24" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== GND 总线 (水平粗深灰线) ===== -->
+                <mxCell id="gnd_bus" value="" style="shape=line;strokeColor=#444444;strokeWidth=4;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="1060" width="1700" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="gnd_label" value="GND 总线 (公共地)" style="text;html=1;strokeColor=#444444;fillColor=#EEEEEE;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;fontColor=#444444;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="920" y="1040" width="180" height="24" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== 电源链 (左侧) ===== -->
+                <mxCell id="bat" value="3.7V&#xa;锂电池" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EF4444;strokeColor=#CC3333;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="260" width="120" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="boost" value="升压模块&#xa;3.7V→5V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3366CC;strokeColor=#2255AA;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="400" width="120" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="sw" value="电源开关&#xa;≥2A 拨动" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9966;strokeColor=#CC6633;fontColor=#333333;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="520" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="bat_ind" value="电量指示板&#xa;(独立接电池)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#27BC9F;strokeColor=#1E9E84;fontColor=#FFFFFF;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="680" width="120" height="45" as="geometry"/>
+                </mxCell>
+
+                <!-- 电池→升压 正极线 -->
+                <mxCell id="e_bat_boost_p" value="BATT_POS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=3;fontSize=11;fontColor=#EF4444;endArrow=classic;" parent="1" edge="1" source="bat" target="boost">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- 电池→升压 GND线 -->
+                <mxCell id="e_bat_boost_g" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="130" y="315" as="sourcePoint"/>
+                        <mxPoint x="130" y="400" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_bat_boost_gnd" value="GND" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#444444;" parent="1" vertex="1">
+                    <mxGeometry x="135" y="355" width="36" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- 升压→开关 -->
+                <mxCell id="e_boost_sw" value="5V输出" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=3;fontSize=11;fontColor=#EF4444;endArrow=classic;" parent="1" edge="1" source="boost" target="sw">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- 开关→VCC_5V总线 -->
+                <mxCell id="e_sw_vcc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=3;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="110" y="520" as="sourcePoint"/>
+                        <mxPoint x="110" y="100" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 电池电量指示板连线 (电池侧) -->
+                <mxCell id="e_bat_ind" value="B+/B- 独立接电池" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27BC9F;strokeWidth=2;dashed=1;fontSize=10;fontColor=#27BC9F;endArrow=none;" parent="1" edge="1" source="bat" target="bat_ind">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== VCC_5V 总线垂直下降到各模块 ===== -->
+
+                <!-- VCC_5V → ESP32 5V -->
+                <mxCell id="drop_vcc_esp" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=3;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="700" y="100" as="sourcePoint"/>
+                        <mxPoint x="700" y="180" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_esp_5v" value="5V" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#EF4444;" parent="1" vertex="1">
+                    <mxGeometry x="708" y="130" width="30" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- VCC_5V → STM32 5V -->
+                <mxCell id="drop_vcc_stm" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=3;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="520" y="100" as="sourcePoint"/>
+                        <mxPoint x="520" y="540" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_stm_5v" value="5V" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#EF4444;" parent="1" vertex="1">
+                    <mxGeometry x="528" y="500" width="30" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- VCC_5V → 舵机1 VCC -->
+                <mxCell id="drop_vcc_s1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1260" y="100" as="sourcePoint"/>
+                        <mxPoint x="1260" y="400" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- VCC_5V → 舵机2 VCC -->
+                <mxCell id="drop_vcc_s2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1400" y="100" as="sourcePoint"/>
+                        <mxPoint x="1400" y="540" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- ===== 电容 C1 C2 (VCC_5V 和 GND 之间) ===== -->
+                <mxCell id="c1_box" value="C1&#xa;470uF/10V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#CC6633;strokeWidth=2;dashed=1;fontSize=13;fontStyle=1;fontColor=#CC6633;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="120" width="100" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="c1_note" value="舵机储能&#xa;(靠近舵机取电点)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#999999;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="861" y="176" width="140" height="30" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="c2_box" value="C2&#xa;100uF/10V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#CC6633;strokeWidth=2;dashed=1;fontSize=13;fontStyle=1;fontColor=#CC6633;" parent="1" vertex="1">
+                    <mxGeometry x="720" y="120" width="100" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="c2_note" value="ESP32旁路&#xa;(靠近ESP32 5V引脚)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#999999;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="176" width="140" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- C1 上端→VCC_5V -->
+                <mxCell id="e_c1_vcc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#EF4444;strokeWidth=2;dashed=1;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="930" y="120" as="sourcePoint"/>
+                        <mxPoint x="930" y="100" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <!-- C1 下端→GND -->
+                <mxCell id="e_c1_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#444444;strokeWidth=2;dashed=1;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="930" y="175" as="sourcePoint"/>
+                        <mxPoint x="930" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_c1_pn" value="(+)→VCC_5V&#xa;(-)→GND" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#CC6633;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="990" y="135" width="90" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- C2 上端→VCC_5V -->
+                <mxCell id="e_c2_vcc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#EF4444;strokeWidth=2;dashed=1;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="770" y="120" as="sourcePoint"/>
+                        <mxPoint x="770" y="100" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <!-- C2 下端→GND -->
+                <mxCell id="e_c2_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#444444;strokeWidth=2;dashed=1;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="770" y="175" as="sourcePoint"/>
+                        <mxPoint x="770" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- ===== ESP32-CAM (中上) ===== -->
+                <mxCell id="esp32" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6FA3FF;strokeColor=#3366CC;strokeWidth=2;fontSize=16;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="180" width="310" height="310" as="geometry"/>
+                </mxCell>
+                <mxCell id="esp32_title" value="ESP32-CAM&#xa;(AI-Thinker)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#FFFFFF;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="190" width="230" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="esp32_role" value="视频采集 + WiFi 连接后端" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontColor=#FFFFFF;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="470" width="230" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- ESP32 引脚标签 (右侧出线) -->
+                <mxCell id="esp_gpio13" value="GPIO13 (UART2 TX) →" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#FFFFFF;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="250" width="170" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="esp_gpio14" value="GPIO14 (UART2 RX) ←" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#FFFFFF;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="280" width="170" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- ESP32 引脚标签 (左侧入线) -->
+                <mxCell id="esp_5v_lbl" value="5V" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#EF4444;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="210" width="40" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="esp_3v3_lbl" value="3V3" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="390" width="36" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="esp_gnd_lbl" value="GND" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#444444;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="420" width="40" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- ESP32 GND → GND总线 -->
+                <mxCell id="e_esp_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="530" y="430" as="sourcePoint"/>
+                        <mxPoint x="280" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!--ESP32 3V3 出线标签（给OLED用） -->
+                <mxCell id="esp_3v3_out" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27BC9F;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="840" y="400" as="sourcePoint"/>
+                        <mxPoint x="1500" y="400" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_3v3_oled" value="3.3V → OLED VCC" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="1050" y="388" width="150" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== STM32 (中下) ===== -->
+                <mxCell id="stm32" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#22D3EE;strokeColor=#1AA8BE;strokeWidth=2;fontSize=16;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="540" width="310" height="330" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm32_title" value="STM32F103C8T6&#xa;(Blue Pill)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="550" width="230" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm32_role" value="舵机控制 + OLED + 按键 + ADC" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="850" width="230" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- STM32 引脚标签 (右侧出线) -->
+                <mxCell id="stm_pa10" value="PA10 (USART1_RX) ←" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#3366CC;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="610" width="190" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pa9" value="PA9 (USART1_TX) →" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#3366CC;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="640" width="190" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pa6" value="PA6 (TIM3_CH1) → 舵机1" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#8B5CF6;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="685" width="190" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pa7" value="PA7 (TIM3_CH2) → 舵机2" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#8B5CF6;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="715" width="190" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pb6" value="PB6 (I2C1_SCL) → OLED" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="750" width="190" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pb7" value="PB7 (I2C1_SDA) → OLED" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="775" width="190" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pb12" value="PB12 → 按键" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#FF9966;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="820" width="140" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_pa0" value="PA0 (ADC) ← 分压中点" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontStyle=1;fontColor=#EF4444;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="850" width="180" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- STM32 供电标签 (左侧入线) -->
+                <mxCell id="stm_5v_lbl" value="5V" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#EF4444;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="575" width="36" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_3v3_lbl" value="3V3" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="600" width="36" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="stm_gnd_lbl" value="GND" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#444444;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="590" width="40" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- STM32 GND → GND总线 -->
+                <mxCell id="e_stm_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="400" y="600" as="sourcePoint"/>
+                        <mxPoint x="400" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- ===== UART 交叉连线 (ESP32 ↔ STM32) ===== -->
+                <!-- 集中示意：TX→RX -->
+                <mxCell id="uart_group" value="UART 115200&#xa;交叉连接" style="shape=mxgraph.arrows2.arrow;dy=0.6;dx=36;notch=0;whiteSpace=wrap;html=1;fillColor=#3366CC;strokeColor=#2255AA;fontColor=#FFFFFF;fontSize=12;fontStyle=1;rotation=90;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="450" width="30" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_esp_to_uart" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3366CC;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="840" y="260" as="sourcePoint"/>
+                        <mxPoint x="815" y="450" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_stm_to_uart" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3366CC;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="710" y="620" as="sourcePoint"/>
+                        <mxPoint x="815" y="520" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="uart_detail" value="GPIO13(TX)→PA10(RX)&#xa;GPIO14(RX)←PA9(TX)&#xa;TX↔RX 交叉接" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#3366CC;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="830" y="460" width="170" height="44" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== 舵机 ===== -->
+                <mxCell id="servo1" value="舵机1 (PAN)&#xa;SG90" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8B5CF6;strokeColor=#7B3FD6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1150" y="360" width="140" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="servo1_pins" value="红线VCC | 棕线GND | 橙线信号" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#666666;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="1140" y="340" width="170" height="16" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="servo2" value="舵机2 (TILT)&#xa;SG90" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8B5CF6;strokeColor=#7B3FD6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="360" width="140" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="servo2_pins" value="红线VCC | 棕线GND | 橙线信号" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#666666;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="340" width="170" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- STM32 PA6 → 舵机1 信号 -->
+                <mxCell id="e_pa6_s1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="710" y="693" as="sourcePoint"/>
+                        <mxPoint x="1150" y="388" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- STM32 PA7 → 舵机2 信号 -->
+                <mxCell id="e_pa7_s2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B5CF6;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="710" y="723" as="sourcePoint"/>
+                        <mxPoint x="1350" y="388" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 舵机1 GND → GND总线 -->
+                <mxCell id="e_s1_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1220" y="415" as="sourcePoint"/>
+                        <mxPoint x="1220" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <!-- 舵机2 GND → GND总线 -->
+                <mxCell id="e_s2_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1420" y="415" as="sourcePoint"/>
+                        <mxPoint x="1420" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- ===== OLED ===== -->
+                <mxCell id="oled" value="OLED&#xa;SSD1306 128x64&#xa;I2C 4引脚" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#27BC9F;strokeColor=#1E9E84;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1500" y="520" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="oled_pins" value="VCC | GND | SCL | SDA" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#FFFFFF;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="1500" y="592" width="150" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- PB6 → OLED SCL -->
+                <mxCell id="e_pb6_scl" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27BC9F;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="710" y="758" as="sourcePoint"/>
+                        <mxPoint x="1500" y="545" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_scl" value="SCL" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="720" width="30" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- PB7 → OLED SDA -->
+                <mxCell id="e_pb7_sda" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27BC9F;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="710" y="783" as="sourcePoint"/>
+                        <mxPoint x="1500" y="575" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_sda" value="SDA" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;fontColor=#27BC9F;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="770" width="34" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- OLED VCC ← ESP32 3V3 (already drawn above) -->
+                <!-- OLED GND → GND总线 -->
+                <mxCell id="e_oled_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1575" y="590" as="sourcePoint"/>
+                        <mxPoint x="1575" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_oled_gnd" value="GND" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#444444;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1583" y="800" width="36" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- 3V3线到达OLED -->
+                <mxCell id="e_3v3_oled_arr" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27BC9F;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1500" y="400" as="sourcePoint"/>
+                        <mxPoint x="1530" y="520" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- ===== 按键 ===== -->
+                <mxCell id="btn" value="用户按键&#xa;(轻触开关)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9966;strokeColor=#CC6633;fontColor=#333333;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1500" y="820" width="130" height="55" as="geometry"/>
+                </mxCell>
+                <!-- PB12 → 按键 -->
+                <mxCell id="e_pb12_btn" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FF9966;strokeWidth=2;endArrow=classic;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="710" y="828" as="sourcePoint"/>
+                        <mxPoint x="1500" y="847" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <!-- 按键 → GND -->
+                <mxCell id="e_btn_gnd" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1565" y="875" as="sourcePoint"/>
+                        <mxPoint x="1565" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="btn_note" value="内部上拉输入&#xa;按下=LOW" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#CC6633;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="1500" y="878" width="130" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== R1/R2 分压 (左侧下方) ===== -->
+                <mxCell id="r1_box" value="R1&#xa;100kΩ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#CC6633;strokeWidth=2;dashed=1;fontSize=13;fontStyle=1;fontColor=#CC6633;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="760" width="90" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="r2_box" value="R2&#xa;100kΩ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#CC6633;strokeWidth=2;dashed=1;fontSize=13;fontStyle=1;fontColor=#CC6633;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="880" width="90" height="50" as="geometry"/>
+                </mxCell>
+
+                <!-- R1上端 → BATT_POS -->
+                <mxCell id="e_r1_top" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="225" y="760" as="sourcePoint"/>
+                        <mxPoint x="225" y="315" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_r1_battpos" value="BATT_POS" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;fontColor=#EF4444;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="400" width="80" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- R2下端 → GND -->
+                <mxCell id="e_r2_bot" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#444444;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="225" y="930" as="sourcePoint"/>
+                        <mxPoint x="280" y="1060" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lbl_r2_gnd" value="→GND" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#444444;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="990" width="46" height="16" as="geometry"/>
+                </mxCell>
+
+                <!-- R1/R2 中点 → STM32 PA0 -->
+                <mxCell id="midpoint" value="BAT_SENSE&#xa;(分压中点)" style="text;html=1;strokeColor=#CC6633;fillColor=#FFFFCC;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontStyle=1;fontColor=#333333;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="825" width="100" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_mid_r" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CC6633;strokeWidth=2;endArrow=none;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="270" y="810" as="sourcePoint"/>
+                        <mxPoint x="270" y="843" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <!-- 中点→PA0 -->
+                <mxCell id="e_mid_pa0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=2;endArrow=classic;dashed=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="390" y="843" as="sourcePoint"/>
+                        <mxPoint x="440" y="858" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="r_divider_note" value="ADC换算:&#xa;battery_mv = adc_raw × 3300 × 2 / 4096" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#CC6633;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="170" y="940" width="220" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- ===== 图例 ===== -->
+                <mxCell id="legend_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;strokeWidth=1;" parent="1" vertex="1">
+                    <mxGeometry x="1600" y="680" width="340" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend_title" value="图例" style="text;html=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1620" y="685" width="40" height="22" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg1_line" value="" style="endArrow=none;html=1;strokeColor=#EF4444;strokeWidth=3;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="720" as="sourcePoint"/>
+                        <mxPoint x="1680" y="720" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg1_t" value="VCC_5V / 正极 (红线)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="710" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg2_line" value="" style="endArrow=none;html=1;strokeColor=#444444;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="745" as="sourcePoint"/>
+                        <mxPoint x="1680" y="745" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg2_t" value="GND 地线 (黑线)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="735" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg3_line" value="" style="endArrow=none;html=1;strokeColor=#3366CC;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="770" as="sourcePoint"/>
+                        <mxPoint x="1680" y="770" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg3_t" value="UART 信号 (蓝线)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="760" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg4_line" value="" style="endArrow=none;html=1;strokeColor=#8B5CF6;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="795" as="sourcePoint"/>
+                        <mxPoint x="1680" y="795" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg4_t" value="PWM 舵机信号 (紫线)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="785" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg5_line" value="" style="endArrow=none;html=1;strokeColor=#27BC9F;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="820" as="sourcePoint"/>
+                        <mxPoint x="1680" y="820" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg5_t" value="I2C / 3.3V (绿线)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="810" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg6_line" value="" style="endArrow=none;html=1;strokeColor=#FF9966;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="845" as="sourcePoint"/>
+                        <mxPoint x="1680" y="845" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg6_t" value="按键信号 (橙线)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="835" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="leg7_line" value="" style="endArrow=none;html=1;strokeColor=#CC6633;strokeWidth=2;dashed=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1620" y="870" as="sourcePoint"/>
+                        <mxPoint x="1680" y="870" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg7_t" value="虚线 = 可选件(optional)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="1690" y="860" width="200" height="18" as="geometry"/>
+                </mxCell>
+
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -76,6 +76,8 @@ nul
 
 # ===== Local workspace / EDA temp =====
 .claude/
+/.history/
+/docs/plans/
 firmware/hardware/.history/
 firmware/hardware/*.tmp
 firmware/hardware/~*.lck
