@@ -11,7 +11,7 @@ void buildLine(char* target, const char* label, int value, const char* suffix) {
 
 }  // namespace
 
-OledFrame OledViewModel::build(const OledDisplayState& state) {
+OledFrame OledViewModel::build(const OledUiState& state) {
     OledFrame frame{};
     frame.isBootScreen = state.uptimeMs < BOOT_SCREEN_DURATION_MS;
 
@@ -24,20 +24,39 @@ OledFrame OledViewModel::build(const OledDisplayState& state) {
         return frame;
     }
 
-    if (state.calibrationMode) {
-        copyText(frame.title, "校准");
-        copyText(frame.lines[0], "MODE CAL");
-        buildPulseLine(frame.lines[1], "PAN", state.panPulseUs);
-        buildPulseLine(frame.lines[2], "TILT", state.tiltPulseUs);
-        copyText(frame.lines[3], "SEND SAVE");
+    if (state.showActionMessage) {
+        copyText(frame.title, "云台");
+        copyText(frame.lines[0], state.actionMessage);
+        buildAngleLine(frame.lines[1], "PAN", state.pan);
+        buildAngleLine(frame.lines[2], "TILT", state.tilt);
+        copyText(frame.lines[3], "UART READY");
         return frame;
     }
 
-    copyText(frame.title, "云台");
-    copyText(frame.lines[0], "MODE NORM");
-    buildAngleLine(frame.lines[1], "PAN", state.pan);
-    buildAngleLine(frame.lines[2], "TILT", state.tilt);
-    copyText(frame.lines[3], "UART READY");
+    switch (state.page) {
+        case OledPage::Status:
+            copyText(frame.title, "云台");
+            copyText(frame.lines[0], "MODE NORM");
+            buildAngleLine(frame.lines[1], "PAN", state.pan);
+            buildAngleLine(frame.lines[2], "TILT", state.tilt);
+            copyText(frame.lines[3], "UART READY");
+            break;
+        case OledPage::Calibration:
+            copyText(frame.title, "校准");
+            copyText(frame.lines[0], state.calibrationMode ? "MODE CAL" : "CAL READY");
+            buildPulseLine(frame.lines[1], "PAN", state.panPulseUs);
+            buildPulseLine(frame.lines[2], "TILT", state.tiltPulseUs);
+            copyText(frame.lines[3], "WEB CAL");
+            break;
+        case OledPage::Battery:
+            copyText(frame.title, "电量");
+            copyText(frame.lines[0], "ADC WAIT");
+            copyText(frame.lines[1], "PA0 WAIT");
+            copyText(frame.lines[2], "BAT WAIT");
+            copyText(frame.lines[3], "SHORT NEXT");
+            break;
+    }
+
     return frame;
 }
 

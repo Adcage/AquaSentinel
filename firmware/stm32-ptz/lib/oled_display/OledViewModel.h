@@ -14,6 +14,24 @@ struct OledDisplayState {
     uint32_t uptimeMs = 0;
 };
 
+enum class OledPage : uint8_t {
+    Status = 0,
+    Calibration = 1,
+    Battery = 2,
+};
+
+struct OledUiState {
+    OledPage page = OledPage::Status;
+    uint8_t pan = 0;
+    uint8_t tilt = 0;
+    bool calibrationMode = false;
+    uint16_t panPulseUs = 1500;
+    uint16_t tiltPulseUs = 1500;
+    uint32_t uptimeMs = 0;
+    bool showActionMessage = false;
+    char actionMessage[OLED_TEXT_BUFFER_SIZE] = {0};
+};
+
 struct OledFrame {
     char title[OLED_TEXT_BUFFER_SIZE];
     char lines[4][OLED_TEXT_BUFFER_SIZE];
@@ -22,7 +40,7 @@ struct OledFrame {
 
 class OledViewModel {
    public:
-    static OledFrame build(const OledDisplayState& state);
+    static OledFrame build(const OledUiState& state);
 
    private:
     static const uint32_t BOOT_SCREEN_DURATION_MS = 1800;

@@ -7,8 +7,6 @@
 
 #include <string.h>
 
-#include "PtzServo.h"
-
 namespace {
 
 const uint8_t OLED_I2C_ADDRESS = 0x3C;
@@ -19,17 +17,20 @@ uint8_t g_oledBuffer[OLED_BUFFER_SIZE];
 
 struct Utf8Glyph {
     const char* utf8;
-    uint8_t rows[8];
+    uint16_t rows[12];
 };
 
 const Utf8Glyph CHINESE_GLYPHS[] = {
-    {"启", {0x3C, 0x04, 0x3C, 0x10, 0x3E, 0x12, 0x3E, 0x10}},
-    {"动", {0x10, 0x7C, 0x10, 0x7C, 0x12, 0x32, 0x54, 0x88}},
-    {"中", {0x10, 0x7C, 0x52, 0x52, 0x7C, 0x10, 0x10, 0x00}},
-    {"云", {0x1C, 0x00, 0x7E, 0x08, 0x10, 0x10, 0x1E, 0x00}},
-    {"台", {0x1C, 0x00, 0x7E, 0x18, 0x3C, 0x10, 0x7E, 0x00}},
-    {"校", {0x22, 0x14, 0x7F, 0x14, 0x22, 0x1C, 0x22, 0x41}},
-    {"准", {0x04, 0x3E, 0x04, 0x7E, 0x24, 0x24, 0x44, 0x84}},
+    {"启", {0x40, 0x3FE, 0x202, 0x202, 0x3FE, 0x200, 0x200, 0x3FC, 0x504, 0x504, 0x5FC, 0x000}},
+    {"动", {0x008, 0x788, 0x008, 0x03E, 0x7CA, 0x212, 0x292, 0x492, 0x4D2, 0x762, 0x02E, 0x000}},
+    {"中", {0x000, 0x040, 0x7FE, 0x442, 0x442, 0x442, 0x7FE, 0x442, 0x040, 0x040, 0x040, 0x000}},
+    {"云", {0x3FC, 0x000, 0x000, 0x7FE, 0x080, 0x088, 0x108, 0x104, 0x21C, 0x3E2, 0x000, 0x000}},
+    {"台", {0x040, 0x080, 0x108, 0x204, 0x7FA, 0x002, 0x3FC, 0x204, 0x204, 0x204, 0x3FC, 0x000}},
+    {"校", {0x210, 0x208, 0x27E, 0x724, 0x242, 0x366, 0x6A4, 0xA18, 0x218, 0x21C, 0x2E2, 0x000}},
+    {"准", {0x050, 0x448, 0x2FE, 0x288, 0x188, 0x1FE, 0x288, 0x2FE, 0x488, 0x488, 0x4FE, 0x000}},
+    {"电", {0x040, 0x040, 0x3FC, 0x244, 0x3FC, 0x244, 0x244, 0x3FC, 0x040, 0x042, 0x03E, 0x000}},
+    {"量", {0x3FC, 0x204, 0x3FC, 0x1F8, 0x7FE, 0x3FC, 0x244, 0x3FC, 0x1F8, 0x3FC, 0x7FE, 0x000}},
+    {"回", {0x7FE, 0x402, 0x402, 0x5F2, 0x512, 0x512, 0x4F2, 0x402, 0x402, 0x7FE, 0x000, 0x000}},
 };
 
 const uint8_t ASCII_SPACE[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -140,9 +141,9 @@ void drawAsciiChar(int16_t x, int16_t y, char ch) {
 }
 
 void drawChineseChar(int16_t x, int16_t y, const Utf8Glyph& glyph) {
-    for (uint8_t row = 0; row < 8; ++row) {
-        for (uint8_t col = 0; col < 8; ++col) {
-            if ((glyph.rows[row] >> (7 - col)) & 0x01) {
+    for (uint8_t row = 0; row < 12; ++row) {
+        for (uint8_t col = 0; col < 12; ++col) {
+            if ((glyph.rows[row] >> (11 - col)) & 0x01) {
                 drawPixel(x + col, y + row);
             }
         }
@@ -165,7 +166,7 @@ void drawCompactText(int16_t x, int16_t y, const char* text) {
         const Utf8Glyph* glyph = findChineseGlyph(text + index);
         if (glyph != nullptr) {
             drawChineseChar(cursorX, y, *glyph);
-            cursorX += 9;
+            cursorX += 13;
             index += 3;
             continue;
         }
@@ -192,13 +193,12 @@ void OledDisplay::begin() {
     initialized = true;
 }
 
-void OledDisplay::update(const PtzServo& servo, uint32_t uptimeMs) {
+void OledDisplay::update(const OledUiState& state) {
     if (!initialized) {
         return;
     }
 
-    const OledDisplayState state = captureState(servo, uptimeMs);
-    const bool intervalElapsed = (uptimeMs - lastRenderMs) >= REFRESH_INTERVAL_MS;
+    const bool intervalElapsed = (state.uptimeMs - lastRenderMs) >= REFRESH_INTERVAL_MS;
     const bool stateChanged = !hasLastState || hasStateChanged(state, lastState);
     if (!intervalElapsed && !stateChanged) {
         return;
@@ -207,22 +207,16 @@ void OledDisplay::update(const PtzServo& servo, uint32_t uptimeMs) {
     drawFrame(OledViewModel::build(state));
     lastState = state;
     hasLastState = true;
-    lastRenderMs = uptimeMs;
+    lastRenderMs = state.uptimeMs;
 }
 
-OledDisplayState OledDisplay::captureState(const PtzServo& servo, uint32_t uptimeMs) {
-    const PtzState state = servo.state();
-    OledDisplayState displayState;
-    displayState.pan = state.pan;
-    displayState.tilt = state.tilt;
-    displayState.calibrationMode = servo.isCalibrationMode();
-    displayState.panPulseUs = servo.currentPanPulseUs();
-    displayState.tiltPulseUs = servo.currentTiltPulseUs();
-    displayState.uptimeMs = uptimeMs;
-    return displayState;
-}
+bool OledDisplay::hasStateChanged(const OledUiState& current, const OledUiState& previous) {
+    if (current.page != previous.page ||
+        current.showActionMessage != previous.showActionMessage ||
+        strcmp(current.actionMessage, previous.actionMessage) != 0) {
+        return true;
+    }
 
-bool OledDisplay::hasStateChanged(const OledDisplayState& current, const OledDisplayState& previous) {
     return current.pan != previous.pan ||
            current.tilt != previous.tilt ||
            current.calibrationMode != previous.calibrationMode ||
@@ -245,15 +239,9 @@ void OledDisplay::drawFrame(const OledFrame& frame) {
 
 void OledDisplay::begin() {}
 
-void OledDisplay::update(const PtzServo&, uint32_t) {}
+void OledDisplay::update(const OledUiState&) {}
 
-OledDisplayState OledDisplay::captureState(const PtzServo&, uint32_t uptimeMs) {
-    OledDisplayState state;
-    state.uptimeMs = uptimeMs;
-    return state;
-}
-
-bool OledDisplay::hasStateChanged(const OledDisplayState&, const OledDisplayState&) { return false; }
+bool OledDisplay::hasStateChanged(const OledUiState&, const OledUiState&) { return false; }
 
 void OledDisplay::drawFrame(const OledFrame&) {}
 
