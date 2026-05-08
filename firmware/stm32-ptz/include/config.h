@@ -14,10 +14,12 @@ constexpr int UART_BAUD_RATE = 115200;
 constexpr uint8_t PIN_SERVO_PAN = PA6;
 constexpr uint8_t PIN_SERVO_TILT = PA7;
 constexpr uint8_t PIN_BUTTON_USER = PB12;
+constexpr uint8_t PIN_BATTERY_ADC = PA0;
 #else
 constexpr uint8_t PIN_SERVO_PAN = 0;
 constexpr uint8_t PIN_SERVO_TILT = 1;
 constexpr uint8_t PIN_BUTTON_USER = 2;
+constexpr uint8_t PIN_BATTERY_ADC = 3;
 #endif
 
 constexpr uint8_t PAN_MIN_ANGLE = 0;
@@ -41,6 +43,8 @@ constexpr uint32_t BUTTON_DEBOUNCE_MS = 30;
 constexpr uint32_t BUTTON_LONG_PRESS_MS = 800;
 constexpr uint32_t BUTTON_SUPER_LONG_PRESS_MS = 2500;
 constexpr uint32_t OLED_ACTION_MESSAGE_MS = 1200;
+constexpr uint32_t BATTERY_SAMPLE_INTERVAL_MS = 200;
+constexpr uint8_t BATTERY_SAMPLE_WINDOW = 8;
 
 // PAN 校准安全脉宽上限：超过该值时，当前机构已接近物理极限，继续推动可能导致堵转或串口异常。
 constexpr uint16_t PAN_CALIBRATION_SAFE_MAX_US = 2350;

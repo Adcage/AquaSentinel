@@ -9,6 +9,10 @@ void buildLine(char* target, const char* label, int value, const char* suffix) {
     snprintf(target, OLED_TEXT_BUFFER_SIZE, "%s %d%s", label, value, suffix);
 }
 
+void buildText(char* target, const char* prefix, const char* value) {
+    snprintf(target, OLED_TEXT_BUFFER_SIZE, "%s %s", prefix, value);
+}
+
 }  // namespace
 
 OledFrame OledViewModel::build(const OledUiState& state) {
@@ -50,9 +54,9 @@ OledFrame OledViewModel::build(const OledUiState& state) {
             break;
         case OledPage::Battery:
             copyText(frame.title, "电量");
-            copyText(frame.lines[0], "ADC WAIT");
-            copyText(frame.lines[1], "PA0 WAIT");
-            copyText(frame.lines[2], "BAT WAIT");
+            buildVoltageLine(frame.lines[0], state.batteryMv, state.batteryValid);
+            buildPercentLine(frame.lines[1], state.batteryPercent, state.batteryValid);
+            buildRawLine(frame.lines[2], state.batteryRaw, state.batteryValid);
             copyText(frame.lines[3], "SHORT NEXT");
             break;
     }
@@ -66,6 +70,31 @@ void OledViewModel::buildAngleLine(char* target, const char* label, uint8_t angl
 
 void OledViewModel::buildPulseLine(char* target, const char* label, uint16_t pulseUs) {
     buildLine(target, label, pulseUs, "US");
+}
+
+void OledViewModel::buildVoltageLine(char* target, uint16_t batteryMv, bool valid) {
+    if (!valid) {
+        copyText(target, "BAT --.--V");
+        return;
+    }
+    const uint16_t centivolts = static_cast<uint16_t>((batteryMv + 5U) / 10U);
+    snprintf(target, OLED_TEXT_BUFFER_SIZE, "BAT %u.%02uV", centivolts / 100U, centivolts % 100U);
+}
+
+void OledViewModel::buildPercentLine(char* target, uint8_t percent, bool valid) {
+    if (!valid) {
+        copyText(target, "PCT --%");
+        return;
+    }
+    snprintf(target, OLED_TEXT_BUFFER_SIZE, "PCT %u%%", percent);
+}
+
+void OledViewModel::buildRawLine(char* target, uint16_t raw, bool valid) {
+    if (!valid) {
+        copyText(target, "RAW ----");
+        return;
+    }
+    buildLine(target, "RAW", raw, "");
 }
 
 void OledViewModel::copyText(char* target, const char* text) {

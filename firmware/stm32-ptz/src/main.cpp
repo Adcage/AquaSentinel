@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "BatteryMonitor.h"
 #include "ButtonHandler.h"
 #include "OledDisplay.h"
 #include "PtzServo.h"
@@ -12,6 +13,7 @@ PtzServo g_servo;
 UartHandler g_uartHandler(g_servo);
 OledDisplay g_oledDisplay;
 ButtonHandler g_buttonHandler;
+BatteryMonitor g_batteryMonitor;
 OledPage g_currentPage = OledPage::Status;
 uint32_t g_actionMessageUntilMs = 0;
 char g_actionMessage[OLED_TEXT_BUFFER_SIZE] = {0};
@@ -38,6 +40,7 @@ void setActionMessage(const char* message, uint32_t nowMs) {
 
 OledUiState buildUiState(uint32_t nowMs) {
     const PtzState servoState = g_servo.state();
+    const BatteryReading batteryReading = g_batteryMonitor.reading();
 
     OledUiState state{};
     state.page = g_currentPage;
@@ -52,6 +55,10 @@ OledUiState buildUiState(uint32_t nowMs) {
         strncpy(state.actionMessage, g_actionMessage, OLED_TEXT_BUFFER_SIZE - 1);
         state.actionMessage[OLED_TEXT_BUFFER_SIZE - 1] = '\0';
     }
+    state.batteryRaw = batteryReading.raw;
+    state.batteryMv = batteryReading.batteryMv;
+    state.batteryPercent = batteryReading.percent;
+    state.batteryValid = batteryReading.valid;
 
     return state;
 }
@@ -63,6 +70,7 @@ void setup() {
     Serial.begin(ptz_config::UART_BAUD_RATE);
     pinMode(ptz_config::PIN_BUTTON_USER, INPUT_PULLUP);
     g_buttonHandler.begin();
+    g_batteryMonitor.begin();
     g_servo.begin(ptz_config::PIN_SERVO_PAN, ptz_config::PIN_SERVO_TILT);
     g_uartHandler.begin(Serial);
     g_oledDisplay.begin();
@@ -72,6 +80,7 @@ void setup() {
 void loop() {
     const uint32_t nowMs = millis();
     g_uartHandler.poll();
+    g_batteryMonitor.update(nowMs);
 
     const bool rawPressed = digitalRead(ptz_config::PIN_BUTTON_USER) == LOW;
     const ButtonEvent event = g_buttonHandler.update(rawPressed, nowMs);
@@ -81,7 +90,7 @@ void loop() {
         g_actionMessage[0] = '\0';
     } else if (event == ButtonEvent::LongPress) {
         g_servo.home();
-        setActionMessage("回中中", nowMs);
+        setActionMessage("正在回中", nowMs);
     }
 
     g_oledDisplay.update(buildUiState(nowMs));

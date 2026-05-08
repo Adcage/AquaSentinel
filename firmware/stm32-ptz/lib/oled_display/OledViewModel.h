@@ -30,6 +30,10 @@ struct OledUiState {
     uint32_t uptimeMs = 0;
     bool showActionMessage = false;
     char actionMessage[OLED_TEXT_BUFFER_SIZE] = {0};
+    uint16_t batteryRaw = 0;
+    uint16_t batteryMv = 0;
+    uint8_t batteryPercent = 0;
+    bool batteryValid = false;
 };
 
 struct OledFrame {
@@ -47,5 +51,8 @@ class OledViewModel {
 
     static void buildAngleLine(char* target, const char* label, uint8_t angle);
     static void buildPulseLine(char* target, const char* label, uint16_t pulseUs);
+    static void buildVoltageLine(char* target, uint16_t batteryMv, bool valid);
+    static void buildPercentLine(char* target, uint8_t percent, bool valid);
+    static void buildRawLine(char* target, uint16_t raw, bool valid);
     static void copyText(char* target, const char* text);
 };
