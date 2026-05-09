@@ -16,29 +16,91 @@ struct BatteryPercentPoint {
 };
 
 const BatteryPercentPoint BATTERY_PERCENT_POINTS[] = {
-    {3300, 0},
-    {3400, 5},
-    {3550, 15},
-    {3700, 35},
-    {3850, 60},
-    {4000, 80},
+    {3000, 0},
+    {3200, 5},
+    {3450, 15},
+    {3600, 35},
+    {3700, 50},
+    {3800, 65},
+    {3900, 75},
+    {4000, 85},
+    {4100, 95},
     {4200, 100},
 };
 
 #ifdef ARDUINO
+
+#ifdef STM32F1
+#include <stm32f1xx_hal.h>
+#include <stm32f1xx_hal_adc.h>
+#include <stm32f1xx_ll_bus.h>
+#include <stm32f1xx_ll_gpio.h>
+
+static ADC_HandleTypeDef hbatteryAdc;
+
 uint16_t readSettledRawSample() {
-    (void)analogRead(ptz_config::PIN_BATTERY_ADC);
-    delayMicroseconds(80);
+    hbatteryAdc.Instance = ADC1;
+    hbatteryAdc.Init.ScanConvMode = DISABLE;
+    hbatteryAdc.Init.ContinuousConvMode = DISABLE;
+    hbatteryAdc.Init.DiscontinuousConvMode = DISABLE;
+    hbatteryAdc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+    hbatteryAdc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    hbatteryAdc.Init.NbrOfConversion = 1;
+
+    HAL_ADC_DeInit(&hbatteryAdc);
+    HAL_ADC_Init(&hbatteryAdc);
+
+    ADC_ChannelConfTypeDef sConfig = {};
+    sConfig.Channel = ADC_CHANNEL_0;
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+
+    HAL_ADC_ConfigChannel(&hbatteryAdc, &sConfig);
+
+    HAL_ADCEx_Calibration_Start(&hbatteryAdc);
+
+    (void)HAL_ADC_Start(&hbatteryAdc);
+    HAL_ADC_PollForConversion(&hbatteryAdc, 10);
+    HAL_ADC_Stop(&hbatteryAdc);
+    HAL_ADC_Start(&hbatteryAdc);
+    HAL_ADC_PollForConversion(&hbatteryAdc, 10);
+    (void)HAL_ADC_GetValue(&hbatteryAdc);
+    HAL_ADC_Stop(&hbatteryAdc);
+
+    delayMicroseconds(500);
 
     uint32_t total = 0;
-    static const uint8_t SAMPLE_COUNT = 6;
+    static const uint8_t SAMPLE_COUNT = 16;
+    for (uint8_t index = 0; index < SAMPLE_COUNT; ++index) {
+        HAL_ADC_Start(&hbatteryAdc);
+        HAL_ADC_PollForConversion(&hbatteryAdc, 10);
+        total += HAL_ADC_GetValue(&hbatteryAdc);
+        HAL_ADC_Stop(&hbatteryAdc);
+        delayMicroseconds(200);
+    }
+
+    HAL_ADC_DeInit(&hbatteryAdc);
+
+    return static_cast<uint16_t>((total + SAMPLE_COUNT / 2U) / SAMPLE_COUNT);
+}
+#else
+
+uint16_t readSettledRawSample() {
+    (void)analogRead(ptz_config::PIN_BATTERY_ADC);
+    delayMicroseconds(200);
+
+    uint32_t total = 0;
+    static const uint8_t SAMPLE_COUNT = 16;
     for (uint8_t index = 0; index < SAMPLE_COUNT; ++index) {
         total += analogRead(ptz_config::PIN_BATTERY_ADC);
-        delayMicroseconds(80);
+        delayMicroseconds(200);
     }
 
     return static_cast<uint16_t>((total + SAMPLE_COUNT / 2U) / SAMPLE_COUNT);
 }
+
+#endif
+
 #endif
 
 }  // namespace
