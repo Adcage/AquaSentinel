@@ -19,5 +19,15 @@ int main() {
     assert(reading.batteryMv > 3900 && reading.batteryMv < 4100);
     assert(reading.percent > 60 && reading.percent < 90);
 
+    assert(BatteryMonitor::batteryMvToPercent(3200) == 0);
+    assert(BatteryMonitor::batteryMvToPercent(3400) == 5);
+    assert(BatteryMonitor::batteryMvToPercent(3550) == 15);
+    assert(BatteryMonitor::batteryMvToPercent(3700) == 35);
+    assert(BatteryMonitor::batteryMvToPercent(3850) == 60);
+    assert(BatteryMonitor::batteryMvToPercent(4000) == 80);
+    assert(BatteryMonitor::batteryMvToPercent(4300) == 100);
+    assert(BatteryMonitor::batteryMvToPercent(3450) == 8);
+    assert(BatteryMonitor::batteryMvToPercent(3625) == 25);
+
     return 0;
 }

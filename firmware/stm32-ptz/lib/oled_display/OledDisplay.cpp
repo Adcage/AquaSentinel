@@ -229,7 +229,11 @@ bool OledDisplay::hasStateChanged(const OledUiState& current, const OledUiState&
            current.tilt != previous.tilt ||
            current.calibrationMode != previous.calibrationMode ||
            current.panPulseUs != previous.panPulseUs ||
-           current.tiltPulseUs != previous.tiltPulseUs;
+           current.tiltPulseUs != previous.tiltPulseUs ||
+           current.batteryRaw != previous.batteryRaw ||
+           current.batteryMv != previous.batteryMv ||
+           current.batteryPercent != previous.batteryPercent ||
+           current.batteryValid != previous.batteryValid;
 }
 
 void OledDisplay::drawFrame(const OledFrame& frame) {

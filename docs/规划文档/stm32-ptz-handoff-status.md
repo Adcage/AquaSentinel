@@ -40,7 +40,7 @@
 
 ## 3. 当前未提交改动（交接重点）
 
-当前工作区还有一轮**尚未提交**的改动，主要是把电量页从占位页升级成真实电量页，并修复 OLED 文本显示不全的问题。
+当前工作区还有一轮**尚未提交**的改动，包括：把电量页从占位页升级成真实电量页、修复 OLED 文本显示不全的问题、以及修复电量页数据不刷新的 bug。
 
 当前未提交文件：
 
@@ -55,6 +55,8 @@ firmware/stm32-ptz/lib/battery_monitor/BatteryMonitor.h
 firmware/stm32-ptz/lib/battery_monitor/BatteryMonitor.cpp
 firmware/stm32-ptz/test/host/test_battery_monitor.cpp
 ```
+
+其中 `OledDisplay.cpp` 相比上一轮新增了 `hasStateChanged` 中电量字段比较的修复；两个测试文件新增了边界与占位场景断言。
 
 这些改动**还没有 commit**，所以换设备继续开发前，要么把这些文件带过去，要么在当前设备先提交。
 
@@ -184,6 +186,45 @@ battery_mv = adc_raw × 3300 × 2 / 4096
 
 根因就是字模表缺少这些字符，被 OLED 渲染时直接吞掉了。
 
+### 5.5 修复电量页不刷新 bug
+
+`OledDisplay::hasStateChanged()` 原来只比较了云台角度、脉宽和页面切换等字段，完全没有比较电量页的四个关键字段：
+
+- `batteryRaw`
+- `batteryMv`
+- `batteryPercent`
+- `batteryValid`
+
+这导致首次切到电量页后会渲染一次，但之后即使 `BatteryMonitor` 持续采样并更新了数据，`OledDisplay::update()` 也会因 `hasStateChanged` 返回 `false` 而 skip 刷新。电量页上的百分比、电压、RAW 值永远停留在首次渲染时的数据。
+
+修复方式：在 `hasStateChanged` 返回表达式中追加了这四个字段的比较。
+
+**修正前：**
+
+```cpp
+return current.pan != previous.pan ||
+       current.tilt != previous.tilt ||
+       current.calibrationMode != previous.calibrationMode ||
+       current.panPulseUs != previous.panPulseUs ||
+       current.tiltPulseUs != previous.tiltPulseUs;
+```
+
+**修正后：**
+
+```cpp
+return current.pan != previous.pan ||
+       current.tilt != previous.tilt ||
+       current.calibrationMode != previous.calibrationMode ||
+       current.panPulseUs != previous.panPulseUs ||
+       current.tiltPulseUs != previous.tiltPulseUs ||
+       current.batteryRaw != previous.batteryRaw ||
+       current.batteryMv != previous.batteryMv ||
+       current.batteryPercent != previous.batteryPercent ||
+       current.batteryValid != previous.batteryValid;
+```
+
+影响文件：`firmware/stm32-ptz/lib/oled_display/OledDisplay.cpp
+
 ---
 
 ## 6. 当前用户实测与修复关系
@@ -223,10 +264,11 @@ battery_mv = adc_raw × 3300 × 2 / 4096
 
 ### 6.4 `PCT 0`
 
-可能有两层原因：
+已确认有三层原因（已全部修复）：
 
-1. `%` 字模缺失，所以百分号看不到
+1. `%` 字模缺失，所以百分号看不到 → 已补充字模
 2. ADC 实际读值偏低，导致换算百分比也确实接近 `0`
+3. **关键 bug**：`OledDisplay::hasStateChanged()` 没有比较电量页的四个字段（`batteryRaw`、`batteryMv`、`batteryPercent`、`batteryValid`），导致首次渲染后即使 BatteryMonitor 更新了数据，OLED 也不会检测到变化、不会刷新显示 → 已修复，在 `hasStateChanged` 中追加了这四个字段的比较
 
 ### 6.5 `1.71V`
 
@@ -235,7 +277,7 @@ battery_mv = adc_raw × 3300 × 2 / 4096
 可能原因：
 
 1. 之前采样方式太粗糙，高阻分压导致 ADC 读低
-2. 软件已经改成“丢弃首样本 + 多次平均”，理论上会改善
+2. 软件已经改成"丢弃首样本 + 多次平均"，理论上会改善
 3. 如果重新烧录后还是偏低，就要继续怀疑硬件侧稳定性
 
 ---
@@ -247,13 +289,17 @@ battery_mv = adc_raw × 3300 × 2 / 4096
 已通过：
 
 1. `test_oled_view_model_pages.cpp`
-- 验证电量页文案格式
+- 验证电量页文案格式（`BAT 4.01V`、`PCT 78%`、`RAW 2489`）
 - 验证动作提示文案 `正在回中`
+- 验证低电量边界（`PCT 0%`，`batteryMv = 3300mV`）
+- 验证无效数据占位（`BAT --.--V`、`PCT --%`、`RAW ----`，`batteryValid = false`）
 
 2. `test_battery_monitor.cpp`
 - 验证原始 ADC 值到毫伏换算
-- 验证毫伏到百分比换算
+- 验证毫伏到百分比换算（含分段映射端点和插值中间值）
 - 验证样本平滑后读数落在合理区间
+- 验证低于 3300mV 映射为 0%、高于 4200mV 映射为 100%
+- 验证插值精度：`3450mV → 8%`、`3625mV → 25%`
 
 ### 7.2 STM32 固件构建
 
@@ -268,12 +314,12 @@ pio run -e bluepill_f103c8
 ```text
 SUCCESS
 RAM:   3920 / 20480  (19.1%)
-Flash: 35800 / 65536 (54.6%)
+Flash: 35816 / 65536 (54.7%)
 ```
 
 说明：
 
-- 当前这轮电量采样改动没有把固件撑爆
+- 当前这轮改动（含不刷新 bug 修复）没有把固件撑爆
 - Flash 还剩余较大空间，可以继续做超长按和校准入口
 
 ---
@@ -348,6 +394,7 @@ feat(firmware): 为 STM32 接入电池电压采样与电量页显示
 目标：
 
 - 板上确认电量页显示完整
+- 确认电量数据实时刷新（不再卡在首次渲染值）
 - 确认电压不再明显偏低
 - 确认 RAW 抖动处于可接受范围
 - 提交当前电量采样改动
@@ -414,8 +461,10 @@ pio run -e bluepill_f103c8 -t upload
 1. `OLED` 基础显示已完成
 2. `PB12` 短按切页已完成
 3. `PB12` 长按回中已完成
-4. 电量页真实采样逻辑已写完，但**需要重新烧录后板级确认效果**
-5. 当前最大的未闭环点不是编译，而是**板上实际 ADC 读值是否已恢复正常**
-6. 下一阶段最自然的功能是：`PB12` 超长按进入校准模式
+4. 电量页真实采样逻辑已写完
+5. **电量页不刷新 bug 已修复**：`hasStateChanged` 现在会比较电量字段，数据变化会触发 OLED 重绘
+6. **字模缺失 bug 已修复**：ASCII `B`/`W`/`X`/`%`/`.`/`-` 已补全
+7. 当前最大的未闭环点不是编译或逻辑，而是**板上实际 ADC 读值是否仍偏低**（需烧录后复测）
+8. 下一阶段最自然的功能是：`PB12` 超长按进入校准模式
 
 这份文档的目的就是让另一台设备上的继续开发不需要重新从头梳理上下文。

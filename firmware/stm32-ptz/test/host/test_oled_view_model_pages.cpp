@@ -33,5 +33,28 @@ int main() {
     assert(std::string(actionFrame.title) == "云台");
     assert(std::string(actionFrame.lines[0]) == "正在回中");
 
+    {
+        OledUiState low{};
+        low.page = OledPage::Battery;
+        low.batteryMv = 3300;
+        low.batteryPercent = 0;
+        low.batteryRaw = 2048;
+        low.batteryValid = true;
+        low.uptimeMs = 3000;
+        OledFrame lowFrame = OledViewModel::build(low);
+        assert(std::string(lowFrame.lines[1]) == "PCT 0%");
+    }
+
+    {
+        OledUiState invalid{};
+        invalid.page = OledPage::Battery;
+        invalid.batteryValid = false;
+        invalid.uptimeMs = 3000;
+        OledFrame invFrame = OledViewModel::build(invalid);
+        assert(std::string(invFrame.lines[0]) == "BAT --.--V");
+        assert(std::string(invFrame.lines[1]) == "PCT --%");
+        assert(std::string(invFrame.lines[2]) == "RAW ----");
+    }
+
     return 0;
 }
