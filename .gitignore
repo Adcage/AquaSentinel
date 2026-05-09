@@ -70,6 +70,7 @@ yolo-service/model/drowning-v11-x.pt
 *.tar.gz
 *.rar
 *.7z
+*.exe
 
 # ===== Useless =====
 nul
