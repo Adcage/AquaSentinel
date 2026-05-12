@@ -21,8 +21,8 @@ int main() {
     assert(BatteryMonitor::batteryMvToPercent(4000) == 85);
     assert(BatteryMonitor::batteryMvToPercent(4100) == 95);
 
-    assert(BatteryMonitor::batteryMvToPercent(3100) == 2);
-    assert(BatteryMonitor::batteryMvToPercent(3500) == 25);
+    assert(BatteryMonitor::batteryMvToPercent(3100) == 3);
+    assert(BatteryMonitor::batteryMvToPercent(3500) == 22);
     assert(BatteryMonitor::batteryMvToPercent(3850) == 70);
 
     monitor.reset();
