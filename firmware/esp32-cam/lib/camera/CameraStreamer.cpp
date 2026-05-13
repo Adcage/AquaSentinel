@@ -75,34 +75,119 @@ bool CameraStreamer::begin() {
     return true;
 }
 
-void CameraStreamer::handleStream(WebServer& server) {
-    if (!cameraInitialized) {
-        server.send(500, "text/plain", "摄像头未初始化");
-        return;
+bool CameraStreamer::tryStartStream() {
+    if (streamActive) {
+        return false;
     }
 
-    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-    server.send(200, "multipart/x-mixed-replace; boundary=frame", "");
+    streamActive = true;
+    streamStartTime = millis();
+    currentFrame = nullptr;
+    currentFrameOffset = 0;
+    currentFrameHeaderOffset = 0;
+    currentFrameFooterOffset = 0;
 
-    while (server.client().connected()) {
-        camera_fb_t* fb = esp_camera_fb_get();
-        if (fb == nullptr) {
-            break;
-        }
-        server.sendContent("--frame\r\n");
-        server.sendContent("Content-Type: image/jpeg\r\n");
-        server.sendContent("Content-Length: " + String(fb->len) + "\r\n\r\n");
-        server.sendContent(reinterpret_cast<const char*>(fb->buf), fb->len);
-        server.sendContent("\r\n");
-        esp_camera_fb_return(fb);
+    Serial.println("流客户端已连接，开始推流");
+    return true;
+}
 
+void CameraStreamer::releaseCurrentFrame() {
+    if (currentFrame != nullptr) {
+        esp_camera_fb_return(currentFrame);
+        currentFrame = nullptr;
+    }
+}
+
+void CameraStreamer::stopStream() {
+    releaseCurrentFrame();
+    streamActive = false;
+    currentFrameOffset = 0;
+    currentFrameHeaderOffset = 0;
+    currentFrameFooterOffset = 0;
+}
+
+size_t CameraStreamer::fillStreamChunk(uint8_t* buffer, size_t maxLen) {
+    if (!streamActive || !cameraInitialized) {
+        return 0;
+    }
+
+    if (millis() - streamStartTime > cam_config::STREAM_CLIENT_TIMEOUT_MS) {
+        Serial.println("流客户端超时，停止推流");
+        stopStream();
+        return 0;
+    }
+
+    if (maxLen < 128) {
+        return RESPONSE_TRY_AGAIN;
+    }
+
+    if (currentFrame == nullptr) {
         const unsigned long now = millis();
-        const int delayMs = cam_config::FRAME_INTERVAL_MS - static_cast<int>(now - lastFrameTime);
-        if (delayMs > 0) {
-            delay(delayMs);
+        if (now - lastFrameTime < static_cast<unsigned long>(cam_config::FRAME_INTERVAL_MS)) {
+            return RESPONSE_TRY_AGAIN;
         }
-        lastFrameTime = millis();
+
+        currentFrame = esp_camera_fb_get();
+        if (currentFrame == nullptr) {
+            Serial.println("摄像头捕获帧失败");
+            return RESPONSE_TRY_AGAIN;
+        }
+
+        currentFrameOffset = 0;
+        currentFrameHeaderOffset = 0;
+        currentFrameFooterOffset = 0;
+
+        snprintf(
+            mjpegHeaderBuf, MJPEG_HEADER_BUF_SIZE,
+            "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n",
+            static_cast<unsigned int>(currentFrame->len));
+        lastFrameTime = now;
     }
+
+    size_t written = 0;
+    const size_t headerLen = strlen(mjpegHeaderBuf);
+    static const char frameFooter[] = "\r\n";
+
+    while (written < maxLen) {
+        if (currentFrameHeaderOffset < headerLen) {
+            const size_t remaining = headerLen - currentFrameHeaderOffset;
+            const size_t copyLen = std::min(remaining, maxLen - written);
+            memcpy(buffer + written, mjpegHeaderBuf + currentFrameHeaderOffset, copyLen);
+            currentFrameHeaderOffset += copyLen;
+            written += copyLen;
+            continue;
+        }
+
+        if (currentFrameOffset < currentFrame->len) {
+            const size_t remaining = currentFrame->len - currentFrameOffset;
+            const size_t copyLen = std::min(remaining, maxLen - written);
+            memcpy(buffer + written, currentFrame->buf + currentFrameOffset, copyLen);
+            currentFrameOffset += copyLen;
+            written += copyLen;
+            continue;
+        }
+
+        if (currentFrameFooterOffset < sizeof(frameFooter) - 1) {
+            const size_t remaining = (sizeof(frameFooter) - 1) - currentFrameFooterOffset;
+            const size_t copyLen = std::min(remaining, maxLen - written);
+            memcpy(buffer + written, frameFooter + currentFrameFooterOffset, copyLen);
+            currentFrameFooterOffset += copyLen;
+            written += copyLen;
+            continue;
+        }
+
+        releaseCurrentFrame();
+        currentFrameOffset = 0;
+        currentFrameHeaderOffset = 0;
+        currentFrameFooterOffset = 0;
+        break;
+    }
+
+    return written;
+}
+
+bool CameraStreamer::isStreaming() const {
+    return streamActive;
 }
 
 String CameraStreamer::statusJson() const {
@@ -110,6 +195,9 @@ String CameraStreamer::statusJson() const {
     status += "\"camera\":\"";
     status += cameraInitialized ? "OK" : "FAIL";
     status += "\",";
+    status += "\"streaming\":";
+    status += isStreaming() ? "true" : "false";
+    status += ",";
     status += "\"wifi\":\"";
     status += WiFi.status() == WL_CONNECTED ? "connected" : "disconnected";
     status += "\",";

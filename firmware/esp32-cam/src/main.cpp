@@ -31,16 +31,19 @@ void connectWiFi() {
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    Serial.println("\n=== AquaSentinel ESP32-CAM 控制测试 (视频流已禁用) ===");
+    Serial.println("\n=== AquaSentinel ESP32-CAM (非阻塞流模式) ===");
 
     g_uartBridge.begin(cam_config::UART_BAUD_RATE, cam_config::UART_RX_PIN, cam_config::UART_TX_PIN);
-    // 暂时禁用视频流以节省内存
-    // g_cameraStreamer.begin();
+    const bool cameraReady = g_cameraStreamer.begin();
+    if (!cameraReady) {
+        Serial.println("摄像头初始化失败，继续保留 PTZ 控制能力");
+    }
     connectWiFi();
 
     if (WiFi.status() == WL_CONNECTED) {
         g_server.begin(cam_config::HTTP_PORT);
-        Serial.println("Web服务器已启动");
+        Serial.println("Web服务器已启动（异步模式）");
+        Serial.println("视频流端点: http://" + WiFi.localIP().toString() + "/stream");
         Serial.println("PTZ 控制端点: http://" + WiFi.localIP().toString() + "/api/ptz/*");
     }
 }
@@ -49,5 +52,4 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED) {
         g_server.loop();
     }
-    delay(1);
 }

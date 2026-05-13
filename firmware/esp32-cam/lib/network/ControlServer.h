@@ -1,6 +1,6 @@
 #pragma once
 
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 
 #include "CameraStreamer.h"
 #include "UartBridge.h"
@@ -14,7 +14,7 @@ class ControlServer {
    private:
     CameraStreamer& camera;
     UartBridge& bridge;
-    WebServer server;
+    AsyncWebServer server;
 
     void setupRoutes();
 };
