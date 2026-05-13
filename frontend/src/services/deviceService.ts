@@ -13,6 +13,11 @@ import type {
 } from "@/types/business";
 import { unwrapApiData, venueIdToName } from "@/services/serviceUtils";
 
+type CameraDeviceVoWithPreview = API.CameraDeviceVO & {
+  previewUrl?: string;
+  deviceBaseUrl?: string;
+};
+
 export interface DeviceQuery extends PageQuery {
   venueId?: string;
   venue?: string;
@@ -60,13 +65,15 @@ const deviceTypeToProtocol = (deviceType?: DeviceRecord["deviceType"]) => {
   return "RTSP";
 };
 
-const toDeviceRecord = (item: API.CameraDeviceVO): DeviceRecord => ({
+const toDeviceRecord = (item: CameraDeviceVoWithPreview): DeviceRecord => ({
   id: String(item.id ?? item.cameraCode ?? ""),
   name: item.cameraName || item.cameraCode || "未命名设备",
   location: item.zoneId != null ? `区域${item.zoneId}` : "未配置区域",
   venue: venueIdToName(item.venueId ?? null),
   deviceType: protocolToDeviceType(item.protocol),
   streamUrl: item.streamUrl || "",
+  previewUrl: item.previewUrl || "",
+  deviceBaseUrl: item.deviceBaseUrl || "",
   status: apiStatusToBusiness(item.deviceStatus),
   maintenanceCycleDays: 30,
   enabled: item.enabled ?? 1,

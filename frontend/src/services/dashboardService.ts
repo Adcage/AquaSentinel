@@ -13,6 +13,10 @@ import type {
 import { unwrapApiData, venueIdToName } from "@/services/serviceUtils";
 import { resolveCameraPreviewTarget } from "@/utils/streamPreview";
 
+type CameraDeviceVoWithPreview = API.CameraDeviceVO & {
+  previewUrl?: string;
+};
+
 const toRiskLevel = (status?: string): CameraGridItem["riskLevel"] => {
   const normalized = status?.toUpperCase();
   if (normalized === "ERROR") {
@@ -24,11 +28,12 @@ const toRiskLevel = (status?: string): CameraGridItem["riskLevel"] => {
   return "normal";
 };
 
-const toCameraGridItem = (item: API.CameraDeviceVO): CameraGridItem => {
+const toCameraGridItem = (item: CameraDeviceVoWithPreview): CameraGridItem => {
   const riskLevel = toRiskLevel(item.deviceStatus);
   const token = sessionStorage.getItem("token") || "";
   const previewTarget = resolveCameraPreviewTarget({
     streamUrl: item.streamUrl,
+    previewUrl: item.previewUrl,
     cameraCode: item.cameraCode,
     cameraId: Number(item.id ?? 0),
     token,

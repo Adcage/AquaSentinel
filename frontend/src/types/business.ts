@@ -83,6 +83,8 @@ export interface DeviceRecord {
   venue: string;
   deviceType: "fixed" | "ptz";
   streamUrl: string;
+  previewUrl?: string;
+  deviceBaseUrl?: string;
   status: DeviceStatus;
   maintenanceCycleDays: number;
   enabled: number;

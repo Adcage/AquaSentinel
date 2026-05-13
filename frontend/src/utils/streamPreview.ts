@@ -2,6 +2,7 @@ export type CameraPreviewProtocol = "webrtc" | "mjpeg" | "ws_jpeg";
 
 interface ResolvePreviewOptions {
   streamUrl?: string;
+  previewUrl?: string;
   cameraCode?: string;
   cameraId?: number;
   token?: string;
@@ -80,20 +81,37 @@ const resolveMjpegUrl = (streamUrl?: string, token?: string): string => {
 };
 
 const resolveBackendProxyUrl = (
+  preferredPreviewUrl?: string,
   cameraId?: number,
   token?: string,
 ): string => {
+  const baseUrl =
+    trimTrailingSlash(String(import.meta.env.VITE_API_BASE_URL || "/api").trim()) ||
+    "/api";
+  const tokenParamName =
+    String(import.meta.env.VITE_STREAM_TOKEN_PARAM_NAME || "token").trim() || "token";
+  const explicitPreviewUrl = (preferredPreviewUrl || "").trim();
+  if (explicitPreviewUrl) {
+    if (/^https?:\/\//i.test(explicitPreviewUrl)) {
+      let url = explicitPreviewUrl;
+      if (token) {
+        url = appendQuery(url, tokenParamName, token);
+      }
+      return url;
+    }
+    const path = explicitPreviewUrl.startsWith("/") ? explicitPreviewUrl : `/${explicitPreviewUrl}`;
+    let url = `${baseUrl}${path}`;
+    if (token) {
+      url = appendQuery(url, tokenParamName, token);
+    }
+    return url;
+  }
   const validCameraId = Number(cameraId || 0);
   if (!Number.isFinite(validCameraId) || validCameraId <= 0) {
     return "";
   }
-  const baseUrl =
-    trimTrailingSlash(String(import.meta.env.VITE_API_BASE_URL || "/api").trim()) ||
-    "/api";
   const provider =
     String(import.meta.env.VITE_STREAM_PROVIDER || "auto").trim() || "auto";
-  const tokenParamName =
-    String(import.meta.env.VITE_STREAM_TOKEN_PARAM_NAME || "token").trim() || "token";
   let previewUrl = `${baseUrl}/streams/cameras/${validCameraId}/preview?provider=${encodeURIComponent(provider)}`;
   if (token) {
     previewUrl = appendQuery(previewUrl, tokenParamName, token);
@@ -112,7 +130,7 @@ export const resolveCameraPreviewTarget = (
   if (previewMode === "backend_proxy") {
     return {
       protocol: "mjpeg",
-      url: resolveBackendProxyUrl(options.cameraId, token),
+      url: resolveBackendProxyUrl(options.previewUrl, options.cameraId, token),
     };
   }
 
