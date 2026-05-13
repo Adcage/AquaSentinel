@@ -14,11 +14,13 @@ import com.springboot.model.entity.CameraDevice;
 import com.springboot.model.vo.BatchOperateResultVO;
 import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.service.CameraDeviceService;
+import com.springboot.service.CameraPreviewRouteService;
 import com.springboot.utils.SqlUtils;
 
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class CameraDeviceServiceImpl extends ServiceImpl<CameraDeviceMapper, CameraDevice>
         implements CameraDeviceService {
+
+    @Resource private CameraPreviewRouteService cameraPreviewRouteService;
 
     @Override
     public void validCameraDevice(CameraDevice cameraDevice, boolean add) {
@@ -154,6 +158,8 @@ public class CameraDeviceServiceImpl extends ServiceImpl<CameraDeviceMapper, Cam
         cameraDeviceVO.setCameraCode(cameraDevice.getCamera_code());
         cameraDeviceVO.setCameraName(cameraDevice.getCamera_name());
         cameraDeviceVO.setStreamUrl(cameraDevice.getStream_url());
+        cameraDeviceVO.setPreviewUrl(cameraPreviewRouteService.buildPreviewUrl(cameraDevice));
+        cameraDeviceVO.setDeviceBaseUrl(cameraPreviewRouteService.buildDeviceBaseUrl(cameraDevice));
         cameraDeviceVO.setProtocol(cameraDevice.getProtocol());
         cameraDeviceVO.setDeviceStatus(cameraDevice.getDevice_status());
         cameraDeviceVO.setHealthStatus(cameraDevice.getHealth_status());

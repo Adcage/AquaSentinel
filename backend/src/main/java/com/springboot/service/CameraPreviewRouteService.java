@@ -59,6 +59,35 @@ public class CameraPreviewRouteService {
                         + encodedSource);
     }
 
+    public String buildPreviewUrl(CameraDevice cameraDevice) {
+        if (cameraDevice == null || cameraDevice.getId() == null) {
+            return "";
+        }
+        if (!supportsVideoHub(cameraDevice)) {
+            return "";
+        }
+        return "/streams/cameras/" + cameraDevice.getId() + "/preview";
+    }
+
+    public String buildDeviceBaseUrl(CameraDevice cameraDevice) {
+        if (cameraDevice == null) {
+            return "";
+        }
+        String streamUrl = StringUtils.defaultString(cameraDevice.getStream_url()).trim();
+        if (!streamUrl.startsWith("http://") && !streamUrl.startsWith("https://")) {
+            return "";
+        }
+        URI uri = URI.create(streamUrl);
+        if (StringUtils.isBlank(uri.getScheme()) || StringUtils.isBlank(uri.getHost())) {
+            return "";
+        }
+        String base = uri.getScheme() + "://" + uri.getHost();
+        if (uri.getPort() > 0) {
+            base += ":" + uri.getPort();
+        }
+        return base;
+    }
+
     public String proxyVideoHubPreview(CameraDevice cameraDevice, OutputStream outputStream)
             throws IOException, InterruptedException {
         URI uri = buildVideoHubStreamUri(cameraDevice);

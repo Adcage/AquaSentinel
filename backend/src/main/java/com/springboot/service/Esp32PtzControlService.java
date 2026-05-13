@@ -116,6 +116,8 @@ public class Esp32PtzControlService {
     }
 
     private String resolveDeviceBaseUrl(CameraDevice cameraDevice) {
+        // 阶段一仍由 stream_url 保存 ESP32 原始 HTTP 地址，PTZ 控制必须始终指向设备本体，
+        // 不能误用 backend 平台预览地址或 yolo-service video_hub 地址。
         String streamUrl = StringUtils.defaultString(cameraDevice.getStream_url()).trim();
         if (!streamUrl.startsWith("http://") && !streamUrl.startsWith("https://")) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "设备 streamUrl 需为 ESP32 HTTP 地址");

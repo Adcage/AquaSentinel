@@ -20,6 +20,10 @@ public class CameraDeviceVO implements Serializable {
 
     private String streamUrl;
 
+    private String previewUrl;
+
+    private String deviceBaseUrl;
+
     private String protocol;
 
     private String deviceStatus;
