@@ -13,6 +13,7 @@ import com.springboot.exception.BusinessException;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.security.StreamTokenAuthService;
 import com.springboot.service.CameraDeviceService;
+import com.springboot.service.CameraPreviewRouteService;
 import com.springboot.service.stream.StreamOpenRequest;
 import com.springboot.service.stream.StreamProviderRouter;
 import com.springboot.service.stream.StreamSession;
@@ -34,6 +35,8 @@ public class CameraStreamController {
     @Resource private CameraDeviceService cameraDeviceService;
 
     @Resource private StreamProviderRouter streamProviderRouter;
+
+    @Resource private CameraPreviewRouteService cameraPreviewRouteService;
 
     @Resource private StreamTokenAuthService streamTokenAuthService;
 
@@ -90,6 +93,24 @@ public class CameraStreamController {
                 internalRequest
                         ? StreamOpenRequest.internal(provider)
                         : StreamOpenRequest.external(provider);
+        if (cameraPreviewRouteService.supportsVideoHub(cameraDevice)) {
+            try {
+                response.setHeader(
+                        "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+                response.setHeader("Pragma", "no-cache");
+                response.setContentType("multipart/x-mixed-replace; boundary=frame");
+                cameraPreviewRouteService.proxyVideoHubPreview(
+                        cameraDevice, response.getOutputStream());
+                return;
+            } catch (BusinessException e) {
+                throw e;
+            } catch (IOException e) {
+                return;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "video_hub 预览被中断");
+            }
+        }
         try (StreamSession streamSession = streamProviderRouter.open(cameraDevice, request)) {
             if (!streamSession.supportsPipe()) {
                 if (StringUtils.isBlank(streamSession.getSourceUrl())) {
