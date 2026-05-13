@@ -48,6 +48,7 @@
       </el-form-item>
       <el-form-item label="传输协议" prop="protocol">
         <el-select v-model="form.protocol" style="width: 100%">
+          <el-option label="HTTP" value="HTTP" />
           <el-option label="RTSP" value="RTSP" />
           <el-option label="HTTP-FLV" value="HTTP-FLV" />
         </el-select>
