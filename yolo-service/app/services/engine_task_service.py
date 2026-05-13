@@ -26,6 +26,7 @@ from app.services.model_inference_service import infer_stream_frame, warmup_mode
 from app.services.rabbitmq_publisher_service import rabbitmq_publisher_service
 from app.services.tracker_service import DeepSortTracker, TrackedObject
 from app.services.video_overlay_service import video_frame_push_service
+from app.video_hub import video_hub_registry
 
 
 @dataclass
@@ -43,6 +44,8 @@ class EngineTaskState:
     drowning_alert_threshold_sec: float = 3.0
     last_callback_at: float = 0.0
     latest_frame_ts: float = 0.0
+    latest_frame_width: int = 0
+    latest_frame_height: int = 0
     latest_detections: list[dict[str, Any]] = field(default_factory=list)
     latest_risk_point: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -73,6 +76,8 @@ def _serialize_task(task: EngineTaskState) -> dict[str, Any]:
         "error_message": task.error_message,
         "realtime": {
             "frame_ts": task.latest_frame_ts,
+            "frame_width": task.latest_frame_width,
+            "frame_height": task.latest_frame_height,
             "detections": task.latest_detections,
             "risk_point": task.latest_risk_point,
         },
@@ -311,6 +316,7 @@ def _sync_task_realtime(
     frame_width: int,
     frame_height: int,
     decisions: list[DrowningDecision] | None = None,
+    frame_timestamp: float | None = None,
 ):
     decision_map: dict[str, DrowningDecision] = {}
     if decisions:
@@ -363,7 +369,9 @@ def _sync_task_realtime(
         task = _TASKS.get(task_code)
         if task is None:
             return
-        task.latest_frame_ts = time.time()
+        task.latest_frame_ts = time.time() if frame_timestamp is None else frame_timestamp
+        task.latest_frame_width = frame_width
+        task.latest_frame_height = frame_height
         task.latest_detections = detections
         task.latest_risk_point = risk_point
         task.updated_at = _utc_now()
@@ -447,6 +455,7 @@ def _push_realtime_ws(
     decisions: list[DrowningDecision],
     frame_width: int,
     frame_height: int,
+    frame_timestamp: float | None = None,
 ):
     camera_id = _extract_camera_id_from_task_code(task_code)
     if camera_id is None:
@@ -481,6 +490,9 @@ def _push_realtime_ws(
     payload = {
         "cameraId": camera_id,
         "taskCode": task_code,
+        "frameWidth": frame_width,
+        "frameHeight": frame_height,
+        "frameTs": time.time() if frame_timestamp is None else frame_timestamp,
         "headCount": len(tracked_objects),
         "detections": detections,
         "riskPoint": risk_point,
@@ -508,6 +520,148 @@ def _should_use_pyav_for_stream(stream_url: str) -> bool:
     return ".flv" in normalized or "format=flv" in normalized
 
 
+def _should_use_video_hub_for_stream(task_code: str, stream_url: str) -> bool:
+    if _extract_camera_id_from_task_code(task_code) is None:
+        return False
+    normalized = (stream_url or "").strip().lower()
+    if not (normalized.startswith("http://") or normalized.startswith("https://")):
+        return False
+    if _should_use_pyav_for_stream(stream_url):
+        return False
+    return True
+
+
+def _build_drowning_evaluator(min_duration_sec: float) -> DrowningRuleEvaluator:
+    return DrowningRuleEvaluator(
+        min_duration_sec=min_duration_sec,
+        posture_threshold=float(
+            current_app.config.get("ENGINE_DROWNING_POSTURE_THRESHOLD", 0.7)
+        ),
+        thermal_threshold=float(
+            current_app.config.get("ENGINE_DROWNING_THERMAL_THRESHOLD", 0.85)
+        ),
+        cooldown_sec=float(
+            current_app.config.get("ENGINE_DROWNING_EVENT_COOLDOWN_SEC", 15.0)
+        ),
+    )
+
+
+def _build_tracker() -> DeepSortTracker:
+    return DeepSortTracker(
+        iou_threshold=float(current_app.config.get("ENGINE_TRACK_IOU_THRESHOLD", 0.3)),
+        max_age_sec=float(current_app.config.get("ENGINE_TRACK_MAX_AGE_SEC", 1.5)),
+    )
+
+
+def _run_loop_with_video_hub(task_code: str, stream_url: str, frame_interval: float):
+    try:
+        import cv2
+        import numpy as np
+    except Exception:
+        current_app.logger.warning("cv2/numpy unavailable, fallback to sleep loop")
+        _run_loop_without_stream(task_code, frame_interval)
+        return
+
+    camera_id = _extract_camera_id_from_task_code(task_code)
+    if camera_id is None:
+        _run_loop_with_stream(task_code, stream_url, frame_interval)
+        return
+
+    tracker = _build_tracker()
+    with _TASKS_LOCK:
+        task_for_threshold = _TASKS.get(task_code)
+        current_drowning_threshold_sec = (
+            3.0
+            if task_for_threshold is None
+            else float(task_for_threshold.drowning_alert_threshold_sec)
+        )
+    evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
+    session = video_hub_registry.ensure_session(camera_id, stream_url)
+    last_infer_at = 0.0
+
+    while True:
+        with _TASKS_LOCK:
+            task = _TASKS.get(task_code)
+            if task is None:
+                return
+            if task.stop_event.is_set():
+                return
+            model_version = task.model_version
+            task_drowning_threshold_sec = float(task.drowning_alert_threshold_sec)
+
+        if abs(task_drowning_threshold_sec - current_drowning_threshold_sec) > 1e-6:
+            current_drowning_threshold_sec = task_drowning_threshold_sec
+            evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
+
+        snapshot = session.frame_cache.wait_for_frame(max(frame_interval, 0.5))
+        if snapshot is None:
+            time.sleep(0.01)
+            continue
+
+        now = time.monotonic()
+        if now - last_infer_at < frame_interval:
+            time.sleep(0.005)
+            continue
+
+        frame_buffer = np.frombuffer(snapshot["jpeg_bytes"], dtype=np.uint8)
+        frame = cv2.imdecode(frame_buffer, cv2.IMREAD_COLOR)
+        if frame is None:
+            continue
+        frame_height, frame_width = frame.shape[:2]
+        frame_timestamp = float(snapshot.get("timestamp") or int(time.time() * 1000)) / 1000.0
+
+        infer_started_at = time.monotonic()
+        detections = infer_stream_frame(frame, model_version=model_version)
+        infer_latency = time.monotonic() - infer_started_at
+        record_inference(
+            model_version=model_version,
+            latency_sec=infer_latency,
+            status="success",
+        )
+        tracked_objects = tracker.update(detections, frame=frame, timestamp=now)
+        drowning_objects = [obj for obj in tracked_objects if _is_drowning_label(obj.label)]
+        decisions = [
+            evaluator.evaluate(tracked_object, timestamp=now)
+            for tracked_object in drowning_objects
+        ]
+        _sync_task_realtime(
+            task_code=task_code,
+            tracked_objects=tracked_objects,
+            frame_width=frame_width,
+            frame_height=frame_height,
+            decisions=decisions,
+            frame_timestamp=frame_timestamp,
+        )
+        _push_realtime_ws(
+            task_code,
+            tracked_objects,
+            decisions,
+            frame_width,
+            frame_height,
+            frame_timestamp=frame_timestamp,
+        )
+        if camera_id is not None:
+            video_frame_push_service.push_frame(
+                ai_ws_push_service,
+                camera_id,
+                frame,
+                list(_TASKS.get(task_code).latest_detections) if _TASKS.get(task_code) else [],
+            )
+
+        frame_count = _touch_task_progress(task_code)
+        _post_detection_event_if_needed(
+            task_code=task_code,
+            tracked_objects=drowning_objects,
+            decisions=decisions,
+            tracker_backend=tracker.backend,
+            frame_count=frame_count,
+            head_count=len(tracked_objects),
+            frame_width=frame_width,
+            frame_height=frame_height,
+        )
+        last_infer_at = now
+
+
 def _build_ffmpeg_capture_options(stream_url: str) -> str:
     normalized_url = (stream_url or "").strip().lower()
     if normalized_url.startswith("http"):
@@ -525,6 +679,10 @@ def _build_ffmpeg_capture_options(stream_url: str) -> str:
 
 
 def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float):
+    if _should_use_video_hub_for_stream(task_code, stream_url):
+        _run_loop_with_video_hub(task_code, stream_url, frame_interval)
+        return
+
     try:
         import cv2
     except Exception:
@@ -542,24 +700,7 @@ def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float
         stream_url
     )
 
-    tracker = DeepSortTracker(
-        iou_threshold=float(current_app.config.get("ENGINE_TRACK_IOU_THRESHOLD", 0.3)),
-        max_age_sec=float(current_app.config.get("ENGINE_TRACK_MAX_AGE_SEC", 1.5)),
-    )
-
-    def _build_evaluator(min_duration_sec: float) -> DrowningRuleEvaluator:
-        return DrowningRuleEvaluator(
-            min_duration_sec=min_duration_sec,
-            posture_threshold=float(
-                current_app.config.get("ENGINE_DROWNING_POSTURE_THRESHOLD", 0.7)
-            ),
-            thermal_threshold=float(
-                current_app.config.get("ENGINE_DROWNING_THERMAL_THRESHOLD", 0.85)
-            ),
-            cooldown_sec=float(
-                current_app.config.get("ENGINE_DROWNING_EVENT_COOLDOWN_SEC", 15.0)
-            ),
-        )
+    tracker = _build_tracker()
 
     with _TASKS_LOCK:
         task_for_threshold = _TASKS.get(task_code)
@@ -568,7 +709,7 @@ def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float
             if task_for_threshold is None
             else float(task_for_threshold.drowning_alert_threshold_sec)
         )
-    evaluator = _build_evaluator(current_drowning_threshold_sec)
+    evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
 
     open_max_retries = max(
         1,
@@ -712,7 +853,7 @@ def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float
 
             if abs(task_drowning_threshold_sec - current_drowning_threshold_sec) > 1e-6:
                 current_drowning_threshold_sec = task_drowning_threshold_sec
-                evaluator = _build_evaluator(current_drowning_threshold_sec)
+                evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
 
             # 从独立读帧线程取最新帧；消费后清空，下一轮等待新帧
             with _frame_lock:
@@ -750,9 +891,11 @@ def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float
                 frame_width=frame_width,
                 frame_height=frame_height,
                 decisions=decisions,
+                frame_timestamp=time.time(),
             )
             _push_realtime_ws(
-                task_code, tracked_objects, decisions, frame_width, frame_height
+                task_code, tracked_objects, decisions, frame_width, frame_height,
+                frame_timestamp=time.time(),
             )
 
             frame_count = _touch_task_progress(task_code)
@@ -969,24 +1112,7 @@ def _run_loop_with_pyav(task_code: str, stream_url: str, frame_interval: float):
     except Exception as exc:
         raise RuntimeError("PyAV not installed, cannot read HTTP-FLV stream") from exc
 
-    tracker = DeepSortTracker(
-        iou_threshold=float(current_app.config.get("ENGINE_TRACK_IOU_THRESHOLD", 0.3)),
-        max_age_sec=float(current_app.config.get("ENGINE_TRACK_MAX_AGE_SEC", 1.5)),
-    )
-
-    def _build_evaluator(min_duration_sec: float) -> DrowningRuleEvaluator:
-        return DrowningRuleEvaluator(
-            min_duration_sec=min_duration_sec,
-            posture_threshold=float(
-                current_app.config.get("ENGINE_DROWNING_POSTURE_THRESHOLD", 0.7)
-            ),
-            thermal_threshold=float(
-                current_app.config.get("ENGINE_DROWNING_THERMAL_THRESHOLD", 0.85)
-            ),
-            cooldown_sec=float(
-                current_app.config.get("ENGINE_DROWNING_EVENT_COOLDOWN_SEC", 15.0)
-            ),
-        )
+    tracker = _build_tracker()
 
     with _TASKS_LOCK:
         task_for_threshold = _TASKS.get(task_code)
@@ -995,7 +1121,7 @@ def _run_loop_with_pyav(task_code: str, stream_url: str, frame_interval: float):
             if task_for_threshold is None
             else float(task_for_threshold.drowning_alert_threshold_sec)
         )
-    evaluator = _build_evaluator(current_drowning_threshold_sec)
+    evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
 
     camera_id = _extract_camera_id_from_task_code(task_code)
     options = {
@@ -1021,7 +1147,7 @@ def _run_loop_with_pyav(task_code: str, stream_url: str, frame_interval: float):
 
             if abs(task_drowning_threshold_sec - current_drowning_threshold_sec) > 1e-6:
                 current_drowning_threshold_sec = task_drowning_threshold_sec
-                evaluator = _build_evaluator(current_drowning_threshold_sec)
+                evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
 
             now = time.monotonic()
             if now - last_infer_at < frame_interval:
@@ -1052,9 +1178,11 @@ def _run_loop_with_pyav(task_code: str, stream_url: str, frame_interval: float):
                 frame_width=frame_width,
                 frame_height=frame_height,
                 decisions=decisions,
+                frame_timestamp=time.time(),
             )
             _push_realtime_ws(
-                task_code, tracked_objects, decisions, frame_width, frame_height
+                task_code, tracked_objects, decisions, frame_width, frame_height,
+                frame_timestamp=time.time(),
             )
             if camera_id is not None:
                 with _TASKS_LOCK:
