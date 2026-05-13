@@ -3,7 +3,7 @@
     <el-aside :width="collapsed ? '64px' : '220px'" class="sider">
       <div class="sider-brand" @click="router.push('/admin/dashboard')">
         <template v-if="collapsed">
-          <span class="sider-brand__mini">AI</span>
+          <LogoIcon :size="40" class="sider-brand__logo" />
         </template>
         <template v-else>
           <div class="sider-brand__title">AI防溺水监测预警系统</div>
@@ -120,6 +120,7 @@
 
 <script setup lang="ts">
 import { Bell, Expand, Fold, User, ChatDotRound } from "@element-plus/icons-vue";
+import LogoIcon from "@/components/icons/LogoIcon.vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { Component } from "vue";
@@ -548,17 +549,11 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.75);
 }
 
-.sider-brand__mini {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: rgba(65, 160, 255, 0.18);
-  color: #41a0ff;
-  display: inline-flex;
+.sider-brand__logo {
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  filter: drop-shadow(0 0 8px rgba(65, 160, 255, 0.35));
 }
 
 .sider-toolbar {

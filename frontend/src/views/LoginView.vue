@@ -2,6 +2,7 @@
   <div class="login-container">
     <div class="login-shell">
       <section class="login-brand-panel">
+        <LogoIcon :size="160" class="brand-logo" />
         <div class="brand-badge">管理端 · UI确认版</div>
         <h1>AI防溺水监测预警系统</h1>
         <p>面向场馆管理员与超级管理员，突出实时连接、报警优先与高效处置。</p>
@@ -108,6 +109,7 @@ import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import { Lock, User } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import { fetchCaptcha, loginAsAdmin } from "@/services/authService";
+import LogoIcon from "@/components/icons/LogoIcon.vue";
 
 const router = useRouter();
 const loading = ref(false);
@@ -248,6 +250,15 @@ onMounted(() => {
       rgba(255, 255, 255, 0) 52%
     );
   z-index: -1;
+}
+
+.brand-logo {
+  display: block;
+  margin: 0 auto 16px;
+  /* 极细白色边缘勾边，让 logo 从深蓝背景中清晰剥离 */
+  filter: drop-shadow(0 0 0.8px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.6))
+    drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 
 .brand-badge {
