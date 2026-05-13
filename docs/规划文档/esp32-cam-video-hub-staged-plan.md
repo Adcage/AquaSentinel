@@ -51,6 +51,7 @@
 3. 服务端把识别框烧录进视频。
 4. 第一阶段就直接上 WebRTC。
 5. 大规模流媒体集群、录像、回放、切片等扩展系统。
+6. video_hub 拉流熔断、退避策略、可观测性与后端管理接口（纳入阶段二 5.7 节）。
 
 ---
 
@@ -572,11 +573,122 @@ ESP32-CAM MJPEG 源
 2. 如果视频使用 `object-fit: contain` 或 `cover`，需要显式处理黑边或裁剪偏移。
 3. 结果超时则直接丢弃，避免把旧框叠到新画面上。
 
-### 5.7 第二阶段风险点
+### 5.7 video_hub 拉流健壮性与可观测性
+
+阶段一已经验证了"ESP32 单路源 → 平台唯一拉流 → 前端可看"这条链路，但存在以下已识别的运营问题：
+
+1. ESP32 重启后，`video_hub` 的恢复窗口受 `read_timeout` 限制，默认 300 秒，已暂时降至 10 秒，但仍只依赖底层 HTTP 超时，无法区分"上游短暂卡顿"和"上游彻底断开"。
+2. `video_hub` 拉流线程一旦启动就不会停止，即使无人观看也会持续占用上游连接和资源。
+3. 没有熔断机制：连续连接失败时会以固定间隔无限重试，浪费资源且无状态可见。
+4. `status` 接口缺少关键运维字段：无法区分"正在连接"、"已连接但没有帧"、"熔断暂停"等状态。
+5. SpringBoot 后端无法管理 `video_hub` 会话：不能主动触发重连、不能主动停止拉流、不能查看熔断原因。
+
+这些问题在 `video_hub` 独立部署后会更加突出——如果没有可观测性和管理接口，这个服务就是黑箱。
+
+因此，将以下能力纳入阶段二（或 video_hub 独立服务拆分时）的实施范围：
+
+#### 5.7.1 拉流状态机
+
+VideoHubSession 引入显式四态模型：
+
+| 状态 | 含义 | 行为 |
+|------|------|------|
+| `CONNECTING` | 正在建立上游连接 | 快速重连退避：1.5s → 3s → 5s → 10s |
+| `CONNECTED` | 上游已连接，持续收帧 | 正常推帧到缓存 |
+| `STALE` | 已连接但超过 `stale_frame_timeout_sec` 没收到新帧 | 主动断开并进入重连 |
+| `CIRCUIT_OPEN` | 连续失败超过阈值，熔断暂停 | 低频探测（60s），不主动推帧 |
+
+激活条件（任一满足即可从 `CIRCUIT_OPEN` 立即跳出并重连）：
+
+1. 有新的平台 viewer 打开 `/stream`。
+2. 收到 `/ensure` 请求。
+3. `source_url` 变更。
+4. 收到 `/reconnect` 手动触发。
+
+#### 5.7.2 无帧超时检测
+
+- 参数：`stale_frame_timeout_sec = 5.0`
+- 已连接状态下，如果连续 5 秒没有收到任何新帧，主动判定连接失活，断开后立即重连。
+- 与修改前的区别：修改前只依赖底层 HTTP 读超时（10s），无法区分"上游还在但断流"和"上游彻底重启"。
+
+#### 5.7.3 熔断与退避策略
+
+重连间隔随连续失败次数逐步退避：
+
+| 连续失败次数 | 重连间隔 |
+|-------------|---------|
+| 1-2 | 1.5s |
+| 3-4 | 3s |
+| 5-6 | 5s |
+| 7-9 | 10s |
+| ≥10（进入熔断） | 60s 低频探测 |
+
+熔断后不会永久停止重连，而是以 60 秒间隔低频探测上游是否恢复。一旦探测成功，失败计数清零，恢复正常连接。
+
+#### 5.7.4 熔断原因记录
+
+`status` 接口新增字段：
+
+```json
+{
+  "camera_id": 1001,
+  "state": "CIRCUIT_OPEN",
+  "connected": false,
+  "circuit_open_reason": "连续连接失败10次: ConnectionRefusedError",
+  "consecutive_failures": 10,
+  "last_failure_at": 1715616000123,
+  "last_failure_detail": "HTTPConnectionPool(host='192.168.137.86', port=80): Max retries exceeded",
+  "stale_frame_timeout_sec": 5,
+  "last_frame_at": 1715615998000,
+  "source_url": "http://192.168.137.86/stream",
+  "viewer_count": 0,
+  "retry_delay_sec": 60
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `state` | 当前状态，四选一：`CONNECTING` / `CONNECTED` / `STALE` / `CIRCUIT_OPEN` |
+| `circuit_open_reason` | 熔断原因摘要 |
+| `consecutive_failures` | 连续失败次数 |
+| `last_failure_at` | 最近一次失败的时间戳(ms) |
+| `last_failure_detail` | 最近一次异常的原始信息 |
+| `stale_frame_timeout_sec` | 无帧超时阈值 |
+| `retry_delay_sec` | 当前重连间隔（随退避变化） |
+
+#### 5.7.5 管理接口
+
+新增接口供 SpringBoot 后端管理 video_hub 会话：
+
+| 方法 | 路径 | 用途 |
+|------|------|------|
+| POST | `/video-hub/cameras/{id}/reconnect` | 手动强制重连：无论当前状态，立即断开现有连接，清零失败计数，立即重连 |
+| DELETE | `/video-hub/cameras/{id}/session` | 主动销毁会话：停止拉流线程，清除缓存，下次有人访问时才重新建立 |
+
+已有接口的增强：
+
+| 方法 | 路径 | 变化 |
+|------|------|------|
+| POST | `/video-hub/cameras/{id}/ensure` | 新增行为：如当前处于熔断状态，收到 ensure 后立即跳出熔断并重连 |
+| GET | `/video-hub/cameras/{id}/status` | 响应体新增 `state`、`circuit_open_reason`、`consecutive_failures` 等字段 |
+
+#### 5.7.6 改动文件范围
+
+| 文件 | 改什么 |
+|------|--------|
+| `yolo-service/app/video_hub/source_worker.py` | 状态机、熔断逻辑、退避策略、无帧超时、原因记录 |
+| `yolo-service/app/video_hub/registry.py` | 新增 `remove_session()` 方法 |
+| `yolo-service/app/video_hub/frame_cache.py` | 记录最后收到帧的时间，支持无帧超时判定 |
+| `yolo-service/app/api/video_hub.py` | 新增 `/reconnect` 和 `DELETE /session`，`status` 响应扩展 |
+| `yolo-service/tests/test_video_hub_source_worker.py` | 熔断、退避、无帧超时测试 |
+| `yolo-service/tests/test_video_hub_stream_api.py` | `/reconnect`、`DELETE /session` 测试 |
+
+### 5.8 第二阶段风险点
 
 1. WebRTC 引入的信令、ICE、浏览器兼容与 NAT 场景复杂度会明显高于 MJPEG。
 2. 如果阶段一没有把采集层与输出层拆开，阶段二会被迫重写 `video_hub`。
 3. 如果阶段一没有统一识别结果的 `timestamp/frameId`，阶段二叠框很容易漂移。
+4. 熔断与退避策略需要根据实际设备类型和网络环境调参，阈值不宜过早硬编码，应支持配置化。
 
 ---
 
