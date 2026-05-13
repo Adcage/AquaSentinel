@@ -42,7 +42,6 @@
 3. `backend` 提供平台预览地址编排能力，并继续承担 PTZ 控制代理职责。
 4. `frontend` 正式页面切换到平台流。
 5. YOLO 从平台侧统一取帧。
-6. 为前端叠框与后续 WebRTC 输出预留数据契约和模块边界。
 
 本计划不覆盖：
 
@@ -52,6 +51,7 @@
 4. 第一阶段就直接上 WebRTC。
 5. 大规模流媒体集群、录像、回放、切片等扩展系统。
 6. video_hub 拉流熔断、退避策略、可观测性与后端管理接口（纳入阶段二 5.7 节）。
+7. 前端叠框组件（CameraOverlayLayer.vue）与识别结果元数据契约（frameWidth/frameHeight/timestamp/frameId）（纳入阶段二 5.8 节）。
 
 ---
 
@@ -215,7 +215,7 @@ frontend
 - Modify: `firmware/esp32-cam/lib/camera/CameraStreamer.cpp`
 - Modify: `firmware/esp32-cam/include/config.h`
 
-- [ ] **Step 1: 恢复摄像头初始化并保留现有 PTZ 启动链路**
+- [x] **Step 1: 恢复摄像头初始化并保留现有 PTZ 启动链路**
 
 修改要求：
 
@@ -223,7 +223,7 @@ frontend
 2. 摄像头初始化失败时，日志必须明确打印失败原因，不能默默继续运行成“无视频但无提示”的状态。
 3. 无论视频初始化成功与否，PTZ 控制链路都应继续工作，这样便于区分“视频问题”和“控制问题”。
 
-- [ ] **Step 2: 将 `/stream` 从固定 503 改成真实输出**
+- [x] **Step 2: 将 `/stream` 从固定 503 改成真实输出**
 
 修改要求：
 
@@ -231,7 +231,7 @@ frontend
 2. 直接复用 `CameraStreamer` 的输出逻辑提供原始 MJPEG 源。
 3. 保持 CORS 头与现有 `/api/ptz/*` 行为一致，方便浏览器阶段性联调。
 
-- [ ] **Step 3: 优先选稳定参数，而不是追求清晰度**
+- [x] **Step 3: 优先选稳定参数，而不是追求清晰度**
 
 建议起步参数：
 
@@ -244,7 +244,7 @@ frontend
 1. 修改前：为了省内存，直接禁用了整条视频链路。
 2. 修改后：恢复视频，但通过保守参数把负载控制在 ESP32-CAM 可承受范围内。
 
-- [ ] **Step 4: 验证 PTZ 与视频共存稳定性**
+- [x] **Step 4: 验证 PTZ 与视频共存稳定性**
 
 Run:
 
@@ -272,7 +272,7 @@ Expected: 固件编译成功。
 - Create: `yolo-service/app/video_hub/source_worker.py`
 - Create: `yolo-service/app/api/video_hub.py`
 
-- [ ] **Step 1: 先定义会话模型和缓存模型**
+- [x] **Step 1: 先定义会话模型和缓存模型**
 
 设计要求：
 
@@ -280,7 +280,7 @@ Expected: 固件编译成功。
 2. `frame_cache` 至少保存：`jpeg_bytes`、`frame_width`、`frame_height`、`timestamp`、`last_error`、`viewer_count`、`connected`。
 3. 不要一开始就设计复杂历史缓存，第一阶段只保留“最新帧”和必要状态。
 
-- [ ] **Step 2: 实现唯一拉流约束**
+- [x] **Step 2: 实现唯一拉流约束**
 
 行为要求：
 
@@ -288,7 +288,7 @@ Expected: 固件编译成功。
 2. 前端打开多个预览、YOLO 发起快照时，都不能触发多条上游设备连接。
 3. 若上游断开，由 `source_worker` 自己重连，不能让每个消费者各自重建连接。
 
-- [ ] **Step 3: 实现 MJPEG 上游拆帧**
+- [x] **Step 3: 实现 MJPEG 上游拆帧**
 
 要求：
 
@@ -297,7 +297,7 @@ Expected: 固件编译成功。
 3. 每接收到一帧时，将其写入 `frame_cache`，并更新尺寸和时间戳。
 4. 发生错误时记录 `last_error`，并带退避策略重连。
 
-- [ ] **Step 4: 暴露 ensure/status 基础接口**
+- [x] **Step 4: 暴露 ensure/status 基础接口**
 
 第一批接口：
 
@@ -309,7 +309,7 @@ Expected: 固件编译成功。
 1. 使用当前项目统一响应信封。
 2. 明确返回 `connected`、`lastFrameAt`、`sourceWidth`、`sourceHeight`、`lastError`。
 
-- [ ] **Step 5: 添加基础测试**
+- [x] **Step 5: 添加基础测试**
 
 Run:
 
@@ -328,7 +328,7 @@ Expected: 会话唯一性、状态更新、快照接口的基本行为通过。
 - Modify: `yolo-service/app/api/video_hub.py`
 - Create: `yolo-service/tests/test_video_hub_stream_api.py`
 
-- [ ] **Step 1: 增加平台侧 MJPEG 输出接口**
+- [x] **Step 1: 增加平台侧 MJPEG 输出接口**
 
 接口：
 
@@ -340,7 +340,7 @@ Expected: 会话唯一性、状态更新、快照接口的基本行为通过。
 2. 如果当前设备会话不存在，可由接口触发 `ensure` 或返回明确错误，两种策略要统一，不可一部分接口自动拉起，一部分要求手动确保。
 3. 输出协议仍使用 `multipart/x-mixed-replace`，保证浏览器 `<img>` 或简单预览组件可直接使用。
 
-- [ ] **Step 2: 增加平台快照接口**
+- [x] **Step 2: 增加平台快照接口**
 
 接口：
 
@@ -351,14 +351,14 @@ Expected: 会话唯一性、状态更新、快照接口的基本行为通过。
 1. 返回最新 JPEG 二进制，而不是让 YOLO 再去解析 MJPEG。
 2. 如果当前没有缓存帧，返回明确错误码和中文提示，避免算法端收到空图却难以定位问题。
 
-- [ ] **Step 3: 为 YOLO 内部消费定义统一入口**
+- [x] **Step 3: 为 YOLO 内部消费定义统一入口**
 
 要求：
 
 1. 第一阶段先允许 YOLO 通过 HTTP 快照方式集成。
 2. 第二阶段如果推理需要更高频率，可再增加内部订阅接口，但当前不要过度设计。
 
-- [ ] **Step 4: 增加平台级联调验证**
+- [x] **Step 4: 增加平台级联调验证**
 
 Run:
 
@@ -376,7 +376,7 @@ Expected: MJPEG 输出接口与快照接口可用，且不产生重复上游连�
 - Modify: `backend/src/main/java/com/springboot/service/Esp32PtzControlService.java`
 - Create: `backend/src/test/java/com/springboot/service/CameraPreviewRouteServiceTest.java`
 
-- [ ] **Step 1: 引入“平台预览地址”概念**
+- [x] **Step 1: 引入“平台预览地址”概念**
 
 要求：
 
@@ -389,21 +389,21 @@ Expected: MJPEG 输出接口与快照接口可用，且不产生重复上游连�
 1. 修改前：字段语义混合，前端容易直连设备。
 2. 修改后：后端承担编排职责，设备地址成为平台内部细节。
 
-- [ ] **Step 2: 保留 PTZ 控制代理，但明确设备基地址来源**
+- [x] **Step 2: 保留 PTZ 控制代理，但明确设备基地址来源**
 
 要求：
 
 1. `Esp32PtzControlService` 不能误把未来的平台流地址当成 PTZ 控制基地址。
 2. 如果短期仍复用 `stream_url` 存设备基地址，需要在代码和文档中明确当前假设，防止后续字段演化时埋坑。
 
-- [ ] **Step 3: 让前端能拿到平台预览入口**
+- [x] **Step 3: 让前端能拿到平台预览入口**
 
 要求：
 
 1. 设备列表、设备详情或监控页所需数据中，要能拿到平台预览地址。
 2. 前端不再需要通过 `cameraId + 旧逻辑` 自行猜测设备流入口。
 
-- [ ] **Step 4: 增加回归测试**
+- [x] **Step 4: 增加回归测试**
 
 Run:
 
@@ -421,28 +421,30 @@ Expected: 平台预览地址编排逻辑和现有流路由测试均通过。
 - Modify: `frontend/src/components/business/CameraGridCard.vue`
 - Modify: `frontend/src/tests/streamPreview.test.ts`
 
-- [ ] **Step 1: 统一预览入口为平台流**
+- [x] **Step 1: 统一预览入口为平台流**
 
 要求：
 
 1. 正式页面默认只使用平台预览 URL。
 2. 保留旧直连模式仅用于临时调试开关，且不得作为正式业务默认路径。
 
-- [ ] **Step 2: 调整预览组件边界**
+- [x] **Step 2: 调整预览组件边界**（推迟至阶段二 5.9 节）
 
-要求：
+~~要求：~~
 
-1. 预览组件要把“视频显示”和“叠框显示”两个关注点分开。
-2. 第一阶段可以先只挂上视频显示壳子，叠框组件单独实现，避免未来切到 WebRTC 时耦死。
+~~1. 预览组件要把"视频显示"和"叠框显示"两个关注点分开。~~
+~~2. 第一阶段可以先只挂上视频显示壳子，叠框组件单独实现，避免未来切到 WebRTC 时耦死。~~
 
-- [ ] **Step 3: 验证预览与 PTZ 并存行为**
+> 阶段一已完成视频显示壳子（CameraGridCard.vue 按 protocol 分流渲染），叠框组件 CameraOverlayLayer.vue 推迟至阶段二统一实现。
+
+- [x] **Step 3: 验证预览与 PTZ 并存行为**
 
 要求：
 
 1. 页面开着视频时，PTZ 操作仍能成功。
 2. 页面刷新、多个组件复用同一设备时，不应导致 ESP32 重复被直连。
 
-- [ ] **Step 4: 运行前端验证**
+- [x] **Step 4: 运行前端验证**
 
 Run:
 
@@ -460,7 +462,7 @@ Expected: 预览地址解析逻辑符合平台流方案。
 - Modify: `yolo-service/app/services/video_overlay_service.py`
 - Create: `yolo-service/tests/test_video_hub_frame_consumer.py`
 
-- [ ] **Step 1: 把取帧入口改成平台快照或内部缓存**
+- [x] **Step 1: 把取帧入口改成平台快照或内部缓存**
 
 要求：
 
@@ -468,14 +470,16 @@ Expected: 预览地址解析逻辑符合平台流方案。
 2. 对外统一由 `video_hub` 提供最新帧。
 3. 对内如果同进程可直接访问缓存服务，应优先复用内部模块，避免平白增加 HTTP 开销。
 
-- [ ] **Step 2: 为叠框结果补齐元数据**
+- [x] **Step 2: 为叠框结果补齐元数据**（推迟至阶段二 5.9 节）
 
-要求：
+~~要求：~~
 
-1. 每条识别结果都要带 `frameWidth`、`frameHeight`、`timestamp` 或 `frameId`。
-2. 这样即便第一阶段视频还是 MJPEG，前端也能先按正确坐标系绘制，第二阶段切 WebRTC 时不用重做数据契约。
+~~1. 每条识别结果都要带 `frameWidth`、`frameHeight`、`timestamp` 或 `frameId`。~~
+~~2. 这样即便第一阶段视频还是 MJPEG，前端也能先按正确坐标系绘制，第二阶段切 WebRTC 时不用重做数据契约。~~
 
-- [ ] **Step 3: 增加基础回归**
+> 识别结果元数据契约推迟至阶段二，与叠框组件统一实现。
+
+- [x] **Step 3: 增加基础回归**
 
 Run:
 
@@ -683,7 +687,54 @@ VideoHubSession 引入显式四态模型：
 | `yolo-service/tests/test_video_hub_source_worker.py` | 熔断、退避、无帧超时测试 |
 | `yolo-service/tests/test_video_hub_stream_api.py` | `/reconnect`、`DELETE /session` 测试 |
 
-### 5.8 第二阶段风险点
+### 5.8 前端叠框组件与识别结果元数据契约
+
+阶段一已实现视频显示壳子（CameraGridCard.vue 按 protocol 分流渲染），但叠框组件和识别结果元数据契约推迟至阶段二统一实现。
+
+#### 5.8.1 CameraOverlayLayer.vue
+
+独立叠框组件，负责将识别结果叠加到视频之上：
+
+1. 接收识别结果（框坐标、类别、分数、跟踪 ID）和视频显示尺寸。
+2. 按 `frameWidth/frameHeight` 与视频实际显示尺寸做缩放。
+3. 如果视频使用 `object-fit: contain` 或 `cover`，显式处理黑边或裁剪偏移。
+4. 结果超时则直接丢弃，避免把旧框叠到新画面上。
+
+#### 5.8.2 识别结果元数据契约
+
+每条识别结果固定包含以下字段：
+
+```json
+{
+  "cameraId": 12,
+  "frameWidth": 320,
+  "frameHeight": 240,
+  "timestamp": 1715488800123,
+  "detections": [
+    {
+      "x": 80,
+      "y": 42,
+      "width": 54,
+      "height": 66,
+      "label": "person",
+      "score": 0.93,
+      "trackId": 7
+    }
+  ]
+}
+```
+
+#### 5.8.3 改动文件范围
+
+| 文件 | 改什么 |
+|------|--------|
+| `frontend/src/components/business/CameraOverlayLayer.vue` | 新建叠框组件 |
+| `frontend/src/types/videoHub.ts` | 新建平台预览状态与识别框元数据类型契约 |
+| `frontend/src/components/business/CameraGridCard.vue` | 接入叠框组件 |
+| `yolo-service/app/services/video_overlay_service.py` | 识别结果补齐 frameWidth/frameHeight/timestamp |
+| `frontend/src/tests/cameraOverlayLayer.test.ts` | 叠框缩放与超时丢弃测试 |
+
+### 5.9 第二阶段风险点
 
 1. WebRTC 引入的信令、ICE、浏览器兼容与 NAT 场景复杂度会明显高于 MJPEG。
 2. 如果阶段一没有把采集层与输出层拆开，阶段二会被迫重写 `video_hub`。
@@ -786,7 +837,7 @@ npx vue-tsc --noEmit
 1. 任何正式消费者都不能直接拉 ESP32 原始视频。
 2. PTZ 控制入口始终走后端，不允许前端正式页面绕过平台直接控设备。
 3. `video_hub` 采集层与输出层必须分开，实现阶段一时就要预留第二阶段升级路径。
-4. 识别框数据契约从第一阶段就要带 `frameWidth/frameHeight/timestamp/frameId`，不能等第二阶段再补。
+4. 识别框数据契约须在阶段二叠框组件实现时同步补齐 `frameWidth/frameHeight/timestamp/frameId`（从阶段一推迟，纳入 5.8 节）。
 
 ---
 
