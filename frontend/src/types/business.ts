@@ -27,6 +27,7 @@ export interface RealtimeDetection {
   confidence: number;
   bbox: RealtimeBBox;
   bboxNorm?: RealtimeBBox;
+  timestamp?: number;
   riskScore?: number;
   riskLevel?: string;
   durationSec?: number;
@@ -61,6 +62,8 @@ export interface CameraGridItem {
   previewProtocol?: "webrtc" | "mjpeg" | "ws_jpeg";
   previewUrl?: string;
   detections: RealtimeDetection[];
+  frameWidth?: number;
+  frameHeight?: number;
   frameTs?: number;
   riskPoint?: RealtimeRiskPoint;
 }
