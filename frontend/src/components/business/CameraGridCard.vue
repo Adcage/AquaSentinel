@@ -47,23 +47,16 @@
         已自动暂停（不在可视区）
       </div>
       <div v-else class="camera-screen__placeholder">视频流占位</div>
-      <div v-if="effectiveProtocol !== 'ws_jpeg'" class="detection-layer">
-        <div
-          v-for="(detection, index) in item.detections"
-          :key="`${detection.trackId}-${index}`"
-          class="detection-box"
-          :class="{
-            'is-drowning': isConfirmedDrowning(detection),
-            'is-warning': isWarningDrowning(detection),
-          }"
-          :style="toBoxStyle(detection)"
-        >
-          <div class="detection-label">
-            {{ isConfirmedDrowning(detection) ? '溺水' : isWarningDrowning(detection) ? '可疑' : toDisplayLabel(detection.label) }}
-            {{ toPercent(detection.confidence) }}
-          </div>
-        </div>
-      </div>
+      <CameraOverlayLayer
+        v-if="item.detections.length > 0 && !paused && isVisible"
+        :detections="item.detections"
+        :frame-width="item.frameWidth ?? 0"
+        :frame-height="item.frameHeight ?? 0"
+        :display-width="videoDisplayWidth"
+        :display-height="videoDisplayHeight"
+        object-fit="cover"
+        :max-age-ms="2000"
+      />
       <div class="camera-controls">
         <el-button size="small" text @click="handleFullscreen">{{
           isFullscreen ? "退出全屏" : "全屏"
@@ -98,6 +91,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import StatusTag from "@/components/common/StatusTag.vue";
 import WebRtcWhepPlayer from "@/components/business/WebRtcWhepPlayer.vue";
+import CameraOverlayLayer from "./CameraOverlayLayer.vue";
 import type { CameraGridItem, RealtimeDetection } from "@/types/business";
 
 interface Props {
@@ -113,7 +107,10 @@ const isFullscreen = ref(false);
 const isVisible = ref(true);
 const streamError = ref("");
 const videoFrameBlobUrl = ref("");
+const videoDisplayWidth = ref(0);
+const videoDisplayHeight = ref(0);
 let visibilityObserver: IntersectionObserver | null = null;
+let resizeObserver: ResizeObserver | null = null;
 
 const effectiveProtocol = computed(() => props.item.previewProtocol || "mjpeg");
 
@@ -139,8 +136,6 @@ const riskMeta = computed(() => {
   return { label: "正常", type: "success" as const };
 });
 
-const toPercent = (value: number) => `${Math.round(value * 100)}%`;
-
 const normalizeLabel = (value: string) => value.trim().toLowerCase();
 
 const isDrowningLabel = (value: string) => {
@@ -160,59 +155,6 @@ const isConfirmedDrowning = (detection: RealtimeDetection): boolean => {
 const isWarningDrowning = (detection: RealtimeDetection): boolean => {
   const level = detection.riskLevel?.toUpperCase();
   return level === "MEDIUM" || (isDrowningLabel(detection.label) && !isConfirmedDrowning(detection));
-};
-
-const toDisplayLabel = (value: string) => {
-  const normalized = normalizeLabel(value);
-  if (isDrowningLabel(value)) {
-    return "溺水";
-  }
-  if (
-    normalized === "out of water" ||
-    normalized === "not swimming" ||
-    normalized.includes("out of water")
-  ) {
-    return "离水";
-  }
-  if (
-    normalized === "swimming" ||
-    normalized === "swimmer" ||
-    normalized.includes("swim")
-  ) {
-    return "游泳者";
-  }
-  if (normalized === "person" || normalized === "human") {
-    return "人员";
-  }
-  return value;
-};
-
-const toBoxStyle = (detection: RealtimeDetection) => {
-  const box = detection.bboxNorm;
-  if (!box) {
-    return {
-      left: "0%",
-      top: "0%",
-      width: "0%",
-      height: "0%",
-    };
-  }
-  let left = box.xMin * 100;
-  let top = box.yMin * 100;
-  let width = (box.xMax - box.xMin) * 100;
-  const height = (box.yMax - box.yMin) * 100;
-
-  if (left + width > 105) {
-    left = (1 - box.xMax) * 100;
-    width = (box.xMax - box.xMin) * 100;
-  }
-
-  return {
-    left: `${Math.max(0, Math.min(100, left))}%`,
-    top: `${Math.max(0, Math.min(100, top))}%`,
-    width: `${Math.max(0, Math.min(100 - left, width))}%`,
-    height: `${Math.max(0, Math.min(100 - top, height))}%`,
-  };
 };
 
 const handleFullscreen = () => {
@@ -282,12 +224,27 @@ onMounted(() => {
     },
   );
   visibilityObserver.observe(screenRef.value);
+
+  if (typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        videoDisplayWidth.value = Math.round(width);
+        videoDisplayHeight.value = Math.round(height);
+      }
+    });
+    resizeObserver.observe(screenRef.value);
+  }
 });
 
 onBeforeUnmount(() => {
   if (visibilityObserver) {
     visibilityObserver.disconnect();
     visibilityObserver = null;
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
   }
   if (videoFrameBlobUrl.value) {
     URL.revokeObjectURL(videoFrameBlobUrl.value);
@@ -386,45 +343,6 @@ defineExpose({
   color: #fff;
   background: rgba(0, 0, 0, 0.45);
   border-radius: 4px;
-}
-
-.detection-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  overflow: hidden;
-}
-
-.detection-box {
-  position: absolute;
-  box-sizing: border-box;
-  border: 2px solid #1dcb6f;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
-}
-
-.detection-box.is-drowning {
-  border-color: #ff4d4f;
-}
-
-.detection-box.is-warning {
-  border-color: #ffc107;
-}
-
-.detection-label {
-  position: absolute;
-  left: 2px;
-  top: 2px;
-  max-width: calc(100% - 4px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  line-height: 16px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
 }
 
 .camera-grid-card :deep(.el-card__body) {
