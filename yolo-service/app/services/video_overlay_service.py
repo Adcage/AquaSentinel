@@ -7,6 +7,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+from flask import current_app
 from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger(__name__)
@@ -303,13 +304,15 @@ class VideoFramePushService:
                     len(detections),
                 )
 
-            drawn_frame = draw_detections_on_frame(
-                frame,
-                detections,
-                resize_width=self._resize_width,
-            )
-
-            jpeg_bytes = encode_frame_to_jpeg(drawn_frame, quality=self._quality)
+            if current_app.config.get("OVERLAY_SERVER_SIDE_ENABLED", False):
+                drawn_frame = draw_detections_on_frame(
+                    frame,
+                    detections,
+                    resize_width=self._resize_width,
+                )
+                jpeg_bytes = encode_frame_to_jpeg(drawn_frame, quality=self._quality)
+            else:
+                jpeg_bytes = encode_frame_to_jpeg(frame, quality=self._quality)
             if jpeg_bytes is None:
                 return False
             if logger.isEnabledFor(logging.DEBUG):
