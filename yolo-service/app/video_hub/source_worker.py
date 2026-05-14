@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterator
+from enum import Enum
 from threading import Lock, Thread
 from time import sleep, time
 
@@ -10,6 +11,13 @@ import requests
 from app.video_hub.frame_cache import FrameCache
 
 logger = logging.getLogger(__name__)
+
+
+class SessionState(str, Enum):
+    CONNECTING = "CONNECTING"
+    CONNECTED = "CONNECTED"
+    STALE = "STALE"
+    CIRCUIT_OPEN = "CIRCUIT_OPEN"
 
 
 def _extract_boundary(content_type: str) -> bytes:
@@ -50,23 +58,39 @@ class VideoHubSession:
         source_url: str,
         connect_timeout_sec: float = 3.0,
         read_timeout_sec: float = 10.0,
-        retry_delay_sec: float = 1.5,
+        stale_frame_timeout_sec: float = 5.0,
     ):
         self.camera_id = camera_id
         self.source_url = source_url
         self.connect_timeout_sec = connect_timeout_sec
         self.read_timeout_sec = read_timeout_sec
-        self.retry_delay_sec = retry_delay_sec
+        self.stale_frame_timeout_sec = stale_frame_timeout_sec
         self.http_session = requests.Session()
         self.http_session.trust_env = False
         self.frame_cache = FrameCache()
         self._start_lock = Lock()
         self._viewer_lock = Lock()
+        self._state_lock = Lock()
         self._started = False
-        self._connected = False
         self._viewer_count = 0
         self._thread: Thread | None = None
         self._last_frame_at: int | None = None
+        self._state = SessionState.CONNECTING
+        self._consecutive_failures = 0
+        self._last_failure_at: int | None = None
+        self._last_failure_detail: str | None = None
+        self._circuit_open_reason: str | None = None
+        self._stopped = False
+
+    @property
+    def state(self) -> str:
+        with self._state_lock:
+            return self._state.value
+
+    @property
+    def consecutive_failures(self) -> int:
+        with self._state_lock:
+            return self._consecutive_failures
 
     def ensure_started(self):
         with self._start_lock:
@@ -81,15 +105,28 @@ class VideoHubSession:
 
     def status_dict(self) -> dict:
         latest = self.frame_cache.latest()
+        with self._state_lock:
+            current_state = self._state
+            circuit_reason = self._circuit_open_reason
+            failures = self._consecutive_failures
+            last_fail_at = self._last_failure_at
+            last_fail_detail = self._last_failure_detail
         return {
             "camera_id": self.camera_id,
-            "connected": self._connected,
+            "state": current_state.value,
+            "connected": current_state == SessionState.CONNECTED,
+            "circuit_open_reason": circuit_reason,
+            "consecutive_failures": failures,
+            "last_failure_at": last_fail_at,
+            "last_failure_detail": last_fail_detail,
+            "stale_frame_timeout_sec": self.stale_frame_timeout_sec,
             "last_frame_at": self._last_frame_at,
             "source_width": latest["frame_width"] if latest else 0,
             "source_height": latest["frame_height"] if latest else 0,
             "last_error": self.frame_cache.last_error(),
             "viewer_count": self._viewer_count,
             "source_url": self.source_url,
+            "retry_delay_sec": self._calc_retry_delay(failures),
         }
 
     def open_stream(self) -> Iterator[bytes]:
@@ -118,6 +155,73 @@ class VideoHubSession:
 
         return generator()
 
+    def stop(self):
+        self._stopped = True
+
+    def activate_from_circuit_open(self):
+        with self._state_lock:
+            if self._state == SessionState.CIRCUIT_OPEN:
+                self._consecutive_failures = 0
+                self._circuit_open_reason = None
+                self._state = SessionState.CONNECTING
+
+    def _transition_to_connected(self):
+        with self._state_lock:
+            self._state = SessionState.CONNECTED
+
+    def _transition_to_connecting(self):
+        with self._state_lock:
+            self._state = SessionState.CONNECTING
+
+    def _transition_to_stale(self):
+        with self._state_lock:
+            self._state = SessionState.STALE
+
+    def _transition_to_circuit_open(self, reason: str):
+        with self._state_lock:
+            self._state = SessionState.CIRCUIT_OPEN
+            self._circuit_open_reason = reason
+
+    def _record_failure(self, detail: str):
+        with self._state_lock:
+            self._consecutive_failures += 1
+            self._last_failure_at = int(time() * 1000)
+            self._last_failure_detail = detail
+            if self._consecutive_failures >= 10:
+                self._state = SessionState.CIRCUIT_OPEN
+                self._circuit_open_reason = (
+                    f"连续连接失败{self._consecutive_failures}次: {detail}"
+                )
+        self.frame_cache.set_error(f"上游视频流异常: {detail}")
+
+    def _record_success(self):
+        with self._state_lock:
+            self._consecutive_failures = 0
+            self._circuit_open_reason = None
+        self.frame_cache.set_error("")
+
+    def _calc_retry_delay(self, consecutive_failures: int) -> float:
+        if consecutive_failures <= 2:
+            return 1.5
+        elif consecutive_failures <= 4:
+            return 3.0
+        elif consecutive_failures <= 6:
+            return 5.0
+        elif consecutive_failures <= 9:
+            return 10.0
+        else:
+            return 60.0
+
+    def _check_stale_frame(self) -> bool:
+        with self._state_lock:
+            if self._state != SessionState.CONNECTED:
+                return False
+        last_at = self.frame_cache.last_frame_at()
+        if last_at is None or time() - last_at > self.stale_frame_timeout_sec:
+            self._transition_to_stale()
+            return True
+        return False
+
     def _multipart_frame(self, payload: bytes, content_type: str) -> bytes:
         header = (
             b"--frame\r\n"
@@ -127,14 +231,61 @@ class VideoHubSession:
         return header + payload + b"\r\n"
 
     def _run_loop(self):
-        while True:
+        while not self._stopped:
+            with self._state_lock:
+                current_state = self._state
+            if current_state == SessionState.CIRCUIT_OPEN:
+                sleep(60.0)
+                if self._stopped:
+                    break
+                continue
+
             try:
                 self._consume_stream()
             except Exception as exc:
-                self._connected = False
-                self.frame_cache.set_error(f"上游视频流异常: {exc}")
-                logger.warning("camera=%s 拉流异常，%.1fs 后重试: %s", self.camera_id, self.retry_delay_sec, exc)
-                sleep(self.retry_delay_sec)
+                with self._state_lock:
+                    is_stale = self._state == SessionState.STALE
+                if is_stale:
+                    logger.info("camera=%s 无帧超时，立即重连", self.camera_id)
+                    self._transition_to_connecting()
+                    continue
+                self._record_failure(str(exc))
+                with self._state_lock:
+                    is_circuit_open = self._state == SessionState.CIRCUIT_OPEN
+                if not is_circuit_open:
+                    self._transition_to_connecting()
+                delay = self._calc_retry_delay(self._consecutive_failures)
+                logger.warning(
+                    "camera=%s 拉流异常，%.1fs 后重试: %s",
+                    self.camera_id,
+                    delay,
+                    exc,
+                )
+                sleep(delay)
+                continue
+
+            if self._stopped:
+                break
+
+            with self._state_lock:
+                post_state = self._state
+            if post_state == SessionState.STALE:
+                logger.info("camera=%s 无帧超时，立即重连", self.camera_id)
+                self._transition_to_connecting()
+                continue
+
+            self._record_failure("上游连接正常关闭")
+            with self._state_lock:
+                is_circuit_open = self._state == SessionState.CIRCUIT_OPEN
+            if not is_circuit_open:
+                self._transition_to_connecting()
+            delay = self._calc_retry_delay(self._consecutive_failures)
+            logger.warning(
+                "camera=%s 上游连接关闭，%.1fs 后重连",
+                self.camera_id,
+                delay,
+            )
+            sleep(delay)
 
     def _consume_stream(self):
         response = None
@@ -148,11 +299,18 @@ class VideoHubSession:
             content_type = response.headers.get("Content-Type", "")
             boundary = _extract_boundary(content_type)
             buffer = bytearray()
-            self._connected = True
-            self.frame_cache.set_error("")
-            logger.info("camera=%s 已连接上游: %s (boundary=%s)", self.camera_id, self.source_url, boundary)
+            self._transition_to_connected()
+            self._record_success()
+            logger.info(
+                "camera=%s 已连接上游: %s (boundary=%s)",
+                self.camera_id,
+                self.source_url,
+                boundary,
+            )
 
             for chunk in response.iter_content(chunk_size=4096):
+                if self._stopped:
+                    break
                 if not chunk:
                     continue
                 buffer.extend(chunk)
@@ -164,8 +322,9 @@ class VideoHubSession:
                     timestamp = int(time() * 1000)
                     self.frame_cache.update(frame, width, height, timestamp)
                     self._last_frame_at = timestamp
+                if self._check_stale_frame():
+                    break
         finally:
-            self._connected = False
             if response is not None:
                 try:
                     response.close()

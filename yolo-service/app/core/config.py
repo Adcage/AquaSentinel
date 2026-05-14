@@ -80,6 +80,7 @@ class BaseConfig:
     RABBITMQ_EXCHANGE = "alert.topic"
     METRICS_ENABLED = True
     METRICS_PORT = 9091
+    OVERLAY_SERVER_SIDE_ENABLED = False
 
 
 def apply_env_overrides(app):
@@ -197,3 +198,6 @@ def apply_env_overrides(app):
         "METRICS_ENABLED", app.config["METRICS_ENABLED"]
     )
     app.config["METRICS_PORT"] = _env_int("METRICS_PORT", app.config["METRICS_PORT"])
+    app.config["OVERLAY_SERVER_SIDE_ENABLED"] = _env_bool(
+        "OVERLAY_SERVER_SIDE_ENABLED", app.config["OVERLAY_SERVER_SIDE_ENABLED"]
+    )

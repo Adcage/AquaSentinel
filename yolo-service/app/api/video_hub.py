@@ -37,6 +37,8 @@ def _get_or_ensure_session(camera_id: int):
 def ensure_camera_session(camera_id: int):
     source_url = _resolve_source_url()
     session = video_hub_registry.ensure_session(camera_id, source_url)
+    if session.state == "CIRCUIT_OPEN":
+        session.activate_from_circuit_open()
     return jsonify(success_payload(session.status_dict(), message="视频会话已就绪"))
 
 
@@ -50,6 +52,32 @@ def camera_session_status(camera_id: int):
             code="VIDEO_HUB_SESSION_NOT_FOUND",
         )
     return jsonify(success_payload(session.status_dict()))
+
+
+@blp.post("/video-hub/cameras/<int:camera_id>/reconnect")
+def reconnect_camera(camera_id: int):
+    session = video_hub_registry.get_session(camera_id)
+    if session is None:
+        raise BusinessError(
+            "视频会话尚未建立",
+            status_code=404,
+            code="VIDEO_HUB_SESSION_NOT_FOUND",
+        )
+    session.activate_from_circuit_open()
+    return jsonify(success_payload({"camera_id": camera_id, "state": session.state}))
+
+
+@blp.delete("/video-hub/cameras/<int:camera_id>/session")
+def delete_camera_session(camera_id: int):
+    session = video_hub_registry.get_session(camera_id)
+    if session is None:
+        raise BusinessError(
+            "视频会话尚未建立",
+            status_code=404,
+            code="VIDEO_HUB_SESSION_NOT_FOUND",
+        )
+    video_hub_registry.remove_session(camera_id)
+    return jsonify(success_payload({"camera_id": camera_id}))
 
 
 @blp.get("/video-hub/cameras/<int:camera_id>/snapshot")

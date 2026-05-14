@@ -1,5 +1,5 @@
 from threading import Thread
-from time import sleep
+from time import sleep, time
 
 from app.video_hub.source_worker import VideoHubSession
 from app.video_hub.frame_cache import FrameCache
@@ -61,3 +61,70 @@ def test_wait_for_new_frame_returns_immediately_if_already_newer():
     result = cache.wait_for_new_frame(0.1, after_version=0)
     assert result is not None
     assert result["_version"] == 1
+
+
+def test_frame_cache_records_last_frame_at():
+    cache = FrameCache()
+    assert cache.last_frame_at() is None
+    cache.update(b"\xff\xd8\xff\xe0", 320, 240)
+    ts = cache.last_frame_at()
+    assert ts is not None
+    assert time() - ts < 1.0
+
+
+def test_session_initial_state_is_connecting():
+    session = VideoHubSession(camera_id=1, source_url="http://192.168.1.88/stream")
+    assert session.state == "CONNECTING"
+
+
+def test_state_transitions_to_connected_on_success():
+    session = VideoHubSession(camera_id=1, source_url="http://192.168.1.88/stream")
+    session._transition_to_connected()
+    assert session.state == "CONNECTED"
+
+
+def test_state_transitions_to_stale_on_no_frames():
+    session = VideoHubSession(
+        camera_id=1,
+        source_url="http://192.168.1.88/stream",
+        stale_frame_timeout_sec=0.1,
+    )
+    session._transition_to_connected()
+    sleep(0.2)
+    session._check_stale_frame()
+    assert session.state == "STALE"
+
+
+def test_state_transitions_to_circuit_open_after_10_failures():
+    session = VideoHubSession(camera_id=1, source_url="http://192.168.1.88/stream")
+    for _ in range(10):
+        session._record_failure("ConnectionRefusedError")
+    assert session.state == "CIRCUIT_OPEN"
+    assert session.consecutive_failures == 10
+
+
+def test_retry_delay_backoff():
+    session = VideoHubSession(camera_id=1, source_url="http://192.168.1.88/stream")
+    assert session._calc_retry_delay(1) == 1.5
+    assert session._calc_retry_delay(3) == 3.0
+    assert session._calc_retry_delay(5) == 5.0
+    assert session._calc_retry_delay(7) == 10.0
+    assert session._calc_retry_delay(10) == 60.0
+    assert session._calc_retry_delay(20) == 60.0
+
+
+def test_session_stop_terminates_loop():
+    session = VideoHubSession(camera_id=1, source_url="http://192.168.1.88/stream")
+    assert not session._stopped
+    session.stop()
+    assert session._stopped
+
+
+def test_circuit_open_activated_by_ensure():
+    session = VideoHubSession(camera_id=1, source_url="http://192.168.1.88/stream")
+    for _ in range(10):
+        session._record_failure("err")
+    assert session.state == "CIRCUIT_OPEN"
+    session.activate_from_circuit_open()
+    assert session.state == "CONNECTING"
+    assert session.consecutive_failures == 0

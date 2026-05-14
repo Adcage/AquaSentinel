@@ -19,6 +19,7 @@ class FrameCache:
         self._snapshot: FrameSnapshot | None = None
         self._version: int = 0
         self._last_error = "尚未开始拉流"
+        self._last_frame_at: float | None = None
 
     def update(
         self,
@@ -36,6 +37,7 @@ class FrameCache:
             )
             self._version += 1
             self._last_error = ""
+            self._last_frame_at = time()
             self._condition.notify_all()
 
     def set_error(self, message: str):
@@ -88,3 +90,6 @@ class FrameCache:
     def last_error(self) -> str:
         with self._condition:
             return self._last_error
+
+    def last_frame_at(self) -> float | None:
+        return self._last_frame_at

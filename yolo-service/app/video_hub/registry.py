@@ -35,3 +35,9 @@ class VideoHubRegistry:
     def get_session(self, camera_id: int) -> VideoHubSession | None:
         with self._lock:
             return self._sessions.get(camera_id)
+
+    def remove_session(self, camera_id: int) -> None:
+        with self._lock:
+            session = self._sessions.pop(camera_id, None)
+        if session is not None:
+            session.stop()
