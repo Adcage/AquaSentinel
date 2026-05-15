@@ -7,6 +7,7 @@ from flask import Blueprint, Response, jsonify, request, current_app
 
 from app.common.errors import BusinessError
 from app.common.response import success_payload
+from app.security.camera_source_resolver import resolve_camera_source
 from app.video_hub import video_hub_registry
 from app.video_hub import webrtc_session_manager
 from app.video_hub.webrtc_signaling import run_async
@@ -175,6 +176,12 @@ def _extract_candidate_lines(sdp: str) -> list[str]:
 
 @blp.post("/video-hub/cameras/<int:camera_id>/whip")
 def whip_offer(camera_id: int):
+    auth_header = str(request.headers.get("Authorization") or "").strip()
+    token = ""
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+    if not token:
+        token = str(request.args.get("token") or "").strip()
     original_sdp = request.get_data(as_text=True)
     if not original_sdp.strip():
         raise BusinessError(
@@ -199,13 +206,7 @@ def whip_offer(camera_id: int):
 
     session = video_hub_registry.get_session(camera_id)
     if session is None:
-        source_url = str(request.args.get("source_url") or "").strip()
-        if not source_url:
-            raise BusinessError(
-                f"camera_id={camera_id} 视频会话尚未建立，需提供 source_url",
-                status_code=503,
-                code="WEBRTC_SESSION_ERROR",
-            )
+        source_url = resolve_camera_source(camera_id, token)
         session = video_hub_registry.ensure_session(camera_id, source_url)
     if session.state == "CIRCUIT_OPEN":
         session.activate_from_circuit_open()

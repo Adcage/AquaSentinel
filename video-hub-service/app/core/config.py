@@ -4,6 +4,9 @@ import os
 
 
 class BaseConfig:
+    VIDEO_HUB_BACKEND_BASE_URL = os.environ.get(
+        "VIDEO_HUB_BACKEND_BASE_URL", "http://127.0.0.1:8300"
+    )
     VIDEO_HUB_CONNECT_TIMEOUT_SEC = float(
         os.environ.get("VIDEO_HUB_CONNECT_TIMEOUT_SEC", "3.0")
     )

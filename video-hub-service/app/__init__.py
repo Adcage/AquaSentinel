@@ -36,7 +36,7 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     def _add_cors_headers(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Authorization"
         return response
 
     return app
