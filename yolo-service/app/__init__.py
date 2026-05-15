@@ -11,8 +11,6 @@ from app.core.middleware import register_middlewares
 from app.modules import register_enabled_modules
 from app.api.engine_tasks import blp as engine_tasks_blp
 from app.api.test_trigger_api import blp as test_trigger_blp
-from app.api.video_hub import blp as video_hub_blp
-from app.api.video_hub_webrtc import blp as video_hub_webrtc_blp
 from app.services.ai_ws_push_service import ai_ws_push_service
 from app.services.model_inference_service import warmup_model
 from app.services.rabbitmq_publisher_service import rabbitmq_publisher_service
@@ -101,9 +99,6 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     enabled_modules = register_enabled_modules(app)
     app.extensions["docs_api"].register_blueprint(engine_tasks_blp)
     app.extensions["docs_api"].register_blueprint(test_trigger_blp)
-    app.register_blueprint(video_hub_blp)
-    app.register_blueprint(video_hub_webrtc_blp)
-
     import app.models as _app_models  # noqa: F401
 
     if not app.config.get("TESTING", False):

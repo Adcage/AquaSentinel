@@ -26,7 +26,7 @@ from app.services.model_inference_service import infer_stream_frame, warmup_mode
 from app.services.rabbitmq_publisher_service import rabbitmq_publisher_service
 from app.services.tracker_service import DeepSortTracker, TrackedObject
 from app.services.video_overlay_service import video_frame_push_service
-from app.video_hub import video_hub_registry
+from app.services.video_hub_client import video_hub_client
 
 
 @dataclass
@@ -576,7 +576,7 @@ def _run_loop_with_video_hub(task_code: str, stream_url: str, frame_interval: fl
             else float(task_for_threshold.drowning_alert_threshold_sec)
         )
     evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
-    session = video_hub_registry.ensure_session(camera_id, stream_url)
+    video_hub_client.ensure_session(camera_id, stream_url)
     last_infer_at = 0.0
 
     while True:
@@ -593,8 +593,8 @@ def _run_loop_with_video_hub(task_code: str, stream_url: str, frame_interval: fl
             current_drowning_threshold_sec = task_drowning_threshold_sec
             evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
 
-        snapshot = session.frame_cache.wait_for_frame(max(frame_interval, 0.5))
-        if snapshot is None:
+        jpeg_bytes = video_hub_client.fetch_snapshot(camera_id)
+        if jpeg_bytes is None:
             time.sleep(0.01)
             continue
 
@@ -603,12 +603,12 @@ def _run_loop_with_video_hub(task_code: str, stream_url: str, frame_interval: fl
             time.sleep(0.005)
             continue
 
-        frame_buffer = np.frombuffer(snapshot["jpeg_bytes"], dtype=np.uint8)
+        frame_buffer = np.frombuffer(jpeg_bytes, dtype=np.uint8)
         frame = cv2.imdecode(frame_buffer, cv2.IMREAD_COLOR)
         if frame is None:
             continue
         frame_height, frame_width = frame.shape[:2]
-        frame_timestamp = float(snapshot.get("timestamp") or int(time.time() * 1000)) / 1000.0
+        frame_timestamp = time.time()
 
         infer_started_at = time.monotonic()
         detections = infer_stream_frame(frame, model_version=model_version)

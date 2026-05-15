@@ -81,6 +81,8 @@ class BaseConfig:
     METRICS_ENABLED = True
     METRICS_PORT = 9091
     OVERLAY_SERVER_SIDE_ENABLED = False
+    VIDEO_HUB_BASE_URL = os.environ.get("VIDEO_HUB_BASE_URL", "http://127.0.0.1:5100")
+    VIDEO_HUB_TIMEOUT_MS = int(os.environ.get("VIDEO_HUB_TIMEOUT_MS", "5000"))
 
 
 def apply_env_overrides(app):
@@ -200,4 +202,10 @@ def apply_env_overrides(app):
     app.config["METRICS_PORT"] = _env_int("METRICS_PORT", app.config["METRICS_PORT"])
     app.config["OVERLAY_SERVER_SIDE_ENABLED"] = _env_bool(
         "OVERLAY_SERVER_SIDE_ENABLED", app.config["OVERLAY_SERVER_SIDE_ENABLED"]
+    )
+    app.config["VIDEO_HUB_BASE_URL"] = os.getenv(
+        "VIDEO_HUB_BASE_URL", app.config["VIDEO_HUB_BASE_URL"]
+    )
+    app.config["VIDEO_HUB_TIMEOUT_MS"] = _env_int(
+        "VIDEO_HUB_TIMEOUT_MS", app.config["VIDEO_HUB_TIMEOUT_MS"]
     )

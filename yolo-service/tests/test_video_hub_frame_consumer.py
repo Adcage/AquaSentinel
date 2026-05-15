@@ -6,6 +6,7 @@ from app import create_app
 from app.services import engine_task_service
 from app.services.engine_task_service import EngineTaskState
 from app.services.tracker_service import TrackedObject
+from app.services.video_hub_client import VideoHubClient
 
 
 def build_app():
@@ -19,33 +20,21 @@ def build_app():
     )
 
 
+class FakeVideoHubClient:
+    def __init__(self):
+        self.ensure_called = None
+        self._jpeg_bytes = b"\xff\xd8\xff\xe0" + b"\x00" * 100 + b"\xff\xd9"
+
+    def ensure_session(self, camera_id, source_url):
+        self.ensure_called = (camera_id, source_url)
+
+    def fetch_snapshot(self, camera_id):
+        return self._jpeg_bytes
+
+
 def test_run_loop_with_video_hub_consumes_frame_cache(monkeypatch):
     app = build_app()
-    ensured = {}
-
-    class FakeFrameCache:
-        def __init__(self):
-            self.calls = 0
-
-        def wait_for_frame(self, _timeout):
-            self.calls += 1
-            return {
-                "jpeg_bytes": b"fake-jpeg-bytes",
-                "timestamp": 1715500000123,
-            }
-
-    class FakeSession:
-        def __init__(self):
-            self.frame_cache = FakeFrameCache()
-
-    class FakeRegistry:
-        def __init__(self):
-            self.session = FakeSession()
-
-        def ensure_session(self, camera_id, source_url):
-            ensured["camera_id"] = camera_id
-            ensured["source_url"] = source_url
-            return self.session
+    fake_client = FakeVideoHubClient()
 
     class FakeTracker:
         backend = "simple"
@@ -91,7 +80,7 @@ def test_run_loop_with_video_hub_consumes_frame_cache(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "cv2", fake_cv2)
     monkeypatch.setitem(sys.modules, "numpy", fake_numpy)
-    monkeypatch.setattr("app.services.engine_task_service.video_hub_registry", FakeRegistry())
+    monkeypatch.setattr("app.services.engine_task_service.video_hub_client", fake_client)
     monkeypatch.setattr("app.services.engine_task_service.DeepSortTracker", FakeTracker)
     monkeypatch.setattr(
         "app.services.engine_task_service.DrowningRuleEvaluator", FakeEvaluator
@@ -156,14 +145,20 @@ def test_run_loop_with_video_hub_consumes_frame_cache(monkeypatch):
 
             payload = engine_task_service._serialize_task(task)
             realtime = payload["realtime"]
-            assert ensured == {
-                "camera_id": 1001,
-                "source_url": "http://192.168.1.88/stream",
-            }
+            assert fake_client.ensure_called == (1001, "http://192.168.1.88/stream")
             assert realtime["frame_width"] == 320
             assert realtime["frame_height"] == 240
-            assert realtime["frame_ts"] == 1715500000.123
             assert payload["frames_processed"] == 1
             assert realtime["detections"][0]["track_id"] == "track_1"
         finally:
             engine_task_service._TASKS.pop(task_code, None)
+
+
+def test_video_hub_client_builds_snapshot_url():
+    client = VideoHubClient(base_url="http://127.0.0.1:5100")
+    assert client._snapshot_url(1001) == "http://127.0.0.1:5100/video-hub/cameras/1001/snapshot"
+
+
+def test_video_hub_client_builds_ensure_url():
+    client = VideoHubClient(base_url="http://127.0.0.1:5100")
+    assert client._ensure_url(1001) == "http://127.0.0.1:5100/video-hub/cameras/1001/ensure"
