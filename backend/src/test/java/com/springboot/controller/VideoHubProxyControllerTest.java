@@ -10,12 +10,15 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.Map;
 
 import com.springboot.common.BaseResponse;
-import com.springboot.config.AppAiEngineProperties;
+import com.springboot.config.AppVideoHubProperties;
 import com.springboot.exception.BusinessException;
+import com.springboot.model.entity.CameraDevice;
 import com.springboot.security.StreamTokenAuthService;
+import com.springboot.service.CameraDeviceService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,9 +37,11 @@ import org.springframework.web.client.RestTemplate;
 @ExtendWith(MockitoExtension.class)
 class VideoHubProxyControllerTest {
 
-    @Mock private AppAiEngineProperties aiEngineProperties;
+    @Mock private AppVideoHubProperties videoHubProperties;
 
     @Mock private StreamTokenAuthService streamTokenAuthService;
+
+    @Mock private CameraDeviceService cameraDeviceService;
 
     @Mock private RestTemplate restTemplate;
 
@@ -45,24 +50,34 @@ class VideoHubProxyControllerTest {
     @BeforeEach
     void setUp() {
         controller = new VideoHubProxyController();
-        ReflectionTestUtils.setField(controller, "aiEngineProperties", aiEngineProperties);
+        ReflectionTestUtils.setField(controller, "videoHubProperties", videoHubProperties);
         ReflectionTestUtils.setField(controller, "streamTokenAuthService", streamTokenAuthService);
+        ReflectionTestUtils.setField(controller, "cameraDeviceService", cameraDeviceService);
         ReflectionTestUtils.setField(controller, "restTemplate", restTemplate);
     }
 
     private void stubBaseUrl() {
-        when(aiEngineProperties.getBaseUrl()).thenReturn("http://127.0.0.1:5000");
+        when(videoHubProperties.getBaseUrl()).thenReturn("http://127.0.0.1:5100");
     }
 
     private void stubTokenParamName() {
         when(streamTokenAuthService.resolveTokenParamName()).thenReturn("token");
     }
 
+    private CameraDevice stubCamera(Long cameraId, String streamUrl) {
+        CameraDevice camera = new CameraDevice();
+        camera.setId(cameraId);
+        camera.setStream_url(streamUrl);
+        when(cameraDeviceService.getById(cameraId)).thenReturn(camera);
+        return camera;
+    }
+
     @Test
-    void whipProxyForwardsSdpToYoloService() {
+    void whipProxyForwardsSdpWithSourceUrl() {
         stubBaseUrl();
         stubTokenParamName();
         doNothing().when(streamTokenAuthService).verifyPreviewToken("valid-token");
+        stubCamera(1001L, "http://192.168.1.100/stream");
 
         byte[] sdpAnswer = "v=0\r\no=- 123 1 IN IP4 0.0.0.0\r\n".getBytes();
         HttpHeaders yoloHeaders = new HttpHeaders();
@@ -72,7 +87,7 @@ class VideoHubProxyControllerTest {
                 new ResponseEntity<>(sdpAnswer, yoloHeaders, HttpStatus.CREATED);
 
         when(restTemplate.exchange(
-                        any(String.class),
+                        any(URI.class),
                         eq(HttpMethod.POST),
                         any(HttpEntity.class),
                         eq(byte[].class)))
@@ -116,7 +131,7 @@ class VideoHubProxyControllerTest {
 
         assertEquals(0, result.getCode());
         assertTrue(result.getData());
-        verify(restTemplate).delete("http://127.0.0.1:5000/video-hub/sessions/abc-123");
+        verify(restTemplate).delete("http://127.0.0.1:5100/video-hub/sessions/abc-123");
     }
 
     @Test
@@ -139,6 +154,7 @@ class VideoHubProxyControllerTest {
         stubBaseUrl();
         stubTokenParamName();
         doNothing().when(streamTokenAuthService).verifyPreviewToken("valid-token");
+        stubCamera(1001L, "http://192.168.1.100/stream");
 
         byte[] sdpAnswer = "answer".getBytes();
         HttpHeaders yoloHeaders = new HttpHeaders();
@@ -147,7 +163,7 @@ class VideoHubProxyControllerTest {
                 new ResponseEntity<>(sdpAnswer, yoloHeaders, HttpStatus.CREATED);
 
         when(restTemplate.exchange(
-                        any(String.class),
+                        any(URI.class),
                         eq(HttpMethod.POST),
                         any(HttpEntity.class),
                         eq(byte[].class)))

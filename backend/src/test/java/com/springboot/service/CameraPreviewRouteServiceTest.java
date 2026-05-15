@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 
-import com.springboot.config.AppAiEngineProperties;
+import com.springboot.config.AppVideoHubProperties;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.service.impl.CameraDeviceServiceImpl;
@@ -31,7 +31,7 @@ class CameraPreviewRouteServiceTest {
         URI uri = service.buildVideoHubStreamUri(httpCamera());
 
         assertTrue(
-                uri.toString().startsWith("http://127.0.0.1:5000/video-hub/cameras/1001/stream"));
+                uri.toString().startsWith("http://127.0.0.1:5100/video-hub/cameras/1001/stream"));
         assertTrue(uri.toString().contains("source_url=http%3A%2F%2F192.168.1.88%2Fstream"));
     }
 
@@ -64,9 +64,9 @@ class CameraPreviewRouteServiceTest {
         assertEquals("http://192.168.1.88/stream", vo.getStreamUrl());
     }
 
-    private AppAiEngineProperties newProperties() {
-        AppAiEngineProperties properties = new AppAiEngineProperties();
-        properties.setBaseUrl("http://127.0.0.1:5000");
+    private AppVideoHubProperties newProperties() {
+        AppVideoHubProperties properties = new AppVideoHubProperties();
+        properties.setBaseUrl("http://127.0.0.1:5100");
         return properties;
     }
 
