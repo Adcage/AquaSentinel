@@ -164,3 +164,45 @@ export const resolveCameraPreviewTarget = (
     url: resolveMjpegUrl(options.streamUrl, token),
   };
 };
+
+export const replaceMdnsCandidates = (
+  sdp: string,
+  candidateIps: string[],
+): string => {
+  if (!candidateIps.length) {
+    return sdp;
+  }
+  const lines = sdp.split("\r\n");
+  let ipIndex = 0;
+  const replaced = lines.map((line) => {
+    if (!line.startsWith("a=candidate:")) {
+      return line;
+    }
+    const parts = line.split(" ");
+    if (parts.length < 6) {
+      return line;
+    }
+    const address = parts[4];
+    if (address.endsWith(".local")) {
+      const replacement = candidateIps[ipIndex % candidateIps.length];
+      ipIndex++;
+      parts[4] = replacement;
+      return parts.join(" ");
+    }
+    return line;
+  });
+  return replaced.join("\r\n");
+};
+
+export const resolveWebrtcCandidateIps = (): string[] => {
+  const raw = String(
+    import.meta.env.VITE_WEBRTC_CANDIDATE_IPS || "",
+  ).trim();
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter((ip) => /^\d+\.\d+\.\d+\.\d+$/.test(ip));
+};
