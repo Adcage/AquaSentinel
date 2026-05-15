@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[project]
+name = "video-hub-service"
+version = "0.1.0"
