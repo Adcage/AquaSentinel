@@ -209,12 +209,17 @@ def test_whip_endpoint_returns_201_with_sdp_answer(monkeypatch):
     monkeypatch.setattr(
         "app.api.video_hub_webrtc.video_hub_registry", registry
     )
+    monkeypatch.setattr(
+        "app.api.video_hub_webrtc.resolve_camera_source",
+        lambda camera_id, token: "http://192.168.1.88/stream",
+    )
 
     sdp_offer = _generate_sdp_offer()
     response = client.post(
         "/video-hub/cameras/1001/whip",
         data=sdp_offer,
         content_type="application/sdp",
+        headers={"Authorization": "Bearer abc123"},
     )
 
     assert response.status_code == 201
@@ -240,12 +245,23 @@ def test_whip_endpoint_returns_error_when_no_session(monkeypatch):
     monkeypatch.setattr(
         "app.api.video_hub_webrtc.video_hub_registry", registry
     )
+    monkeypatch.setattr(
+        "app.api.video_hub_webrtc.resolve_camera_source",
+        lambda camera_id, token: (_ for _ in ()).throw(
+            __import__("app.common.errors", fromlist=["BusinessError"]).BusinessError(
+                "camera_id=1001 视频会话尚未建立",
+                status_code=503,
+                code="WEBRTC_SESSION_ERROR",
+            )
+        ),
+    )
 
     sdp_offer = _generate_sdp_offer()
     response = client.post(
         "/video-hub/cameras/1001/whip",
         data=sdp_offer,
         content_type="application/sdp",
+        headers={"Authorization": "Bearer abc123"},
     )
 
     assert response.status_code == 503
@@ -266,12 +282,17 @@ def test_whip_delete_returns_200(monkeypatch):
     monkeypatch.setattr(
         "app.api.video_hub_webrtc.video_hub_registry", registry
     )
+    monkeypatch.setattr(
+        "app.api.video_hub_webrtc.resolve_camera_source",
+        lambda camera_id, token: "http://192.168.1.88/stream",
+    )
 
     sdp_offer = _generate_sdp_offer()
     whip_response = client.post(
         "/video-hub/cameras/1001/whip",
         data=sdp_offer,
         content_type="application/sdp",
+        headers={"Authorization": "Bearer abc123"},
     )
 
     assert whip_response.status_code == 201
