@@ -12,6 +12,8 @@ import numpy as np
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from PIL import Image
 
+from app.video_hub.log_controls import should_log_frame_progress
+
 if TYPE_CHECKING:
     from app.video_hub.frame_cache import FrameCache
 
@@ -102,7 +104,7 @@ class VideoStreamTrack(MediaStreamTrack):
                     self._last_version,
                     len(jpeg_bytes),
                 )
-            elif self._last_version % 100 == 0:
+            elif should_log_frame_progress(self._last_version, 300):
                 logger.info(
                     "WebRTC 发帧 camera_id=%d version=%d size=%d",
                     self._camera_id,

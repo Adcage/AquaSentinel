@@ -9,6 +9,7 @@ from time import sleep, time
 import requests
 
 from app.video_hub.frame_cache import FrameCache
+from app.video_hub.log_controls import should_log_after_cooldown
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,8 @@ class VideoHubSession:
         self._last_failure_detail: str | None = None
         self._circuit_open_reason: str | None = None
         self._stopped = False
+        self._last_connected_log_at: float | None = None
+        self._last_closed_log_at: float | None = None
 
     @property
     def state(self) -> str:
@@ -248,7 +251,9 @@ class VideoHubSession:
                 with self._state_lock:
                     is_stale = self._state == SessionState.STALE
                 if is_stale:
-                    logger.info("camera=%s 无帧超时，1.5s 后重连", self.camera_id)
+                    if should_log_after_cooldown(self._last_closed_log_at, time(), 60.0):
+                        logger.info("camera=%s 无帧超时，1.5s 后重连", self.camera_id)
+                        self._last_closed_log_at = time()
                     self._transition_to_connecting()
                     sleep(1.5)
                     continue
@@ -258,12 +263,14 @@ class VideoHubSession:
                 if not is_circuit_open:
                     self._transition_to_connecting()
                 delay = self._calc_retry_delay(self._consecutive_failures)
-                logger.warning(
-                    "camera=%s 拉流异常，%.1fs 后重试: %s",
-                    self.camera_id,
-                    delay,
-                    exc,
-                )
+                if should_log_after_cooldown(self._last_closed_log_at, time(), 60.0):
+                    logger.warning(
+                        "camera=%s 拉流异常，%.1fs 后重试: %s",
+                        self.camera_id,
+                        delay,
+                        exc,
+                    )
+                    self._last_closed_log_at = time()
                 sleep(delay)
                 continue
 
@@ -273,7 +280,9 @@ class VideoHubSession:
             with self._state_lock:
                 post_state = self._state
             if post_state == SessionState.STALE:
-                logger.info("camera=%s 无帧超时，1.5s 后重连", self.camera_id)
+                if should_log_after_cooldown(self._last_closed_log_at, time(), 60.0):
+                    logger.info("camera=%s 无帧超时，1.5s 后重连", self.camera_id)
+                    self._last_closed_log_at = time()
                 self._transition_to_connecting()
                 sleep(1.5)
                 continue
@@ -284,11 +293,13 @@ class VideoHubSession:
             if not is_circuit_open:
                 self._transition_to_connecting()
             delay = self._calc_retry_delay(self._consecutive_failures)
-            logger.warning(
-                "camera=%s 上游连接关闭，%.1fs 后重连",
-                self.camera_id,
-                delay,
-            )
+            if should_log_after_cooldown(self._last_closed_log_at, time(), 60.0):
+                logger.warning(
+                    "camera=%s 上游连接关闭，%.1fs 后重连",
+                    self.camera_id,
+                    delay,
+                )
+                self._last_closed_log_at = time()
             sleep(delay)
 
     def _consume_stream(self):
@@ -306,13 +317,15 @@ class VideoHubSession:
             self._transition_to_connected()
             self._record_success()
             self._last_frame_at = int(time() * 1000)
-            logger.info(
-                "camera=%s 已连接上游: %s (boundary=%s, content_type=%s)",
-                self.camera_id,
-                self.source_url,
-                boundary,
-                content_type,
-            )
+            if should_log_after_cooldown(self._last_connected_log_at, time(), 60.0):
+                logger.info(
+                    "camera=%s 已连接上游: %s (boundary=%s, content_type=%s)",
+                    self.camera_id,
+                    self.source_url,
+                    boundary,
+                    content_type,
+                )
+                self._last_connected_log_at = time()
 
             frame_count = 0
             for chunk in response.iter_content(chunk_size=4096):
