@@ -11,6 +11,12 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
+import {
+  isVerboseWebrtcDebugEnabled,
+  shouldLogWebrtcEvent,
+  summarizeStatsSnapshot,
+} from "@/utils/webrtcDebug";
+
 interface Props {
   src: string;
   muted?: boolean;
@@ -31,8 +37,12 @@ const videoRef = ref<HTMLVideoElement | null>(null);
 let peerConnection: RTCPeerConnection | null = null;
 let sessionUrl = "";
 let startSeq = 0;
+const verboseDebug = isVerboseWebrtcDebugEnabled();
 
 const debugLog = (label: string, detail?: unknown) => {
+  if (!shouldLogWebrtcEvent(label, verboseDebug)) {
+    return;
+  }
   console.info(`[WebRtcWhepPlayer] ${label}`, detail ?? "");
 };
 
@@ -51,7 +61,9 @@ const summarizeSdp = (sdp: string) => {
 const logSdpSummary = (label: string, sdp: string) => {
   const summary = summarizeSdp(sdp);
   debugLog(`${label} summary`, summary);
-  debugLog(`${label} candidates`, summary.candidates.join(" || "));
+  if (verboseDebug) {
+    debugLog(`${label} candidates`, summary.candidates.join(" || "));
+  }
 };
 
 const dumpStats = async (pc: RTCPeerConnection) => {
@@ -221,6 +233,9 @@ const startConnection = async () => {
     headers: {
       "Content-Type": "application/sdp",
       Accept: "application/sdp",
+      ...(sessionStorage.getItem("token")
+        ? { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+        : {}),
     },
     body: pc.localDescription.sdp,
   });
@@ -251,7 +266,10 @@ const startConnection = async () => {
     sdp: answerSdp,
   });
   debugLog("setRemoteDescription resolved");
-  debugLog("remoteDescription actual SDP", pc.remoteDescription?.sdp);
+  if (verboseDebug) {
+    debugLog("remoteDescription actual SDP", pc.remoteDescription?.sdp);
+  }
+  let lastStatsKey = "";
   const statsInterval = setInterval(async () => {
     if (peerConnection !== pc) {
       clearInterval(statsInterval);
@@ -259,30 +277,39 @@ const startConnection = async () => {
     }
     try {
       const stats = await pc.getStats();
-      for (const report of stats.values()) {
-        if (
-          report.type === "candidate-pair" ||
-          report.type === "local-candidate" ||
-          report.type === "remote-candidate"
-        ) {
-          debugLog(`[stats] ${report.type}`, {
-            id: report.id,
-            ...(report.type === "candidate-pair"
-              ? {
-                  state: (report as RTCIceCandidatePairStats).state,
-                  nominated: (report as RTCIceCandidatePairStats).nominated,
-                  requestsSent: (report as RTCIceCandidatePairStats).requestsSent,
-                  responsesReceived: (report as RTCIceCandidatePairStats).responsesReceived,
-                  bytesSent: (report as RTCIceCandidatePairStats).bytesSent,
-                  bytesReceived: (report as RTCIceCandidatePairStats).bytesReceived,
-                }
-              : {
-                  candidateType: (report as RTCIceCandidateStats).candidateType,
-                  ip: (report as RTCIceCandidateStats).ip,
-                  port: (report as RTCIceCandidateStats).port,
-                  protocol: (report as RTCIceCandidateStats).protocol,
-                }),
-          });
+      if (verboseDebug) {
+        for (const report of stats.values()) {
+          if (
+            report.type === "candidate-pair" ||
+            report.type === "local-candidate" ||
+            report.type === "remote-candidate"
+          ) {
+            debugLog(`[stats] ${report.type}`, {
+              id: report.id,
+              ...(report.type === "candidate-pair"
+                ? {
+                    state: (report as RTCIceCandidatePairStats).state,
+                    nominated: (report as RTCIceCandidatePairStats).nominated,
+                    requestsSent: (report as RTCIceCandidatePairStats).requestsSent,
+                    responsesReceived: (report as RTCIceCandidatePairStats).responsesReceived,
+                    bytesSent: (report as RTCIceCandidatePairStats).bytesSent,
+                    bytesReceived: (report as RTCIceCandidatePairStats).bytesReceived,
+                  }
+                : {
+                    candidateType: (report as RTCIceCandidateStats).candidateType,
+                    ip: (report as RTCIceCandidateStats).ip,
+                    port: (report as RTCIceCandidateStats).port,
+                    protocol: (report as RTCIceCandidateStats).protocol,
+                  }),
+            });
+          }
+        }
+      } else {
+        const summary = summarizeStatsSnapshot(Array.from(stats.values()) as Record<string, unknown>[]);
+        const nextKey = JSON.stringify(summary);
+        if (summary.selectedPair && nextKey !== lastStatsKey) {
+          lastStatsKey = nextKey;
+          debugLog("stats summary", summary);
         }
       }
     } catch {

@@ -141,13 +141,9 @@ export const resolveCameraPreviewTarget = (
       options.cameraId,
     );
     if (whepUrl) {
-      const shouldAppendToken =
-        String(import.meta.env.VITE_WEBRTC_APPEND_TOKEN_QUERY || "false").toLowerCase() ===
-        "true";
-      const url = shouldAppendToken && token ? appendQuery(whepUrl, "token", token) : whepUrl;
       return {
         protocol: "webrtc",
-        url,
+        url: whepUrl,
       };
     }
   }

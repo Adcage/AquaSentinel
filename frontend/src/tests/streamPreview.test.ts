@@ -46,6 +46,27 @@ describe("stream preview url", () => {
     expect(target.url).toContain("provider=auto");
     expect(target.url).toContain("token=abc123");
   });
+
+  it("builds webrtc direct url without leaking token or source_url into query", () => {
+    vi.stubEnv("VITE_CAMERA_PREVIEW_MODE", "webrtc");
+    vi.stubEnv("VITE_WEBRTC_WHEP_BASE_URL", "http://localhost:5100");
+    vi.stubEnv("VITE_WEBRTC_WHEP_PATH_TEMPLATE", "video-hub/cameras/{cameraId}/whip");
+    vi.stubEnv("VITE_WEBRTC_APPEND_TOKEN_QUERY", "true");
+
+    const target = resolveCameraPreviewTarget({
+      cameraId: 5021,
+      cameraCode: "CAM-5021",
+      streamUrl: "http://192.168.137.173/stream",
+      token: "abc123",
+    });
+
+    expect(target.protocol).toBe("webrtc");
+    expect(target.url).toBe("http://localhost:5100/video-hub/cameras/5021/whip");
+    expect(target.url).not.toContain("token=");
+    expect(target.url).not.toContain("source_url=");
+
+    vi.unstubAllEnvs();
+  });
 });
 
 describe("replaceMdnsCandidates", () => {
