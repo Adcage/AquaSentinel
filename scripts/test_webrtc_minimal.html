@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>WebRTC WHEP 最小测试</title>
+<style>
+body { font-family: monospace; margin: 20px; background: #1a1a2e; color: #e0e0e0; }
+button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+video { width: 640px; height: 480px; background: #000; margin: 10px 0; }
+#log { white-space: pre-wrap; max-height: 400px; overflow-y: auto; background: #0d0d1a; padding: 10px; border: 1px solid #333; font-size: 12px; }
+.stats-row { margin: 2px 0; }
+.stats-remote { color: #4fc3f7; }
+.stats-pair { color: #ffd54f; }
+.stats-transport { color: #81c784; }
+</style>
+</head>
+<body>
+<h2>WebRTC WHEP 最小测试（直连 video-hub-service）</h2>
+<div>
+  <label>WHIP URL: <input id="whipUrl" value="http://localhost:5100/video-hub/cameras/5021/whip?source_url=http://192.168.137.173/stream" style="width:600px"></label>
+</div>
+<div>
+  <button onclick="startWhep()">启动 WHEP</button>
+  <button onclick="stopWhep()">停止</button>
+  <button onclick="dumpStats()">打印 Stats</button>
+</div>
+<video id="video" autoplay playsinline muted></video>
+<div id="log"></div>
+
+<script>
+let pc = null;
+let sessionUrl = '';
+const logEl = document.getElementById('log');
+
+function log(msg, cls) {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(msg);
+}
+
+async function startWhep() {
+  if (pc) { pc.close(); pc = null; }
+  logEl.innerHTML = '';
+  const url = document.getElementById('whipUrl').value.trim();
+
+  pc = new RTCPeerConnection({
+    iceServers: [],
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require',
+  });
+
+  pc.addEventListener('icecandidate', e => {
+    log(`local candidate: ${e.candidate?.candidate || 'end-of-candidates'}`);
+  });
+  pc.addEventListener('iceconnectionstatechange', () => {
+    log(`ICE: ${pc.iceConnectionState}`);
+  });
+  pc.addEventListener('connectionstatechange', () => {
+    log(`Connection: ${pc.connectionState}`);
+  });
+  pc.addEventListener('signalingstatechange', () => {
+    log(`Signaling: ${pc.signalingState}`);
+  });
+
+  pc.addTransceiver('video', { direction: 'recvonly' });
+
+  pc.ontrack = e => {
+    log(`ontrack: kind=${e.track.kind} muted=${e.track.muted} streams=${e.streams.length}`);
+    const video = document.getElementById('video');
+    if (e.streams[0]) {
+      video.srcObject = e.streams[0];
+      video.play().then(() => log('video.play() OK')).catch(err => log(`video.play() error: ${err}`));
+    }
+    e.track.onunmute = () => log(`track unmuted: ${e.track.kind}`);
+  };
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  await new Promise(resolve => {
+    if (pc.iceGatheringState === 'complete') return resolve();
+    const handler = () => {
+      if (pc.iceGatheringState === 'complete') {
+        pc.removeEventListener('icegatheringstatechange', handler);
+        resolve();
+      }
+    };
+    pc.addEventListener('icegatheringstatechange', handler);
+    setTimeout(() => { pc.removeEventListener('icegatheringstatechange', handler); resolve(); }, 3000);
+  });
+
+  log(`Offer m-lines: ${pc.localDescription.sdp.split('\n').filter(l => l.startsWith('m=')).length}`);
+
+  log('Sending WHIP offer...');
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/sdp', 'Accept': 'application/sdp' },
+      body: pc.localDescription.sdp,
+    });
+  } catch (err) {
+    log(`FETCH ERROR: ${err}`);
+    return;
+  }
+
+  log(`Response status: ${response.status}`);
+  if (!response.ok) {
+    log(`Error body: ${await response.text()}`);
+    return;
+  }
+
+  const answerSdp = await response.text();
+  const location = response.headers.get('location') || '';
+  log(`Answer length: ${answerSdp.length}, candidates: ${(answerSdp.match(/^a=candidate:/gm) || []).length}`);
+  log(`Location: ${location}`);
+
+  if (location) {
+    sessionUrl = new URL(location, url).toString();
+  }
+
+  log('--- Answer SDP (first 2000 chars) ---');
+  log(answerSdp.substring(0, 2000));
+
+  log('--- setRemoteDescription ---');
+  try {
+    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+    log('setRemoteDescription OK');
+  } catch (err) {
+    log(`setRemoteDescription FAILED: ${err}`);
+    return;
+  }
+
+  log('--- remoteDescription.sdp (first 2000 chars) ---');
+  log(pc.remoteDescription?.sdp?.substring(0, 2000) || 'null');
+
+  setInterval(() => {
+    if (!pc) return;
+    pc.getStats().then(stats => {
+      for (const r of stats.values()) {
+        if (r.type === 'remote-candidate') {
+          log(`[stats] remote-candidate: type=${r.candidateType} ip=${r.ip} port=${r.port} protocol=${r.protocol}`, 'stats-remote');
+        } else if (r.type === 'candidate-pair') {
+          log(`[stats] candidate-pair: state=${r.state} nominated=${r.nominated} requestsSent=${r.requestsSent} requestsReceived=${r.requestsReceived} bytesSent=${r.bytesSent} bytesReceived=${r.bytesReceived}`, 'stats-pair');
+        } else if (r.type === 'transport') {
+          log(`[stats] transport: dtlsState=${r.dtlsState} iceRole=${r.iceRole} iceState=${r.iceState}`, 'stats-transport');
+        }
+      }
+    }).catch(() => {});
+  }, 3000);
+}
+
+function stopWhep() {
+  if (pc) { pc.close(); pc = null; }
+  if (sessionUrl) { fetch(sessionUrl, { method: 'DELETE' }).catch(() => {}); sessionUrl = ''; }
+  document.getElementById('video').srcObject = null;
+  log('Stopped');
+}
+
+async function dumpStats() {
+  if (!pc) return;
+  const stats = await pc.getStats();
+  for (const r of stats.values()) {
+    if (['remote-candidate', 'local-candidate', 'candidate-pair', 'transport'].includes(r.type)) {
+      log(`[dump] ${r.type}: ${JSON.stringify(r)}`);
+    }
+  }
+}
+</script>
+</body>
+</html>
