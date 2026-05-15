@@ -1,16 +1,25 @@
 package com.springboot.controller;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ErrorCode;
 import com.springboot.common.ResultUtils;
-import com.springboot.config.AppAiEngineProperties;
+import com.springboot.config.AppVideoHubProperties;
 import com.springboot.exception.BusinessException;
+import com.springboot.model.entity.CameraDevice;
 import com.springboot.security.StreamTokenAuthService;
+import com.springboot.service.CameraDeviceService;
 
 import jakarta.annotation.Resource;
-import org.springframework.http.HttpEntity;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,31 +30,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
-/**
- * WHEP 信令反代控制器
- *
- * <p>将 WHEP 信令请求转发到 yolo-service，保持"前端只跟 Java 后端交互"约定。
- */
 @RestController
 @RequestMapping("/video-hub")
 public class VideoHubProxyController {
 
-    @Resource private AppAiEngineProperties aiEngineProperties;
+    @Resource private AppVideoHubProperties videoHubProperties;
 
     @Resource private StreamTokenAuthService streamTokenAuthService;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Resource private CameraDeviceService cameraDeviceService;
 
-    /**
-     * 转发 WHEP SDP offer 到 yolo-service
-     *
-     * @param cameraId 摄像头 ID
-     * @param params 查询参数（含 token）
-     * @param sdpOffer SDP offer 请求体
-     * @return 201 + SDP answer + Location header
-     */
+    private static final HttpClient HTTP_CLIENT =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+
     @PostMapping("/cameras/{cameraId}/whip")
     public ResponseEntity<byte[]> whipOffer(
             @PathVariable Long cameraId,
@@ -54,47 +52,72 @@ public class VideoHubProxyController {
         String token = params.get(streamTokenAuthService.resolveTokenParamName());
         streamTokenAuthService.verifyPreviewToken(token);
 
-        String yoloUrl =
-                aiEngineProperties.getBaseUrl() + "/video-hub/cameras/" + cameraId + "/whip";
+        StringBuilder urlBuilder =
+                new StringBuilder()
+                        .append(videoHubProperties.getBaseUrl())
+                        .append("/video-hub/cameras/")
+                        .append(cameraId)
+                        .append("/whip");
 
-        HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.setContentType(MediaType.valueOf("application/sdp"));
-        HttpEntity<byte[]> requestEntity = new HttpEntity<>(sdpOffer, requestHeaders);
+        boolean hasParam = false;
 
-        ResponseEntity<byte[]> yoloResponse =
-                restTemplate.exchange(
-                        yoloUrl,
-                        org.springframework.http.HttpMethod.POST,
-                        requestEntity,
-                        byte[].class);
-
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentType(MediaType.valueOf("application/sdp"));
-
-        String location = yoloResponse.getHeaders().getFirst(HttpHeaders.LOCATION);
-        if (location != null && !location.startsWith("/api")) {
-            responseHeaders.set(HttpHeaders.LOCATION, "/api" + location);
-        } else if (location != null) {
-            responseHeaders.set(HttpHeaders.LOCATION, location);
+        CameraDevice camera = cameraDeviceService.getById(cameraId);
+        if (camera != null && StringUtils.isNotBlank(camera.getStream_url())) {
+            urlBuilder
+                    .append("?source_url=")
+                    .append(URLEncoder.encode(camera.getStream_url(), StandardCharsets.UTF_8));
+            hasParam = true;
         }
 
-        return ResponseEntity.status(yoloResponse.getStatusCode())
-                .headers(responseHeaders)
-                .body(yoloResponse.getBody());
-    }
-
-    /**
-     * 转发 WHEP 会话删除请求到 yolo-service
-     *
-     * @param sessionId WHEP 会话 ID
-     * @return 成功响应
-     */
-    @DeleteMapping("/sessions/{sessionId}")
-    public BaseResponse<Boolean> deleteWhipSession(@PathVariable String sessionId) {
-        String yoloUrl = aiEngineProperties.getBaseUrl() + "/video-hub/sessions/" + sessionId;
+        if (StringUtils.isNotBlank(videoHubProperties.getPreferredIp())) {
+            urlBuilder.append(hasParam ? "&" : "?");
+            urlBuilder.append("preferred_ip=").append(videoHubProperties.getPreferredIp());
+        }
 
         try {
-            restTemplate.delete(yoloUrl);
+            HttpRequest httpRequest =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(urlBuilder.toString()))
+                            .header("Content-Type", "application/sdp")
+                            .POST(HttpRequest.BodyPublishers.ofByteArray(sdpOffer))
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
+
+            HttpResponse<byte[]> targetResponse =
+                    HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());
+
+            HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.setContentType(MediaType.valueOf("application/sdp"));
+
+            String location = targetResponse.headers().firstValue("Location").orElse(null);
+            if (location != null && !location.startsWith("/api")) {
+                responseHeaders.set(HttpHeaders.LOCATION, "/api" + location);
+            } else if (location != null) {
+                responseHeaders.set(HttpHeaders.LOCATION, location);
+            }
+
+            return ResponseEntity.status(targetResponse.statusCode())
+                    .headers(responseHeaders)
+                    .body(targetResponse.body());
+        } catch (Exception e) {
+            throw new BusinessException(
+                    ErrorCode.OPERATION_ERROR, "WHIP 代理请求失败: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/sessions/{sessionId}")
+    public BaseResponse<Boolean> deleteWhipSession(@PathVariable String sessionId) {
+        String targetUrl = videoHubProperties.getBaseUrl() + "/video-hub/sessions/" + sessionId;
+
+        try {
+            HttpRequest httpRequest =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(targetUrl))
+                            .DELETE()
+                            .timeout(Duration.ofSeconds(10))
+                            .build();
+
+            HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
             throw new BusinessException(
                     ErrorCode.OPERATION_ERROR, "删除 WHEP 会话失败: " + e.getMessage());

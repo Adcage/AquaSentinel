@@ -32,6 +32,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
                     "/api/auth/captcha",
                     "/api/lifeguards/login",
                     "/api/streams/**",
+                    "/api/video-hub/**",
                     "/api/internal/**",
                     "/api/ws/**",
                     "/api/doc.html",

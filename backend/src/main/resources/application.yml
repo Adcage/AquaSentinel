@@ -192,12 +192,18 @@ app:
         - http://127.0.0.1:5173
         - http://127.0.0.1:5174
         - http://localhost:4173
+        - http://192.168.0.181:5173
+        - http://192.168.0.181:5174
+        - http://192.168.0.181:4173
         - http://127.0.0.1:4173
         - http://localhost:3000
     ai-callback:
       key: ai-service
       secret: change-this-ai-callback-secret
       allowed-skew-seconds: 300
+  video-hub:
+    base-url: http://127.0.0.1:5100
+    timeout-ms: 5000
   ai:
     engine:
       base-url: http://127.0.0.1:5000
@@ -209,7 +215,8 @@ app:
       proxy-base-url: http://127.0.0.1:8300/api
       internal-preview-path-template: /internal/streams/cameras/{cameraId}/preview
       display-preview-path-template: /streams/cameras/{cameraId}/preview
-      timeout-ms: 5000
+    timeout-ms: 5000
+    preferred-ip: 192.168.0.181
     intelligence:
       enabled: true
       chat-system-prompt: |

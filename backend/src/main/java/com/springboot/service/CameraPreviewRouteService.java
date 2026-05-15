@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import com.springboot.common.ErrorCode;
-import com.springboot.config.AppAiEngineProperties;
+import com.springboot.config.AppVideoHubProperties;
 import com.springboot.exception.BusinessException;
 import com.springboot.model.entity.CameraDevice;
 
@@ -22,13 +22,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class CameraPreviewRouteService {
 
-    private final AppAiEngineProperties appAiEngineProperties;
+    private final AppVideoHubProperties appVideoHubProperties;
 
     private final HttpClient httpClient =
             HttpClient.newBuilder().connectTimeout(Duration.ofMillis(2000)).build();
 
-    public CameraPreviewRouteService(AppAiEngineProperties appAiEngineProperties) {
-        this.appAiEngineProperties = appAiEngineProperties;
+    public CameraPreviewRouteService(AppVideoHubProperties appVideoHubProperties) {
+        this.appVideoHubProperties = appVideoHubProperties;
     }
 
     public boolean supportsVideoHub(CameraDevice cameraDevice) {
@@ -49,7 +49,7 @@ public class CameraPreviewRouteService {
         }
         String baseUrl =
                 StringUtils.removeEnd(
-                        StringUtils.defaultString(appAiEngineProperties.getBaseUrl()).trim(), "/");
+                        StringUtils.defaultString(appVideoHubProperties.getBaseUrl()).trim(), "/");
         String encodedSource = URLEncoder.encode(streamUrl, StandardCharsets.UTF_8);
         return URI.create(
                 baseUrl
@@ -95,7 +95,7 @@ public class CameraPreviewRouteService {
                 HttpRequest.newBuilder(uri)
                         .timeout(
                                 Duration.ofMillis(
-                                        Math.max(3000, appAiEngineProperties.getTimeoutMs())))
+                                        Math.max(3000, appVideoHubProperties.getTimeoutMs())))
                         .GET()
                         .build();
         HttpResponse<InputStream> response =
