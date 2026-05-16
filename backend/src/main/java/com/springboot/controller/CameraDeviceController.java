@@ -27,6 +27,7 @@ import com.springboot.model.vo.CameraDeviceVO;
 import com.springboot.ratelimit.RateLimit;
 import com.springboot.service.AiStreamTaskService;
 import com.springboot.service.CameraDeviceService;
+import com.springboot.service.CameraStreamSyncService;
 import com.springboot.service.Esp32PtzControlService;
 import com.springboot.websocket.AlertWsPublisher;
 
@@ -51,6 +52,8 @@ public class CameraDeviceController {
     @Resource private AiStreamTaskService aiStreamTaskService;
 
     @Resource private Esp32PtzControlService esp32PtzControlService;
+
+    @Resource private CameraStreamSyncService cameraStreamSyncService;
 
     @RateLimit(
             capacity = 10,
@@ -82,6 +85,8 @@ public class CameraDeviceController {
                 cameraDevice.getCamera_code(),
                 cameraDevice.getDevice_status(),
                 cameraDevice.getHealth_status());
+        cameraStreamSyncService.upsertCameraStream(
+                cameraDevice.getId(), cameraDevice.getStream_url(), cameraDevice.getEnabled());
         return ResultUtils.success(cameraDevice.getId());
     }
 
@@ -113,6 +118,7 @@ public class CameraDeviceController {
                 oldCameraDevice.getCamera_code(),
                 "DELETED",
                 oldCameraDevice.getHealth_status());
+        cameraStreamSyncService.removeCameraStream(oldCameraDevice.getId());
         return ResultUtils.success(true);
     }
 
@@ -144,6 +150,8 @@ public class CameraDeviceController {
                     latest.getCamera_code(),
                     latest.getDevice_status(),
                     latest.getHealth_status());
+            cameraStreamSyncService.upsertCameraStream(
+                    latest.getId(), latest.getStream_url(), latest.getEnabled());
         }
         if (old != null
                 && StringUtils.isNotBlank(cameraDeviceUpdateRequest.getStreamUrl())
@@ -190,6 +198,8 @@ public class CameraDeviceController {
                     latest.getCamera_code(),
                     latest.getDevice_status(),
                     latest.getHealth_status());
+            cameraStreamSyncService.upsertCameraStream(
+                    latest.getId(), latest.getStream_url(), latest.getEnabled());
         }
         if (old != null
                 && StringUtils.isNotBlank(cameraDeviceEditRequest.getStreamUrl())
@@ -226,6 +236,7 @@ public class CameraDeviceController {
                         latest.getCamera_code(),
                         latest.getDevice_status(),
                         latest.getHealth_status());
+                cameraStreamSyncService.removeCameraStream(latest.getId());
             }
         }
         return ResultUtils.success(result);
@@ -250,6 +261,9 @@ public class CameraDeviceController {
         }
         BatchOperateResultVO result =
                 cameraDeviceService.batchDeleteCameraDevices(request.getCameraIds());
+        for (Long successId : result.getSuccessIds()) {
+            cameraStreamSyncService.removeCameraStream(successId);
+        }
         return ResultUtils.success(result);
     }
 
