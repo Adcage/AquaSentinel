@@ -15,7 +15,7 @@ bool exceedsCalibrationSafeLimit(bool panAxis, int pulseUs) {
 
 }  // namespace
 
-UartHandler::UartHandler(PtzServo& servoRef) : servo(servoRef) {}
+UartHandler::UartHandler(PtzServo& servoRef, char* ipBufferRef) : servo(servoRef), ipBuffer(ipBufferRef) {}
 
 void UartHandler::begin(HardwareSerial& serialRef) {
     serial = &serialRef;
@@ -47,6 +47,15 @@ void UartHandler::poll() {
 void UartHandler::handleLine(String line) {
     line.trim();
     if (line.length() == 0) {
+        return;
+    }
+
+    if (line.startsWith(ptz_protocol::CMD_IP)) {
+        String ipStr = line.substring(3);
+        ipStr.trim();
+        if (ipStr.length() > 0 && ipStr.length() <= 15 && ipBuffer != nullptr) {
+            ipStr.toCharArray(ipBuffer, 16);
+        }
         return;
     }
 

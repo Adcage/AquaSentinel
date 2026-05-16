@@ -10,7 +10,8 @@
 #include "config.h"
 
 PtzServo g_servo;
-UartHandler g_uartHandler(g_servo);
+char g_espIp[16] = {0};
+UartHandler g_uartHandler(g_servo, g_espIp);
 OledDisplay g_oledDisplay;
 ButtonHandler g_buttonHandler;
 BatteryMonitor g_batteryMonitor;
@@ -27,6 +28,8 @@ OledPage nextPage(OledPage page) {
         case OledPage::Calibration:
             return OledPage::Battery;
         case OledPage::Battery:
+            return OledPage::Network;
+        case OledPage::Network:
             return OledPage::Status;
     }
     return OledPage::Status;
@@ -59,6 +62,8 @@ OledUiState buildUiState(uint32_t nowMs) {
     state.batteryMv = batteryReading.batteryMv;
     state.batteryPercent = batteryReading.percent;
     state.batteryValid = batteryReading.valid;
+    strncpy(state.espIp, g_espIp, 15);
+    state.espIp[15] = '\0';
 
     return state;
 }

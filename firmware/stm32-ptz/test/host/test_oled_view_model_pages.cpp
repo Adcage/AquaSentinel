@@ -56,5 +56,25 @@ int main() {
         assert(std::string(invFrame.lines[2]) == "RAW ----");
     }
 
+    {
+        OledUiState netState{};
+        netState.page = OledPage::Network;
+        netState.uptimeMs = 3000;
+        OledFrame netFrame = OledViewModel::build(netState);
+        assert(std::string(netFrame.title) == "网络");
+        assert(std::string(netFrame.lines[0]) == "NO IP");
+    }
+
+    {
+        OledUiState netState{};
+        netState.page = OledPage::Network;
+        std::strncpy(netState.espIp, "192.168.1.100", 15);
+        netState.espIp[15] = '\0';
+        netState.uptimeMs = 3000;
+        OledFrame netFrame = OledViewModel::build(netState);
+        assert(std::string(netFrame.title) == "网络");
+        assert(std::string(netFrame.lines[0]) == "IP 192.168.1.100");
+    }
+
     return 0;
 }

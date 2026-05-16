@@ -18,6 +18,7 @@ enum class OledPage : uint8_t {
     Status = 0,
     Calibration = 1,
     Battery = 2,
+    Network = 3,
 };
 
 struct OledUiState {
@@ -34,6 +35,7 @@ struct OledUiState {
     uint16_t batteryMv = 0;
     uint8_t batteryPercent = 0;
     bool batteryValid = false;
+    char espIp[16] = {0};
 };
 
 struct OledFrame {

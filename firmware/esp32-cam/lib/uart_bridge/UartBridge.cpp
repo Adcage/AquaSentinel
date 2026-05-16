@@ -65,6 +65,13 @@ String UartBridge::calibSetValue(const String& axis, const String& key, int puls
     return sendCommand(cmd);
 }
 
+void UartBridge::sendIp(const String& ip) {
+    String cmd = bridge_protocol::CMD_IP_PREFIX;
+    cmd += ip;
+    cmd += "\n";
+    serial.print(cmd);
+}
+
 String UartBridge::sendCommand(const String& cmd, uint32_t timeoutMs) {
     while (serial.available() > 0) {
         serial.read();

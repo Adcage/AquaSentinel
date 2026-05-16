@@ -6,12 +6,13 @@
 
 class UartHandler {
    public:
-    explicit UartHandler(PtzServo& servoRef);
+    UartHandler(PtzServo& servoRef, char* ipBufferRef);
     void begin(HardwareSerial& serialRef);
     void poll();
 
    private:
     PtzServo& servo;
+    char* ipBuffer;
     HardwareSerial* serial = nullptr;
     String lineBuffer;
 

@@ -23,6 +23,7 @@ void connectWiFi() {
         Serial.println("\nWiFi连接成功");
         Serial.print("IP地址: ");
         Serial.println(WiFi.localIP());
+        g_uartBridge.sendIp(WiFi.localIP().toString());
     } else {
         Serial.println("\nWiFi连接失败");
     }

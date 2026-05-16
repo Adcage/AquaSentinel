@@ -59,6 +59,18 @@ OledFrame OledViewModel::build(const OledUiState& state) {
             buildRawLine(frame.lines[2], state.batteryRaw, state.batteryValid);
             copyText(frame.lines[3], "SHORT NEXT");
             break;
+        case OledPage::Network:
+            copyText(frame.title, "网络");
+            if (state.espIp[0] != '\0') {
+                snprintf(frame.lines[0], OLED_TEXT_BUFFER_SIZE, "IP %s", state.espIp);
+                copyText(frame.lines[1], "WIFI OK");
+            } else {
+                copyText(frame.lines[0], "NO IP");
+                copyText(frame.lines[1], "WIFI WAIT");
+            }
+            copyText(frame.lines[2], "");
+            copyText(frame.lines[3], "SHORT NEXT");
+            break;
     }
 
     return frame;

@@ -19,6 +19,7 @@ class UartBridge {
     String calibSetPan(int pulseUs);
     String calibSetTilt(int pulseUs);
     String calibSetValue(const String& axis, const String& key, int pulseUs);
+    void sendIp(const String& ip);
 
    private:
     HardwareSerial& serial;

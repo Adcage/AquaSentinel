@@ -13,4 +13,6 @@ constexpr const char* CMD_CALIB_SET = "CALIB:SET,";
 
 // MOVE 命令需要通过 sendMove(pan, tilt) 方法动态构造，格式为 "MOVE:pan,tilt\n"
 
+constexpr const char* CMD_IP_PREFIX = "IP:";
+
 }  // namespace bridge_protocol

@@ -14,6 +14,7 @@ constexpr const char* CMD_CALIB_DATA = "CALIB:DATA?";
 constexpr const char* CMD_CALIB_SET = "CALIB:SET,";
 constexpr const char* CMD_CALIB_PAN = "CALIB:PAN,";
 constexpr const char* CMD_CALIB_TILT = "CALIB:TILT,";
+constexpr const char* CMD_IP = "IP:";
 
 constexpr const char* RESP_ACK = "ACK:";
 constexpr const char* RESP_STATUS = "STATUS:";
