@@ -42,6 +42,9 @@ services:
           password: "123456"
           database: 1
       SPRING_PROFILES_ACTIVE: local
+      APP_AI_ENGINE_BASE_URL: http://yolo-service:5000
+      APP_AI_ENGINE_CALLBACK_URL: http://backend:8300/api/internal/ai/events
+      APP_AI_ENGINE_PROXY_BASE_URL: http://backend:8300/api
     depends_on:
       mysql:
         condition: service_healthy
@@ -70,6 +73,7 @@ services:
       VIDEO_HUB_BASE_URL: http://video-hub:5100
       DATABASE_URL: sqlite:///instance/app.db
       MODEL_PATH: model/best.pt
+      RABBITMQ_URL: ""
     volumes:
       - yolo_model:/app/model
     depends_on:

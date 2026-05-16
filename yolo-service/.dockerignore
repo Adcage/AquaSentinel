@@ -6,3 +6,4 @@ model/*.pt
 *.md
 tests/
 .pytest_cache/
+.env

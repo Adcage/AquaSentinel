@@ -203,6 +203,10 @@ def apply_env_overrides(app):
     app.config["OVERLAY_SERVER_SIDE_ENABLED"] = _env_bool(
         "OVERLAY_SERVER_SIDE_ENABLED", app.config["OVERLAY_SERVER_SIDE_ENABLED"]
     )
+    app.config["JAVA_BACKEND_BASE_URL"] = os.getenv(
+        "JAVA_BACKEND_BASE_URL",
+        app.config.get("JAVA_BACKEND_BASE_URL", "http://127.0.0.1:8300"),
+    )
     app.config["VIDEO_HUB_BASE_URL"] = os.getenv(
         "VIDEO_HUB_BASE_URL", app.config["VIDEO_HUB_BASE_URL"]
     )
