@@ -77,6 +77,14 @@
           inactive-text="禁用"
         />
       </el-form-item>
+      <el-form-item label="画面旋转">
+        <el-select v-model="form.rotation" style="width: 100%">
+          <el-option label="不旋转" :value="0" />
+          <el-option label="顺时针 90" :value="90" />
+          <el-option label="180" :value="180" />
+          <el-option label="顺时针 270" :value="270" />
+        </el-select>
+      </el-form-item>
     </el-form>
 
     <template #footer>
@@ -111,9 +119,8 @@ interface FormModel {
   deviceStatus: string;
   healthStatus: string;
   enabled: number;
-}
-
-interface Props {
+  rotation: number;
+}interface Props {
   modelValue: boolean;
   deviceId?: number;
 }
@@ -172,6 +179,7 @@ const form = reactive<FormModel>({
   deviceStatus: "ONLINE",
   healthStatus: "NORMAL",
   enabled: 1,
+  rotation: 0,
 });
 
 const enabledBool = computed({
@@ -206,6 +214,7 @@ const resetForm = () => {
   form.deviceStatus = "ONLINE";
   form.healthStatus = "NORMAL";
   form.enabled = 1;
+  form.rotation = 0;
 };
 
 onMounted(async () => {
@@ -286,6 +295,7 @@ const loadDeviceData = async () => {
     form.deviceStatus = data.deviceStatus || "ONLINE";
     form.healthStatus = data.healthStatus || "NORMAL";
     form.enabled = data.enabled ?? 1;
+    form.rotation = data.rotation ?? 0;
     // 再次等待，确保 el-select 能正确匹配选项并显示 label
     await nextTick();
   } catch (error) {
@@ -322,6 +332,7 @@ const handleSubmit = async () => {
         deviceStatus: form.deviceStatus,
         healthStatus: form.healthStatus,
         enabled: form.enabled,
+        rotation: form.rotation,
       });
       unwrapApiData<boolean>(response, "更新设备失败");
       ElMessage.success("编辑设备成功");
@@ -339,6 +350,7 @@ const handleSubmit = async () => {
         deviceStatus: form.deviceStatus,
         healthStatus: form.healthStatus,
         enabled: form.enabled,
+        rotation: form.rotation,
       });
       unwrapApiData<number>(response, "新增设备失败");
       ElMessage.success("新增设备成功");

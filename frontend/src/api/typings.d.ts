@@ -865,6 +865,7 @@ declare namespace API {
     deviceStatus?: string;
     healthStatus?: string;
     enabled?: number;
+    rotation?: number;
     lastHeartbeatAt?: string;
   };
 
@@ -881,6 +882,7 @@ declare namespace API {
     deviceStatus?: string;
     healthStatus?: string;
     enabled?: number;
+    rotation?: number;
     lastHeartbeatAt?: string;
   };
 
@@ -912,6 +914,7 @@ declare namespace API {
     deviceStatus?: string;
     healthStatus?: string;
     enabled?: number;
+    rotation?: number;
     lastHeartbeatAt?: string;
   };
 
@@ -926,6 +929,7 @@ declare namespace API {
     deviceStatus?: string;
     healthStatus?: string;
     enabled?: number;
+    rotation?: number;
     lastHeartbeatAt?: string;
     createdAt?: string;
     updatedAt?: string;
