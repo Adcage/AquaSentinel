@@ -2,9 +2,10 @@ from app.video_hub.registry import VideoHubRegistry
 
 
 class DummySession:
-    def __init__(self, camera_id: int, source_url: str):
+    def __init__(self, camera_id: int, source_url: str, rotation: int = 0):
         self.camera_id = camera_id
         self.source_url = source_url
+        self.rotation = rotation
         self.start_calls = 0
         self.state = "CONNECTING"
 
@@ -18,8 +19,8 @@ class DummySession:
 def test_registry_reuses_existing_session_for_same_camera():
     created: list[DummySession] = []
 
-    def factory(camera_id: int, source_url: str):
-        session = DummySession(camera_id, source_url)
+    def factory(camera_id: int, source_url: str, rotation: int = 0):
+        session = DummySession(camera_id, source_url, rotation=rotation)
         created.append(session)
         return session
 
@@ -37,8 +38,8 @@ def test_registry_reuses_existing_session_for_same_camera():
 def test_registry_updates_source_url_when_changed():
     created: list[DummySession] = []
 
-    def factory(camera_id: int, source_url: str):
-        session = DummySession(camera_id, source_url)
+    def factory(camera_id: int, source_url: str, rotation: int = 0):
+        session = DummySession(camera_id, source_url, rotation=rotation)
         created.append(session)
         return session
 

@@ -29,7 +29,7 @@ class StubRegistry:
         assert camera_id == 1001
         return self.session
 
-    def ensure_session(self, camera_id: int, source_url: str):
+    def ensure_session(self, camera_id: int, source_url: str, rotation: int = 0):
         assert camera_id == 1001
         self.ensure_calls.append((camera_id, source_url))
         return self.session
@@ -71,9 +71,10 @@ def test_stream_endpoint_updates_existing_session_source_url(monkeypatch):
 
 
 class StubSessionForManagement:
-    def __init__(self, camera_id: int, source_url: str):
+    def __init__(self, camera_id: int, source_url: str, rotation: int = 0):
         self.camera_id = camera_id
         self.source_url = source_url
+        self.rotation = rotation
         self._stopped = False
         self._state = "CONNECTING"
         self._consecutive_failures = 0
@@ -107,9 +108,9 @@ class StubRegistryForManagement:
     def __init__(self):
         self._sessions: dict[int, StubSessionForManagement] = {}
 
-    def ensure_session(self, camera_id: int, source_url: str):
+    def ensure_session(self, camera_id: int, source_url: str, rotation: int = 0):
         if camera_id not in self._sessions:
-            self._sessions[camera_id] = StubSessionForManagement(camera_id, source_url)
+            self._sessions[camera_id] = StubSessionForManagement(camera_id, source_url, rotation=rotation)
         return self._sessions[camera_id]
 
     def get_session(self, camera_id: int):

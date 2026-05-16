@@ -113,7 +113,7 @@ class StubRegistryForWebrtc:
     def get_session(self, camera_id: int):
         return self._sessions.get(camera_id)
 
-    def ensure_session(self, camera_id: int, source_url: str):
+    def ensure_session(self, camera_id: int, source_url: str, rotation: int = 0):
         if camera_id not in self._sessions:
             self._sessions[camera_id] = StubVideoHubSessionForWebrtc(
                 camera_id, source_url

@@ -11,7 +11,7 @@ class FakeRegistry:
         self.sessions: dict[int, str] = {}
         self.removed: list[int] = []
 
-    def ensure_session(self, camera_id: int, source_url: str):
+    def ensure_session(self, camera_id: int, source_url: str, rotation: int = 0):
         self.sessions[camera_id] = source_url
 
     def remove_session(self, camera_id: int):
