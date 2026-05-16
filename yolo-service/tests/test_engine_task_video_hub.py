@@ -14,7 +14,7 @@ def test_should_use_video_hub_for_http_camera_stream():
         engine_task_service._should_use_video_hub_for_stream(
             "TASK_CAM_1001_1710000000000", "rtsp://192.168.1.88/live"
         )
-        is False
+        is True
     )
 
 

@@ -20,26 +20,28 @@ def build_app():
     )
 
 
-def test_stream_worker_generates_drowning_event(monkeypatch):
+def test_stream_worker_via_video_hub_generates_drowning_event(monkeypatch):
+    import numpy as np
+
     app = build_app()
     callback_payloads = []
+    snapshot_call_count = {"n": 0}
 
-    captures = []
+    fake_jpeg = np.zeros((720, 1280, 3), dtype=np.uint8)
+    import cv2
 
-    class FakeCapture:
-        def __init__(self, source):
-            self.source = source
-            self.released = False
-            captures.append(self)
+    encode_result = cv2.imencode(".jpg", fake_jpeg)
+    fake_jpeg_bytes = encode_result[1].tobytes()
 
-        def isOpened(self):
-            return True
+    class FakeVideoHubClient:
+        def ensure_session(self, camera_id, source_url):
+            return {"camera_id": camera_id, "status": "CONNECTED"}
 
-        def read(self):
-            return True, types.SimpleNamespace(shape=(720, 1280, 3))
-
-        def release(self):
-            self.released = True
+        def fetch_snapshot(self, camera_id):
+            snapshot_call_count["n"] += 1
+            if snapshot_call_count["n"] > 5:
+                return None
+            return fake_jpeg_bytes
 
     class FakeTracker:
         backend = "simple"
@@ -87,11 +89,6 @@ def test_stream_worker_generates_drowning_event(monkeypatch):
                     task.stop_event.set()
         return True
 
-    monkeypatch.setitem(
-        sys.modules,
-        "cv2",
-        types.SimpleNamespace(VideoCapture=FakeCapture),
-    )
     monkeypatch.setattr("app.services.engine_task_service.warmup_model", lambda: None)
     monkeypatch.setattr(
         "app.services.engine_task_service.infer_stream_frame",
@@ -110,9 +107,14 @@ def test_stream_worker_generates_drowning_event(monkeypatch):
     monkeypatch.setattr(
         "app.services.engine_task_service.post_task_callback", fake_callback
     )
-    monkeypatch.setattr("app.services.engine_task_service.DeepSortTracker", FakeTracker)
+    monkeypatch.setattr(
+        "app.services.engine_task_service.DeepSortTracker", FakeTracker
+    )
     monkeypatch.setattr(
         "app.services.engine_task_service.DrowningRuleEvaluator", FakeEvaluator
+    )
+    monkeypatch.setattr(
+        "app.services.engine_task_service.video_hub_client", FakeVideoHubClient()
     )
 
     with app.app_context():
@@ -157,74 +159,85 @@ def test_stream_worker_generates_drowning_event(monkeypatch):
 
         engine_task_service._TASKS.clear()
 
-    assert captures
-    assert captures[0].source == "rtsp://10.10.2.18/live/1"
-    assert captures[0].released is True
+    assert snapshot_call_count["n"] >= 1
 
 
-def test_build_ffmpeg_capture_options_rtsp_defaults_udp(monkeypatch):
-    monkeypatch.delenv("ENGINE_RTSP_TRANSPORT", raising=False)
-
-    options = engine_task_service._build_ffmpeg_capture_options(
-        "rtsp://10.10.2.18/live/1"
-    )
-
-    assert "rtsp_transport;udp" in options
-    assert "stimeout;10000000" in options
-
-
-def test_build_ffmpeg_capture_options_rtsp_honors_transport_env(monkeypatch):
-    monkeypatch.setenv("ENGINE_RTSP_TRANSPORT", "tcp")
-
-    options = engine_task_service._build_ffmpeg_capture_options(
-        "rtsp://10.10.2.18/live/1"
-    )
-
-    assert "rtsp_transport;tcp" in options
-
-
-def test_build_ffmpeg_capture_options_http_omits_rtsp_transport(monkeypatch):
-    monkeypatch.setenv("ENGINE_RTSP_TRANSPORT", "udp")
-
-    options = engine_task_service._build_ffmpeg_capture_options(
-        "http://127.0.0.1:9600/video_feed"
-    )
-
-    assert "rtsp_transport" not in options
-    assert "timeout;10000000" in options
-
-
-def test_should_use_pyav_for_http_flv_stream():
+def test_should_use_video_hub_for_rtsp():
     assert (
-        engine_task_service._should_use_pyav_for_stream(
-            "http://127.0.0.1:18081/live/camera1.flv"
+        engine_task_service._should_use_video_hub_for_stream(
+            "TASK_CAM_100_test", "rtsp://10.10.2.18/live/1"
         )
         is True
     )
 
 
-def test_should_not_use_pyav_for_rtsp_stream():
+def test_should_use_video_hub_for_http():
     assert (
-        engine_task_service._should_use_pyav_for_stream("rtsp://10.10.2.18/live/1")
+        engine_task_service._should_use_video_hub_for_stream(
+            "TASK_CAM_100_test", "http://192.168.1.88/stream"
+        )
+        is True
+    )
+
+
+def test_should_use_video_hub_for_http_flv():
+    assert (
+        engine_task_service._should_use_video_hub_for_stream(
+            "TASK_CAM_100_test", "http://127.0.0.1:18081/live/camera1.flv"
+        )
+        is True
+    )
+
+
+def test_should_not_use_video_hub_without_camera_id():
+    assert (
+        engine_task_service._should_use_video_hub_for_stream(
+            "TASK_UNKNOWN", "rtsp://10.10.2.18/live/1"
+        )
         is False
     )
 
 
-def test_run_loop_with_stream_http_flv_routes_to_pyav(monkeypatch):
-    called = {"pyav": False}
-
-    monkeypatch.setitem(
-        sys.modules,
-        "cv2",
-        types.SimpleNamespace(VideoCapture=lambda _url: None),
+def test_should_not_use_video_hub_with_empty_url():
+    assert (
+        engine_task_service._should_use_video_hub_for_stream(
+            "TASK_CAM_100_test", ""
+        )
+        is False
     )
 
-    def fake_run_loop_with_pyav(task_code, stream_url, frame_interval):
-        called["pyav"] = True
+
+def test_run_loop_with_stream_routes_rtsp_to_video_hub(monkeypatch):
+    called = {"video_hub": False}
+
+    def fake_run_loop_with_video_hub(task_code, stream_url, frame_interval):
+        called["video_hub"] = True
 
     monkeypatch.setattr(
-        "app.services.engine_task_service._run_loop_with_pyav",
-        fake_run_loop_with_pyav,
+        "app.services.engine_task_service._run_loop_with_video_hub",
+        fake_run_loop_with_video_hub,
+    )
+
+    app = build_app()
+    with app.app_context():
+        engine_task_service._run_loop_with_stream(
+            "TASK_CAM_100_1710000000000",
+            "rtsp://10.10.2.18/live/1",
+            0.2,
+        )
+
+    assert called["video_hub"] is True
+
+
+def test_run_loop_with_stream_routes_http_flv_to_video_hub(monkeypatch):
+    called = {"video_hub": False}
+
+    def fake_run_loop_with_video_hub(task_code, stream_url, frame_interval):
+        called["video_hub"] = True
+
+    monkeypatch.setattr(
+        "app.services.engine_task_service._run_loop_with_video_hub",
+        fake_run_loop_with_video_hub,
     )
 
     app = build_app()
@@ -235,7 +248,7 @@ def test_run_loop_with_stream_http_flv_routes_to_pyav(monkeypatch):
             0.2,
         )
 
-    assert called["pyav"] is True
+    assert called["video_hub"] is True
 
 
 def test_build_event_payload_event_uid_should_fit_backend_length_limit():

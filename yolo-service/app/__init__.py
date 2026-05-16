@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask
 
 from app.core.config import BaseConfig, apply_env_overrides
@@ -74,6 +75,10 @@ def _recreate_sqlite_file(uri: str):
 
 
 def create_app(config_overrides: dict | None = None) -> Flask:
+    is_testing = bool(config_overrides and config_overrides.get("TESTING"))
+    if not is_testing:
+        load_dotenv(override=False)
+
     app = Flask(__name__)
     app.config.from_object(BaseConfig)
     apply_env_overrides(app)

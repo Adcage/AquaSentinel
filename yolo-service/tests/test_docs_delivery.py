@@ -8,8 +8,8 @@ def test_readme_contains_quick_start_checklist():
     assert "flask-smorest" in text
 
 
-def test_env_example_contains_mysql_and_wechat_placeholders():
+def test_env_example_contains_key_placeholders():
     text = Path(".env.example").read_text(encoding="utf-8")
     assert "DATABASE_URL" in text
-    assert "WECHAT_APP_ID" in text
-    assert "WECHAT_MCH_ID" in text
+    assert "VIDEO_HUB_BASE_URL" in text
+    assert "MODEL_VERSION_PATHS_JSON" in text

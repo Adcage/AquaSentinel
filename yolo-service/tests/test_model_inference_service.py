@@ -6,7 +6,19 @@ import pytest
 
 from app import create_app
 from app.core.errors import BusinessError
+from app.services import model_inference_service
 from app.services.model_inference_service import infer_image, infer_video
+
+
+@pytest.fixture(autouse=True)
+def _reset_model_cache():
+    model_inference_service._MODEL_INSTANCES.clear()
+    model_inference_service._MODEL_PATH_BY_VERSION.clear()
+    model_inference_service._MODEL_WARMED_VERSIONS.clear()
+    yield
+    model_inference_service._MODEL_INSTANCES.clear()
+    model_inference_service._MODEL_PATH_BY_VERSION.clear()
+    model_inference_service._MODEL_WARMED_VERSIONS.clear()
 
 
 def test_infer_image_raises_when_ultralytics_model_load_fails(tmp_path, monkeypatch):
@@ -14,6 +26,13 @@ def test_infer_image_raises_when_ultralytics_model_load_fails(tmp_path, monkeypa
     image_path = tmp_path / "demo.png"
     model_path.write_bytes(b"fake-weights")
     image_path.write_bytes(b"fake-image")
+
+    class _FakeYOLO:
+        def __init__(self, _):
+            raise RuntimeError("weights not supported")
+
+    fake_ultralytics = types.SimpleNamespace(YOLO=_FakeYOLO)
+    monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
 
     app = create_app(
         {
@@ -24,13 +43,6 @@ def test_infer_image_raises_when_ultralytics_model_load_fails(tmp_path, monkeypa
             "MODEL_PATH": model_path.as_posix(),
         }
     )
-
-    class _FakeYOLO:
-        def __init__(self, _):
-            raise RuntimeError("weights not supported")
-
-    fake_ultralytics = types.SimpleNamespace(YOLO=_FakeYOLO)
-    monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
 
     with app.app_context():
         with pytest.raises(BusinessError, match="ultralytics model load failed"):
@@ -42,17 +54,6 @@ def test_infer_video_raises_when_ultralytics_predict_fails(tmp_path, monkeypatch
     video_path = tmp_path / "demo.mp4"
     model_path.write_bytes(b"fake-weights")
     video_path.write_bytes(b"fake-video")
-
-    app = create_app(
-        {
-            "TESTING": True,
-            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-            "ENABLED_MODULES": "health",
-            "RECOGNITION_USE_FAKE_MODEL": False,
-            "MODEL_PATH": model_path.as_posix(),
-            "VIDEO_INFER_FRAME_INTERVAL": 0.2,
-        }
-    )
 
     class _FakeModel:
         def predict(self, **kwargs):
@@ -92,6 +93,17 @@ def test_infer_video_raises_when_ultralytics_predict_fails(tmp_path, monkeypatch
     monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
     monkeypatch.setitem(sys.modules, "cv2", fake_cv2)
 
+    app = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "ENABLED_MODULES": "health",
+            "RECOGNITION_USE_FAKE_MODEL": False,
+            "MODEL_PATH": model_path.as_posix(),
+            "VIDEO_INFER_FRAME_INTERVAL": 0.2,
+        }
+    )
+
     with app.app_context():
         with pytest.raises(BusinessError, match="ultralytics inference failed"):
             infer_video(video_path.as_posix())
@@ -106,17 +118,6 @@ def test_infer_image_filters_unknown_labels_by_labels_json(tmp_path, monkeypatch
     labels_path.write_text(
         json.dumps({"labels": [{"en": "drone", "zh": "无人机"}]}, ensure_ascii=False),
         encoding="utf-8",
-    )
-
-    app = create_app(
-        {
-            "TESTING": True,
-            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-            "ENABLED_MODULES": "health",
-            "RECOGNITION_USE_FAKE_MODEL": False,
-            "MODEL_PATH": model_path.as_posix(),
-            "MODEL_LABELS_PATH": labels_path.as_posix(),
-        }
     )
 
     class _ValueHolder:
@@ -161,6 +162,17 @@ def test_infer_image_filters_unknown_labels_by_labels_json(tmp_path, monkeypatch
 
     fake_ultralytics = types.SimpleNamespace(YOLO=_FakeYOLO)
     monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
+
+    app = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "ENABLED_MODULES": "health",
+            "RECOGNITION_USE_FAKE_MODEL": False,
+            "MODEL_PATH": model_path.as_posix(),
+            "MODEL_LABELS_PATH": labels_path.as_posix(),
+        }
+    )
 
     with app.app_context():
         detections = infer_image(image_path.as_posix())
