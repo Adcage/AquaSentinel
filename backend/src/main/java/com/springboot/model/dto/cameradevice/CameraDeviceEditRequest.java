@@ -24,5 +24,7 @@ public class CameraDeviceEditRequest implements Serializable {
 
     private Integer enabled;
 
+    private Integer rotation;
+
     private Date lastHeartbeatAt;
 }

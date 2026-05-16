@@ -187,6 +187,7 @@ public class CameraDeviceController {
         cameraDevice.setDevice_status(cameraDeviceEditRequest.getDeviceStatus());
         cameraDevice.setHealth_status(cameraDeviceEditRequest.getHealthStatus());
         cameraDevice.setEnabled(cameraDeviceEditRequest.getEnabled());
+        cameraDevice.setRotation(cameraDeviceEditRequest.getRotation());
         cameraDevice.setLast_heartbeat_at(cameraDeviceEditRequest.getLastHeartbeatAt());
         cameraDeviceService.validCameraDevice(cameraDevice, false);
         boolean result = cameraDeviceService.updateById(cameraDevice);
@@ -347,6 +348,7 @@ public class CameraDeviceController {
         cameraDevice.setDevice_status(request.getDeviceStatus());
         cameraDevice.setHealth_status(request.getHealthStatus());
         cameraDevice.setEnabled(request.getEnabled());
+        cameraDevice.setRotation(request.getRotation());
         cameraDevice.setLast_heartbeat_at(request.getLastHeartbeatAt());
         return cameraDevice;
     }
@@ -363,6 +365,7 @@ public class CameraDeviceController {
         cameraDevice.setDevice_status(request.getDeviceStatus());
         cameraDevice.setHealth_status(request.getHealthStatus());
         cameraDevice.setEnabled(request.getEnabled());
+        cameraDevice.setRotation(request.getRotation());
         cameraDevice.setLast_heartbeat_at(request.getLastHeartbeatAt());
         return cameraDevice;
     }

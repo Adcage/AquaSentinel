@@ -32,6 +32,8 @@ public class CameraDeviceVO implements Serializable {
 
     private Integer enabled;
 
+    private Integer rotation;
+
     private Date lastHeartbeatAt;
 
     private Date createdAt;

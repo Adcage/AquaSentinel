@@ -53,6 +53,10 @@ public class CameraDevice implements Serializable {
     @TableField(value = "enabled")
     private Integer enabled;
 
+    /** 画面旋转角度(0/90/180/270) */
+    @TableField(value = "rotation")
+    private Integer rotation;
+
     /** 最近心跳时间 */
     @TableField(value = "last_heartbeat_at")
     private Date last_heartbeat_at;

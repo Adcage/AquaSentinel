@@ -164,6 +164,7 @@ public class CameraDeviceServiceImpl extends ServiceImpl<CameraDeviceMapper, Cam
         cameraDeviceVO.setDeviceStatus(cameraDevice.getDevice_status());
         cameraDeviceVO.setHealthStatus(cameraDevice.getHealth_status());
         cameraDeviceVO.setEnabled(cameraDevice.getEnabled());
+        cameraDeviceVO.setRotation(cameraDevice.getRotation());
         cameraDeviceVO.setLastHeartbeatAt(cameraDevice.getLast_heartbeat_at());
         cameraDeviceVO.setCreatedAt(cameraDevice.getCreated_at());
         cameraDeviceVO.setUpdatedAt(cameraDevice.getUpdated_at());
