@@ -23,7 +23,7 @@
 ┌─────────────┐     ┌─────────────┐     ┌──────────────┐     ┌──────────────┐
 │  Frontend   │────▶│   Backend   │────▶│  YOLO Service│     │ video-hub   │
 │  (Vue 3)    │◀────│  (Spring)   │◀────│  (Flask)     │     │ (Flask/PyAV) │
-│             │ WS  │  Port 8300  │ WS  │  Port 5000   │     │  Port 8400   │
+│             │ WS  │  Port 8300  │ WS  │  Port 5000   │     │  Port 5100   │
 └──────┬──────┘     └──────┬──────┘     └──────┬───────┘     └──────┬───────┘
        │                   │                    │                    │
        │            ┌──────┴──────┐             │             ┌──────┴──────┐
@@ -59,7 +59,7 @@
 
 各子项目的构建、运行和测试命令见 [docs/运行部署/core-stack-quickstart.md](docs/运行部署/core-stack-quickstart.md)。
 
-> 该文档将在后续补充，当前可参考各子项目目录下的 README 或 `AGENTS.md` 中的构建命令。
+一键验证核心服务状态：`pwsh ./scripts/verify_core_stack.ps1`
 
 ---
 
@@ -78,7 +78,7 @@
 | 构建产物 (Frontend) | 3.1 MB |
 | APK (Android) | 115 MB |
 
-完整基线数据见 [docs/项目现状/baseline-metrics.md](docs/项目现状/baseline-metrics.md)。
+完整基线数据见 [docs/项目现状/baseline-metrics.md](docs/项目现状/baseline-metrics.md)，简历可引用指标见 [docs/项目现状/resume-ready-metrics.md](docs/项目现状/resume-ready-metrics.md)。
 
 ---
 
@@ -89,4 +89,6 @@
 | [docs/项目现状/architecture.md](docs/项目现状/architecture.md) | 系统架构详解（分层、数据流、数据库模型） |
 | [docs/项目现状/tech-stack.md](docs/项目现状/tech-stack.md) | 技术栈依赖矩阵与详析 |
 | [docs/项目现状/baseline-metrics.md](docs/项目现状/baseline-metrics.md) | 可量化基线指标（代码规模、性能、质量） |
+| [docs/项目现状/resume-ready-metrics.md](docs/项目现状/resume-ready-metrics.md) | 简历可引用指标摘要与写法示例 |
 | [docs/项目现状/issues-and-optimization.md](docs/项目现状/issues-and-optimization.md) | 问题分析与优化路线图 |
+| [docs/运行部署/core-stack-quickstart.md](docs/运行部署/core-stack-quickstart.md) | 核心链路快速启动与验证 |
