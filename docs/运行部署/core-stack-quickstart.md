@@ -305,7 +305,18 @@ Invoke-RestMethod http://localhost:5000/api/health
 | Redis 密码 | 默认密码为 `123456`，仅限本地开发。生产环境必须更换 |
 | 数据库迁移 | `backend/sql/` 目录下有增量迁移脚本（如 `migration_*.sql`），需按文件名顺序执行 |
 
-## 7 快速参考：端口与地址汇总
+## 7 部署方式说明
+
+当前采用手动启动方案，原因如下：
+
+- 各子项目尚未提供 `Dockerfile`，直接编写 `docker-compose.yml` 缺乏基础
+- YOLO Service 依赖模型文件（体积大、需单独获取），不适合无条件打包进镜像
+- GPU/CUDA 依赖在容器中配置复杂，与"最小可运行"目标冲突
+- 核心链路的手动启动步骤已在本文档中完整覆盖
+
+后续可按需补全 `Dockerfile` 和 `docker-compose.yml`，优先级为：Backend > video-hub-service > YOLO Service。
+
+## 8 快速参考：端口与地址汇总
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
