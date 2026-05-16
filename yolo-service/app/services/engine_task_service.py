@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 import hashlib
-import os
 import re
 import threading
 import time
@@ -513,22 +512,15 @@ def _run_loop_without_stream(task_code: str, frame_interval: float):
         _touch_task_progress(task_code)
 
 
-def _should_use_pyav_for_stream(stream_url: str) -> bool:
-    normalized = (stream_url or "").strip().lower()
-    if not (normalized.startswith("http://") or normalized.startswith("https://")):
-        return False
-    return ".flv" in normalized or "format=flv" in normalized
-
-
 def _should_use_video_hub_for_stream(task_code: str, stream_url: str) -> bool:
     if _extract_camera_id_from_task_code(task_code) is None:
         return False
     normalized = (stream_url or "").strip().lower()
-    if not (normalized.startswith("http://") or normalized.startswith("https://")):
-        return False
-    if _should_use_pyav_for_stream(stream_url):
-        return False
-    return True
+    return bool(normalized) and (
+        normalized.startswith("rtsp://")
+        or normalized.startswith("http://")
+        or normalized.startswith("https://")
+    )
 
 
 def _build_drowning_evaluator(min_duration_sec: float) -> DrowningRuleEvaluator:
@@ -564,7 +556,10 @@ def _run_loop_with_video_hub(task_code: str, stream_url: str, frame_interval: fl
 
     camera_id = _extract_camera_id_from_task_code(task_code)
     if camera_id is None:
-        _run_loop_with_stream(task_code, stream_url, frame_interval)
+        current_app.logger.warning(
+            "无法从 task_code 提取 camera_id，回退空循环: %s", task_code
+        )
+        _run_loop_without_stream(task_code, frame_interval)
         return
 
     tracker = _build_tracker()
@@ -662,259 +657,15 @@ def _run_loop_with_video_hub(task_code: str, stream_url: str, frame_interval: fl
         last_infer_at = now
 
 
-def _build_ffmpeg_capture_options(stream_url: str) -> str:
-    normalized_url = (stream_url or "").strip().lower()
-    if normalized_url.startswith("http"):
-        return "timeout;10000000|reconnect;1|reconnect_streamed;1|reconnect_delay_max;5"
-    rtsp_transport = (
-        str(os.environ.get("ENGINE_RTSP_TRANSPORT", "udp") or "udp").strip().lower()
-    )
-    if rtsp_transport not in {"udp", "tcp"}:
-        rtsp_transport = "udp"
-    return (
-        f"rtsp_transport;{rtsp_transport}|stimeout;10000000|max_delay;500000|"
-        "analyzeduration;2000000|reconnect;1|reconnect_streamed;1|"
-        "reconnect_delay_max;5"
-    )
-
-
 def _run_loop_with_stream(task_code: str, stream_url: str, frame_interval: float):
     if _should_use_video_hub_for_stream(task_code, stream_url):
         _run_loop_with_video_hub(task_code, stream_url, frame_interval)
         return
 
-    try:
-        import cv2
-    except Exception:
-        current_app.logger.warning("cv2 unavailable, fallback to sleep loop")
-        _run_loop_without_stream(task_code, frame_interval)
-        return
-
-    if _should_use_pyav_for_stream(stream_url):
-        current_app.logger.info("Using PyAV for HTTP-FLV stream: %s", stream_url)
-        _run_loop_with_pyav(task_code, stream_url, frame_interval)
-        return
-
-    os.environ["OPENCV_FFMPEG_READ_ATTEMPTS"] = "16384"
-    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = _build_ffmpeg_capture_options(
-        stream_url
+    current_app.logger.warning(
+        "stream_url 非标准协议，回退空循环: %s", stream_url
     )
-
-    tracker = _build_tracker()
-
-    with _TASKS_LOCK:
-        task_for_threshold = _TASKS.get(task_code)
-        current_drowning_threshold_sec = (
-            3.0
-            if task_for_threshold is None
-            else float(task_for_threshold.drowning_alert_threshold_sec)
-        )
-    evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
-
-    open_max_retries = max(
-        1,
-        int(current_app.config.get("ENGINE_STREAM_OPEN_MAX_RETRIES", 5)),
-    )
-    open_retry_interval = max(
-        0.5,
-        float(current_app.config.get("ENGINE_STREAM_OPEN_RETRY_INTERVAL_SEC", 2.0)),
-    )
-    capture = None
-    for _attempt in range(open_max_retries):
-        capture = cv2.VideoCapture(stream_url)
-        if capture.isOpened():
-            break
-        capture.release()
-        current_app.logger.warning(
-            "stream open attempt %s/%s failed, retrying in %.1fs: %s",
-            _attempt + 1,
-            open_max_retries,
-            open_retry_interval,
-            stream_url,
-        )
-        time.sleep(open_retry_interval)
-    else:
-        raise RuntimeError(
-            f"failed to open stream after {open_max_retries} attempts: {stream_url}"
-        )
-
-    # 减小内部缓冲区，降低视频流延迟
-    try:
-        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-    except Exception:
-        pass
-
-    # 统一使用独立读帧线程（HTTP/RTSP），持续消费流数据只保留最新帧，避免缓冲积压
-    _latest_frame: list = [None]
-    _frame_lock = threading.Lock()
-    _reader_stop = threading.Event()
-    # 供视频推帧线程使用的独立帧缓冲区（仅覆写，不被推理循环清空）
-    _push_latest_frame: list = [None]
-    _push_frame_lock = threading.Lock()
-    # 在 app context 内预取配置，供子线程闭包使用（子线程无 app context）
-    _reader_max_failures = max(
-        5, int(current_app.config.get("ENGINE_STREAM_MAX_READ_FAILURES", 30))
-    )
-    _reader_reconnect_cooldown = max(
-        0.1, float(current_app.config.get("ENGINE_STREAM_RECONNECT_COOLDOWN_SEC", 1.0))
-    )
-
-    def _frame_reader_worker(cap_ref):
-        fail_count = 0
-        while not _reader_stop.is_set():
-            ok, f = cap_ref["capture"].read()
-            if ok:
-                fail_count = 0
-                with _frame_lock:
-                    _latest_frame[0] = f
-                with _push_frame_lock:
-                    _push_latest_frame[0] = f
-            else:
-                fail_count += 1
-                if fail_count >= _reader_max_failures:
-                    cap_ref["capture"].release()
-                    time.sleep(_reader_reconnect_cooldown)
-                    with _TASKS_LOCK:
-                        task_for_url = _TASKS.get(cap_ref["task_code"])
-                        current_stream_url = (
-                            task_for_url.stream_url if task_for_url else stream_url
-                        )
-                    cap_ref["capture"] = cv2.VideoCapture(current_stream_url)
-                    try:
-                        cap_ref["capture"].set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                    except Exception:
-                        pass
-                    fail_count = 0
-                else:
-                    time.sleep(0.01)
-
-    cap_ref = {"capture": capture, "task_code": task_code}
-    reader_thread = threading.Thread(
-        target=_frame_reader_worker,
-        args=(cap_ref,),
-        daemon=True,
-        name=f"frame-reader-{task_code}",
-    )
-    reader_thread.start()
-
-    # 独立推帧线程：以目标 FPS 推送视频帧，叠加上次推理检测结果，不依赖推理完成
-    _push_stop = threading.Event()
-    _push_min_interval = 1.0 / max(
-        1, int(os.environ.get("VIDEO_FRAME_PUSH_FPS", "8") or "8")
-    )
-    _push_camera_id = _extract_camera_id_from_task_code(task_code)
-
-    def _video_push_worker():
-        last_push_at = 0.0
-        while not _push_stop.is_set() and not _reader_stop.is_set():
-            now = time.monotonic()
-            if now - last_push_at < _push_min_interval:
-                time.sleep(0.01)
-                continue
-            with _push_frame_lock:
-                push_frame = _push_latest_frame[0]
-            if push_frame is None:
-                time.sleep(0.01)
-                continue
-            if _push_camera_id is None:
-                time.sleep(0.1)
-                continue
-            with _TASKS_LOCK:
-                task_snap = _TASKS.get(task_code)
-                if task_snap is None or task_snap.stop_event.is_set():
-                    break
-                last_detections = list(task_snap.latest_detections)
-            video_frame_push_service.push_frame(
-                ai_ws_push_service,
-                _push_camera_id,
-                push_frame,
-                last_detections,
-            )
-            last_push_at = now
-
-    push_thread = threading.Thread(
-        target=_video_push_worker,
-        daemon=True,
-        name=f"video-push-{task_code}",
-    )
-    push_thread.start()
-
-    last_infer_at = 0.0
-    try:
-        while True:
-            with _TASKS_LOCK:
-                task = _TASKS.get(task_code)
-                if task is None:
-                    return
-                if task.stop_event.is_set():
-                    return
-                model_version = task.model_version
-                task_drowning_threshold_sec = float(task.drowning_alert_threshold_sec)
-
-            if abs(task_drowning_threshold_sec - current_drowning_threshold_sec) > 1e-6:
-                current_drowning_threshold_sec = task_drowning_threshold_sec
-                evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
-
-            # 从独立读帧线程取最新帧；消费后清空，下一轮等待新帧
-            with _frame_lock:
-                frame = _latest_frame[0]
-                _latest_frame[0] = None
-            if frame is None:
-                time.sleep(0.01)
-                continue
-
-            now = time.monotonic()
-            if now - last_infer_at < frame_interval:
-                time.sleep(0.005)
-                continue
-
-            frame_height, frame_width = frame.shape[:2]
-            _t0 = time.monotonic()
-            detections = infer_stream_frame(frame, model_version=model_version)
-            _infer_latency = time.monotonic() - _t0
-            record_inference(
-                model_version=model_version,
-                latency_sec=_infer_latency,
-                status="success",
-            )
-            tracked_objects = tracker.update(detections, frame=frame, timestamp=now)
-            drowning_objects = [
-                obj for obj in tracked_objects if _is_drowning_label(obj.label)
-            ]
-            decisions = [
-                evaluator.evaluate(tracked_object, timestamp=now)
-                for tracked_object in drowning_objects
-            ]
-            _sync_task_realtime(
-                task_code=task_code,
-                tracked_objects=tracked_objects,
-                frame_width=frame_width,
-                frame_height=frame_height,
-                decisions=decisions,
-                frame_timestamp=time.time(),
-            )
-            _push_realtime_ws(
-                task_code, tracked_objects, decisions, frame_width, frame_height,
-                frame_timestamp=time.time(),
-            )
-
-            frame_count = _touch_task_progress(task_code)
-            _post_detection_event_if_needed(
-                task_code=task_code,
-                tracked_objects=drowning_objects,
-                decisions=decisions,
-                tracker_backend=tracker.backend,
-                frame_count=frame_count,
-                head_count=len(tracked_objects),
-                frame_width=frame_width,
-                frame_height=frame_height,
-            )
-            last_infer_at = now
-    finally:
-        _reader_stop.set()
-        _push_stop.set()
-        cap_ref["capture"].release()
-        capture = cap_ref["capture"]
+    _run_loop_without_stream(task_code, frame_interval)
 
 
 def _engine_task_worker(app, task_code: str):
@@ -1104,110 +855,3 @@ def update_task_config(
             )
         task.updated_at = _utc_now()
         return _serialize_task(task)
-
-
-def _run_loop_with_pyav(task_code: str, stream_url: str, frame_interval: float):
-    try:
-        import av
-    except Exception as exc:
-        raise RuntimeError("PyAV not installed, cannot read HTTP-FLV stream") from exc
-
-    tracker = _build_tracker()
-
-    with _TASKS_LOCK:
-        task_for_threshold = _TASKS.get(task_code)
-        current_drowning_threshold_sec = (
-            3.0
-            if task_for_threshold is None
-            else float(task_for_threshold.drowning_alert_threshold_sec)
-        )
-    evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
-
-    camera_id = _extract_camera_id_from_task_code(task_code)
-    options = {
-        "rw_timeout": "10000000",
-        "reconnect": "1",
-        "reconnect_streamed": "1",
-        "reconnect_delay_max": "5",
-    }
-    container = av.open(stream_url, options=options)
-    try:
-        video_stream = next((s for s in container.streams if s.type == "video"), None)
-        if video_stream is None:
-            raise RuntimeError(f"no video stream found: {stream_url}")
-
-        last_infer_at = 0.0
-        for frame in container.decode(video_stream):
-            with _TASKS_LOCK:
-                task = _TASKS.get(task_code)
-                if task is None or task.stop_event.is_set():
-                    return
-                model_version = task.model_version
-                task_drowning_threshold_sec = float(task.drowning_alert_threshold_sec)
-
-            if abs(task_drowning_threshold_sec - current_drowning_threshold_sec) > 1e-6:
-                current_drowning_threshold_sec = task_drowning_threshold_sec
-                evaluator = _build_drowning_evaluator(current_drowning_threshold_sec)
-
-            now = time.monotonic()
-            if now - last_infer_at < frame_interval:
-                continue
-
-            image = frame.to_ndarray(format="bgr24")
-            frame_height, frame_width = image.shape[:2]
-            _t0 = time.monotonic()
-            detections = infer_stream_frame(image, model_version=model_version)
-            _infer_latency = time.monotonic() - _t0
-            record_inference(
-                model_version=model_version,
-                latency_sec=_infer_latency,
-                status="success",
-            )
-            tracked_objects = tracker.update(detections, frame=image, timestamp=now)
-            drowning_objects = [
-                obj for obj in tracked_objects if _is_drowning_label(obj.label)
-            ]
-            decisions = [
-                evaluator.evaluate(tracked_object, timestamp=now)
-                for tracked_object in drowning_objects
-            ]
-
-            _sync_task_realtime(
-                task_code=task_code,
-                tracked_objects=tracked_objects,
-                frame_width=frame_width,
-                frame_height=frame_height,
-                decisions=decisions,
-                frame_timestamp=time.time(),
-            )
-            _push_realtime_ws(
-                task_code, tracked_objects, decisions, frame_width, frame_height,
-                frame_timestamp=time.time(),
-            )
-            if camera_id is not None:
-                with _TASKS_LOCK:
-                    task_snap = _TASKS.get(task_code)
-                    last_detections = (
-                        [] if task_snap is None else list(task_snap.latest_detections)
-                    )
-                video_frame_push_service.push_frame(
-                    ai_ws_push_service,
-                    camera_id,
-                    image,
-                    last_detections,
-                )
-
-            frame_count = _touch_task_progress(task_code)
-            _post_detection_event_if_needed(
-                task_code=task_code,
-                tracked_objects=drowning_objects,
-                decisions=decisions,
-                tracker_backend=tracker.backend,
-                frame_count=frame_count,
-                head_count=len(tracked_objects),
-                frame_width=frame_width,
-                frame_height=frame_height,
-            )
-            last_infer_at = now
-    finally:
-        container.close()
