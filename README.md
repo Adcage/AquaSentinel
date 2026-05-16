@@ -57,7 +57,13 @@
 
 ## 快速开始
 
-各子项目的构建、运行和测试命令见 [docs/运行部署/core-stack-quickstart.md](docs/运行部署/core-stack-quickstart.md)。
+Docker Compose 一键启动：
+
+```bash
+docker compose up -d
+```
+
+详细步骤与手动启动方式见 [docs/运行部署/core-stack-quickstart.md](docs/运行部署/core-stack-quickstart.md)。
 
 一键验证核心服务状态：`pwsh ./scripts/verify_core_stack.ps1`
 

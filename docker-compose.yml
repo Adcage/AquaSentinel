@@ -1,0 +1,91 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: aqua_sentinel
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass 123456
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123456", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8300:8300"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/aqua_sentinel?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: "123456"
+      SPRING_REDISSON_CONFIG: |
+        singleServerConfig:
+          address: "redis://redis:6379"
+          password: "123456"
+          database: 1
+      SPRING_PROFILES_ACTIVE: local
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  video-hub:
+    build: ./video-hub-service
+    ports:
+      - "5100:5100"
+    environment:
+      VIDEO_HUB_PORT: "5100"
+      VIDEO_HUB_BACKEND_BASE_URL: http://backend:8300
+      VIDEO_HUB_REDIS_URL: redis://:123456@redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  yolo-service:
+    build: ./yolo-service
+    ports:
+      - "5000:5000"
+    environment:
+      APP_ENV: prod
+      JAVA_BACKEND_BASE_URL: http://backend:8300
+      VIDEO_HUB_BASE_URL: http://video-hub:5100
+      DATABASE_URL: sqlite:///instance/app.db
+      MODEL_PATH: model/best.pt
+    volumes:
+      - yolo_model:/app/model
+    depends_on:
+      backend:
+        condition: service_started
+      video-hub:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  mysql_data:
+  yolo_model:

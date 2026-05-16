@@ -307,14 +307,42 @@ Invoke-RestMethod http://localhost:5000/api/health
 
 ## 7 部署方式说明
 
-当前采用手动启动方案，原因如下：
+### Docker Compose（推荐）
 
-- 各子项目尚未提供 `Dockerfile`，直接编写 `docker-compose.yml` 缺乏基础
-- YOLO Service 依赖模型文件（体积大、需单独获取），不适合无条件打包进镜像
-- GPU/CUDA 依赖在容器中配置复杂，与"最小可运行"目标冲突
-- 核心链路的手动启动步骤已在本文档中完整覆盖
+项目根目录提供 `docker-compose.yml`，一键启动全部核心服务：
 
-后续可按需补全 `Dockerfile` 和 `docker-compose.yml`，优先级为：Backend > video-hub-service > YOLO Service。
+```powershell
+# 启动所有服务
+docker compose up -d
+
+# 查看服务状态
+docker compose ps
+
+# 查看日志
+docker compose logs -f
+
+# 停止所有服务
+docker compose down
+```
+
+模型文件需单独挂载到 `yolo-service` 容器中。Docker Compose 已配置 `yolo_model` 卷，可将模型文件复制到卷中：
+
+```powershell
+# 查看卷路径
+docker volume inspect aquasentinel_yolo_model
+
+# 复制模型文件到卷中（替换为实际路径）
+docker cp model/drowning-v11-x.pt <容器ID>:/app/model/
+```
+
+注意事项：
+- YOLO 模型文件体积较大，未打包进镜像，需通过卷挂载或 `docker cp` 提供
+- GPU/CUDA 依赖在容器中需额外配置（参考 [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/)）
+- MySQL 初始化脚本通过 `docker-entrypoint-initdb.d` 自动执行
+
+### 手动启动
+
+如需手动启动各服务，按本文档第 4 节的顺序逐个启动即可。
 
 ## 8 快速参考：端口与地址汇总
 
