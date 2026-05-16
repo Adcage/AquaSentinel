@@ -1,0 +1,11 @@
+rtspAddress: :18554
+rtmpAddress: :11935
+hlsAddress: :18888
+srtAddress: :0
+api: yes
+apiAddress: :19997
+paths:
+  cam1:
+    source: publisher
+  cam2:
+    source: publisher
