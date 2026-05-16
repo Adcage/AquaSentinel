@@ -16,6 +16,35 @@ from app.video_hub.log_controls import should_log_after_cooldown
 
 logger = logging.getLogger(__name__)
 
+_VALID_ROTATIONS = {0, 90, 180, 270}
+
+_ROTATE_TRANSPOSE_MAP = {
+    90: Image.Transpose.ROTATE_270,
+    180: Image.Transpose.ROTATE_180,
+    270: Image.Transpose.ROTATE_90,
+}
+
+
+def _apply_rotation_to_jpeg(jpeg_bytes: bytes, rotation: int) -> tuple[bytes, int, int]:
+    if rotation not in _VALID_ROTATIONS:
+        rotation = 0
+    if rotation == 0:
+        return jpeg_bytes, 0, 0
+    img = Image.open(io.BytesIO(jpeg_bytes))
+    img = img.transpose(_ROTATE_TRANSPOSE_MAP[rotation])
+    width, height = img.size
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=75)
+    return buf.getvalue(), width, height
+
+
+def _apply_rotation_to_image(img: Image.Image, rotation: int) -> Image.Image:
+    if rotation not in _VALID_ROTATIONS:
+        rotation = 0
+    if rotation == 0:
+        return img
+    return img.transpose(_ROTATE_TRANSPOSE_MAP[rotation])
+
 
 class SessionState(str, Enum):
     CONNECTING = "CONNECTING"
@@ -88,12 +117,14 @@ class VideoHubSession:
         connect_timeout_sec: float = 3.0,
         read_timeout_sec: float = 10.0,
         stale_frame_timeout_sec: float = 5.0,
+        rotation: int = 0,
     ):
         self.camera_id = camera_id
         self.source_url = source_url
         self.connect_timeout_sec = connect_timeout_sec
         self.read_timeout_sec = read_timeout_sec
         self.stale_frame_timeout_sec = stale_frame_timeout_sec
+        self.rotation = rotation if rotation in _VALID_ROTATIONS else 0
         self.http_session = requests.Session()
         self.http_session.trust_env = False
         self.frame_cache = FrameCache()
@@ -157,6 +188,7 @@ class VideoHubSession:
             "last_error": self.frame_cache.last_error(),
             "viewer_count": self._viewer_count,
             "source_url": self.source_url,
+            "rotation": self.rotation,
             "retry_delay_sec": self._calc_retry_delay(failures),
         }
 
@@ -374,11 +406,12 @@ class VideoHubSession:
                     continue
                 try:
                     img = frame.to_image()
+                    img = _apply_rotation_to_image(img, self.rotation)
                     buf = io.BytesIO()
                     img.save(buf, format="JPEG", quality=75)
                     jpeg_bytes = buf.getvalue()
-                    width = frame.width
-                    height = frame.height
+                    width = img.size[0]
+                    height = img.size[1]
                     timestamp = int(now * 1000)
                     self.frame_cache.update(jpeg_bytes, width, height, timestamp)
                     self._last_frame_at = timestamp
@@ -437,6 +470,10 @@ class VideoHubSession:
                         break
                     width, height = _parse_jpeg_size(frame)
                     timestamp = int(time() * 1000)
+                    if self.rotation != 0:
+                        frame, rotated_w, rotated_h = _apply_rotation_to_jpeg(frame, self.rotation)
+                        if rotated_w and rotated_h:
+                            width, height = rotated_w, rotated_h
                     self.frame_cache.update(frame, width, height, timestamp)
                     self._last_frame_at = timestamp
                     frame_count += 1

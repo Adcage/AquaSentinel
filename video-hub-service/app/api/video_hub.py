@@ -21,22 +21,36 @@ def _resolve_source_url() -> str:
     return source_url
 
 
+def _resolve_rotation() -> int:
+    payload = request.get_json(silent=True) or {}
+    raw = payload.get("rotation", request.args.get("rotation", 0))
+    try:
+        rotation = int(raw)
+    except (TypeError, ValueError):
+        rotation = 0
+    if rotation not in (0, 90, 180, 270):
+        rotation = 0
+    return rotation
+
+
 def _get_or_ensure_session(camera_id: int):
     requested_source_url = str(request.args.get("source_url") or "").strip()
+    rotation = _resolve_rotation()
     if requested_source_url:
-        return video_hub_registry.ensure_session(camera_id, requested_source_url)
+        return video_hub_registry.ensure_session(camera_id, requested_source_url, rotation=rotation)
 
     session = video_hub_registry.get_session(camera_id)
     if session is not None:
         return session
     source_url = _resolve_source_url()
-    return video_hub_registry.ensure_session(camera_id, source_url)
+    return video_hub_registry.ensure_session(camera_id, source_url, rotation=rotation)
 
 
 @blp.post("/video-hub/cameras/<int:camera_id>/ensure")
 def ensure_camera_session(camera_id: int):
     source_url = _resolve_source_url()
-    session = video_hub_registry.ensure_session(camera_id, source_url)
+    rotation = _resolve_rotation()
+    session = video_hub_registry.ensure_session(camera_id, source_url, rotation=rotation)
     if session.state == "CIRCUIT_OPEN":
         session.activate_from_circuit_open()
     return jsonify(success_payload(session.status_dict(), message="视频会话已就绪"))
