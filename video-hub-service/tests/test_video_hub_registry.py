@@ -6,9 +6,13 @@ class DummySession:
         self.camera_id = camera_id
         self.source_url = source_url
         self.start_calls = 0
+        self.state = "CONNECTING"
 
     def ensure_started(self):
         self.start_calls += 1
+
+    def activate_from_circuit_open(self):
+        self.state = "CONNECTING"
 
 
 def test_registry_reuses_existing_session_for_same_camera():

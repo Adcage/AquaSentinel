@@ -23,3 +23,6 @@ class BaseConfig:
         os.environ.get("VIDEO_HUB_DEFAULT_TARGET_FPS", "10.0")
     )
     VIDEO_HUB_PREFERRED_IP = os.environ.get("VIDEO_HUB_PREFERRED_IP", "")
+    VIDEO_HUB_REDIS_URL = os.environ.get(
+        "VIDEO_HUB_REDIS_URL", "redis://:123456@127.0.0.1:6379/1"
+    )

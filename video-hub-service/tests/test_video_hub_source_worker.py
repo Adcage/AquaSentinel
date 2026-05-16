@@ -1,7 +1,7 @@
 from threading import Thread
 from time import sleep, time
 
-from app.video_hub.source_worker import VideoHubSession
+from app.video_hub.source_worker import VideoHubSession, _should_use_pyav, _build_pyav_options
 from app.video_hub.frame_cache import FrameCache
 
 
@@ -141,3 +141,35 @@ def test_circuit_open_activated_by_ensure():
     session.activate_from_circuit_open()
     assert session.state == "CONNECTING"
     assert session.consecutive_failures == 0
+
+
+def test_should_use_pyav_returns_true_for_rtsp():
+    assert _should_use_pyav("rtsp://10.10.10.1/live/1") is True
+
+
+def test_should_use_pyav_returns_true_for_http_flv():
+    assert _should_use_pyav("http://stream.example.com/flv/CAM-001") is True
+    assert _should_use_pyav("http://stream.example.com/live.stream.flv") is True
+    assert _should_use_pyav("http://stream.example.com/live?format=flv") is True
+
+
+def test_should_use_pyav_returns_false_for_http_mjpeg():
+    assert _should_use_pyav("http://192.168.1.88/stream") is False
+
+
+def test_should_use_pyav_returns_false_for_https_mjpeg():
+    assert _should_use_pyav("https://192.168.1.88/stream") is False
+
+
+def test_build_pyav_options_rtsp():
+    options = _build_pyav_options("rtsp://10.10.10.1/live/1")
+    assert options["rtsp_transport"] == "tcp"
+    assert options["stimeout"] == "10000000"
+    assert options["reconnect"] == "1"
+
+
+def test_build_pyav_options_http_flv():
+    options = _build_pyav_options("http://stream.example.com/flv/CAM-001")
+    assert "rtsp_transport" not in options
+    assert options["timeout"] == "10000000"
+    assert options["reconnect"] == "1"

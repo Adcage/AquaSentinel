@@ -91,5 +91,9 @@ class FrameCache:
         with self._condition:
             return self._last_error
 
+    def reset_frame_timestamp(self):
+        with self._condition:
+            self._last_frame_at = None
+
     def last_frame_at(self) -> float | None:
         return self._last_frame_at

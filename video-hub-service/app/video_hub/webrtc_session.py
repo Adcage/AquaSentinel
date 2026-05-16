@@ -5,6 +5,7 @@ import io
 import logging
 import time
 import uuid
+from fractions import Fraction
 from typing import TYPE_CHECKING
 
 import av
@@ -39,6 +40,8 @@ class VideoStreamTrack(MediaStreamTrack):
         self._last_av_frame: av.VideoFrame | None = None
         self._last_version: int = 0
         self._first_frame_logged: bool = False
+        self._pts: int = 0
+        self._time_base = Fraction(1, 90000)
 
     async def recv(self) -> av.VideoFrame:
         loop = asyncio.get_event_loop()
@@ -84,6 +87,9 @@ class VideoStreamTrack(MediaStreamTrack):
                 img = Image.open(io.BytesIO(jpeg_bytes))
                 arr = np.asarray(img)
                 frame = av.VideoFrame.from_ndarray(arr, format="rgb24")
+                frame.pts = self._pts
+                frame.time_base = self._time_base
+                self._pts += 90000 // int(self._target_fps)
             except Exception:
                 logger.debug("JPEG 解码异常，重发上一帧 camera_id=%d", self._camera_id)
                 if self._last_av_frame is not None:

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import io
 import logging
 from collections.abc import Iterator
 from enum import Enum
 from threading import Lock, Thread
 from time import sleep, time
 
+import av
 import requests
+from PIL import Image
 
 from app.video_hub.frame_cache import FrameCache
 from app.video_hub.log_controls import should_log_after_cooldown
@@ -19,6 +22,31 @@ class SessionState(str, Enum):
     CONNECTED = "CONNECTED"
     STALE = "STALE"
     CIRCUIT_OPEN = "CIRCUIT_OPEN"
+
+
+def _should_use_pyav(source_url: str) -> bool:
+    normalized = source_url.strip().lower()
+    if normalized.startswith("rtsp://"):
+        return True
+    if normalized.startswith("http://") or normalized.startswith("https://"):
+        if ".flv" in normalized or "/flv/" in normalized or "format=flv" in normalized:
+            return True
+    return False
+
+
+def _build_pyav_options(source_url: str) -> dict:
+    normalized = source_url.strip().lower()
+    options = {
+        "reconnect": "1",
+        "reconnect_streamed": "1",
+        "reconnect_delay_max": "5",
+    }
+    if normalized.startswith("rtsp://"):
+        options["rtsp_transport"] = "tcp"
+        options["stimeout"] = "10000000"
+    else:
+        options["timeout"] = "10000000"
+    return options
 
 
 def _extract_boundary(content_type: str) -> bytes:
@@ -227,6 +255,14 @@ class VideoHubSession:
             return True
         return False
 
+    def _close_and_rebuild_http_session(self):
+        try:
+            self.http_session.close()
+        except Exception:
+            pass
+        self.http_session = requests.Session()
+        self.http_session.trust_env = False
+
     def _multipart_frame(self, payload: bytes, content_type: str) -> bytes:
         header = (
             b"--frame\r\n"
@@ -263,14 +299,15 @@ class VideoHubSession:
                 if not is_circuit_open:
                     self._transition_to_connecting()
                 delay = self._calc_retry_delay(self._consecutive_failures)
-                if should_log_after_cooldown(self._last_closed_log_at, time(), 60.0):
-                    logger.warning(
-                        "camera=%s 拉流异常，%.1fs 后重试: %s",
-                        self.camera_id,
-                        delay,
-                        exc,
-                    )
-                    self._last_closed_log_at = time()
+                logger.warning(
+                    "camera=%s 拉流异常(%s)，%.1fs 后重试(第%d次): %s",
+                    self.camera_id,
+                    type(exc).__name__,
+                    delay,
+                    self._consecutive_failures,
+                    exc,
+                )
+                self._last_closed_log_at = time()
                 sleep(delay)
                 continue
 
@@ -293,16 +330,75 @@ class VideoHubSession:
             if not is_circuit_open:
                 self._transition_to_connecting()
             delay = self._calc_retry_delay(self._consecutive_failures)
-            if should_log_after_cooldown(self._last_closed_log_at, time(), 60.0):
-                logger.warning(
-                    "camera=%s 上游连接关闭，%.1fs 后重连",
-                    self.camera_id,
-                    delay,
-                )
-                self._last_closed_log_at = time()
+            logger.info(
+                "camera=%s 上游连接关闭，%.1fs 后重连(第%d次)",
+                self.camera_id,
+                delay,
+                self._consecutive_failures,
+            )
+            self._last_closed_log_at = time()
             sleep(delay)
 
     def _consume_stream(self):
+        if _should_use_pyav(self.source_url):
+            self._consume_stream_pyav()
+        else:
+            self._consume_stream_http()
+
+    def _consume_stream_pyav(self):
+        container = None
+        try:
+            options = _build_pyav_options(self.source_url)
+            container = av.open(self.source_url, options=options)
+            stream = container.streams.video[0]
+            stream.thread_type = "AUTO"
+            self.frame_cache.reset_frame_timestamp()
+            self._transition_to_connected()
+            self._record_success()
+            self._last_frame_at = int(time() * 1000)
+            if should_log_after_cooldown(self._last_connected_log_at, time(), 60.0):
+                logger.info(
+                    "camera=%s 已连接上游(PyAV): %s",
+                    self.camera_id,
+                    self.source_url,
+                )
+                self._last_connected_log_at = time()
+
+            frame_interval = 1.0 / 10.0
+            last_output_at: float = 0
+            for frame in container.decode(stream):
+                if self._stopped:
+                    break
+                now = time()
+                if now - last_output_at < frame_interval:
+                    continue
+                try:
+                    img = frame.to_image()
+                    buf = io.BytesIO()
+                    img.save(buf, format="JPEG", quality=75)
+                    jpeg_bytes = buf.getvalue()
+                    width = frame.width
+                    height = frame.height
+                    timestamp = int(now * 1000)
+                    self.frame_cache.update(jpeg_bytes, width, height, timestamp)
+                    self._last_frame_at = timestamp
+                    last_output_at = now
+                except Exception:
+                    continue
+                if self._check_stale_frame():
+                    logger.warning(
+                        "camera=%s PyAV 无帧超时",
+                        self.camera_id,
+                    )
+                    break
+        finally:
+            if container is not None:
+                try:
+                    container.close()
+                except Exception:
+                    pass
+
+    def _consume_stream_http(self):
         response = None
         try:
             response = self.http_session.get(
@@ -314,6 +410,7 @@ class VideoHubSession:
             content_type = response.headers.get("Content-Type", "")
             boundary = _extract_boundary(content_type)
             buffer = bytearray()
+            self.frame_cache.reset_frame_timestamp()
             self._transition_to_connected()
             self._record_success()
             self._last_frame_at = int(time() * 1000)
@@ -351,12 +448,19 @@ class VideoHubSession:
                         len(buffer),
                     )
                     break
+            logger.info(
+                "camera=%s HTTP 流结束，已解析 %d 帧，buffer=%d 字节",
+                self.camera_id,
+                frame_count,
+                len(buffer),
+            )
         finally:
             if response is not None:
                 try:
                     response.close()
                 except Exception:
                     pass
+            self._close_and_rebuild_http_session()
 
     def _pop_frame(self, buffer: bytearray, boundary: bytes) -> bytes | None:
         boundary_token = b"--" + boundary

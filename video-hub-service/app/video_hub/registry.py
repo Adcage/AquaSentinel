@@ -28,6 +28,8 @@ class VideoHubRegistry:
                     camera_id, session.source_url, source_url,
                 )
                 session.source_url = source_url
+                if session.state == "CIRCUIT_OPEN":
+                    session.activate_from_circuit_open()
         if created:
             session.ensure_started()
         return session

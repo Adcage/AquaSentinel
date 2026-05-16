@@ -32,6 +32,10 @@ def create_app(config_overrides: dict | None = None) -> Flask:
 
     register_error_handlers(app)
 
+    from app.video_hub import redis_stream_sync
+
+    redis_stream_sync.start(app.config.get("VIDEO_HUB_REDIS_URL", ""))
+
     @app.after_request
     def _add_cors_headers(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
