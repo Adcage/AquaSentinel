@@ -51,12 +51,15 @@ public class CameraPreviewRouteService {
                 StringUtils.removeEnd(
                         StringUtils.defaultString(appVideoHubProperties.getBaseUrl()).trim(), "/");
         String encodedSource = URLEncoder.encode(streamUrl, StandardCharsets.UTF_8);
+        int rotation = cameraDevice.getRotation() != null ? cameraDevice.getRotation() : 0;
         return URI.create(
                 baseUrl
                         + "/video-hub/cameras/"
                         + cameraDevice.getId()
                         + "/stream?source_url="
-                        + encodedSource);
+                        + encodedSource
+                        + "&rotation="
+                        + rotation);
     }
 
     public String buildPreviewUrl(CameraDevice cameraDevice) {

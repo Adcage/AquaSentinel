@@ -38,7 +38,12 @@ public class VideoHubProxyController {
             throw new com.springboot.exception.BusinessException(
                     com.springboot.common.ErrorCode.NOT_FOUND_ERROR, "摄像头视频源不存在");
         }
-        return ResultUtils.success(java.util.Map.of("sourceUrl", camera.getStream_url().trim()));
+        java.util.Map<String, String> data = new java.util.HashMap<>();
+        data.put("sourceUrl", camera.getStream_url().trim());
+        data.put(
+                "rotation",
+                String.valueOf(camera.getRotation() != null ? camera.getRotation() : 0));
+        return ResultUtils.success(data);
     }
 
     @DeleteMapping("/sessions/{sessionId}")
