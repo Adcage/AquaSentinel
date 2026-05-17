@@ -26,3 +26,5 @@ class BaseConfig:
     VIDEO_HUB_REDIS_URL = os.environ.get(
         "VIDEO_HUB_REDIS_URL", "redis://:123456@127.0.0.1:6379/1"
     )
+    WEBRTC_MEDIA_PORT_RANGE = os.environ.get("WEBRTC_MEDIA_PORT_RANGE", "")
+    VIDEO_HUB_PUSH_TOKEN = os.environ.get("VIDEO_HUB_PUSH_TOKEN", "")

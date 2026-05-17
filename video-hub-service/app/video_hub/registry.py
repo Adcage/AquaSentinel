@@ -14,12 +14,12 @@ class VideoHubRegistry:
         self._sessions: dict[int, VideoHubSession] = {}
         self._lock = Lock()
 
-    def ensure_session(self, camera_id: int, source_url: str, rotation: int = 0) -> VideoHubSession:
+    def ensure_session(self, camera_id: int, source_url: str, rotation: int = 0, stream_mode: str = "pull") -> VideoHubSession:
         created = False
         with self._lock:
             session = self._sessions.get(camera_id)
             if session is None:
-                session = self._session_factory(camera_id, source_url, rotation=rotation)
+                session = self._session_factory(camera_id, source_url, rotation=rotation, stream_mode=stream_mode)
                 self._sessions[camera_id] = session
                 created = True
             elif session.source_url != source_url:
@@ -36,6 +36,8 @@ class VideoHubRegistry:
                     camera_id, session.rotation, rotation,
                 )
                 session.rotation = rotation
+            if stream_mode == "push" and session.stream_mode != "push":
+                session.switch_to_push_mode()
         if created:
             session.ensure_started()
         return session
@@ -49,3 +51,12 @@ class VideoHubRegistry:
             session = self._sessions.pop(camera_id, None)
         if session is not None:
             session.stop()
+
+    def get_or_create_session(self, camera_id: int, source_url: str = "", rotation: int = 0) -> VideoHubSession:
+        with self._lock:
+            session = self._sessions.get(camera_id)
+            if session is not None:
+                if session.stream_mode != "push":
+                    session.switch_to_push_mode()
+                return session
+        return self.ensure_session(camera_id, source_url or f"camera_{camera_id}", rotation=rotation, stream_mode="push")

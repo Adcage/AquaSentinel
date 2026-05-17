@@ -118,6 +118,7 @@ class VideoHubSession:
         read_timeout_sec: float = 10.0,
         stale_frame_timeout_sec: float = 5.0,
         rotation: int = 0,
+        stream_mode: str = "pull",
     ):
         self.camera_id = camera_id
         self.source_url = source_url
@@ -125,6 +126,7 @@ class VideoHubSession:
         self.read_timeout_sec = read_timeout_sec
         self.stale_frame_timeout_sec = stale_frame_timeout_sec
         self.rotation = rotation if rotation in _VALID_ROTATIONS else 0
+        self.stream_mode = stream_mode
         self.http_session = requests.Session()
         self.http_session.trust_env = False
         self.frame_cache = FrameCache()
@@ -372,6 +374,9 @@ class VideoHubSession:
             sleep(delay)
 
     def _consume_stream(self):
+        if self.stream_mode == "push":
+            self._consume_stream_push()
+            return
         if _should_use_pyav(self.source_url):
             self._consume_stream_pyav()
         else:
@@ -498,6 +503,23 @@ class VideoHubSession:
                 except Exception:
                     pass
             self._close_and_rebuild_http_session()
+
+    def switch_to_push_mode(self):
+        if self.stream_mode == "push":
+            return
+        logger.info("camera=%s 切换到推帧模式 (原 source_url=%s)", self.camera_id, self.source_url)
+        self.stream_mode = "push"
+        self._transition_to_connected()
+        self._record_success()
+
+    def _consume_stream_push(self):
+        self._transition_to_connected()
+        self._record_success()
+        logger.info("camera=%s 推帧模式，等待 WebSocket 推送帧数据", self.camera_id)
+        while not self._stopped:
+            sleep(1.0)
+            if self._check_stale_frame():
+                break
 
     def _pop_frame(self, buffer: bytearray, boundary: bytes) -> bytes | None:
         boundary_token = b"--" + boundary

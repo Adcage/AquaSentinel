@@ -46,8 +46,9 @@ class RedisStreamSync:
                 camera_id = int(camera_id_str)
                 data = json.loads(value_json)
                 stream_url = data.get("stream_url", "")
+                stream_mode = data.get("stream_mode", "pull")
                 if stream_url:
-                    self._registry.ensure_session(camera_id, stream_url)
+                    self._registry.ensure_session(camera_id, stream_url, stream_mode=stream_mode)
             logger.info("Redis 初始同步完成，共 %d 个摄像头", len(all_entries))
         except Exception as exc:
             logger.warning("Redis 初始同步失败: %s", exc)
@@ -77,8 +78,9 @@ class RedisStreamSync:
             return
         if action == "upsert":
             source_url = event.get("stream_url", "")
+            stream_mode = event.get("stream_mode", "pull")
             if source_url:
-                self._registry.ensure_session(camera_id, source_url)
+                self._registry.ensure_session(camera_id, source_url, stream_mode=stream_mode)
                 logger.info("Redis 事件: camera=%s upsert", camera_id)
         elif action == "delete":
             self._registry.remove_session(camera_id)
