@@ -128,8 +128,15 @@ def _pin_answer_candidates(answer_sdp: str, preferred_address: str | None, fallb
     pinned: list[str] = []
     kept_count = 0
     removed_count = 0
+    rewritten_count = 0
     for line in lines:
         if not line.startswith("a=candidate:"):
+            if line.startswith("c=IN IP4 ") and fallback_ip:
+                original_ip = line[len("c=IN IP4 "):]
+                if original_ip != fallback_ip and _is_private_ipv4(original_ip):
+                    pinned.append(f"c=IN IP4 {fallback_ip}")
+                    rewritten_count += 1
+                    continue
             pinned.append(line)
             continue
         parts = line.split()
@@ -144,15 +151,33 @@ def _pin_answer_candidates(answer_sdp: str, preferred_address: str | None, fallb
         if effective_preferred and address == effective_preferred:
             pinned.append(line)
             kept_count += 1
+        elif fallback_ip and _is_private_ipv4(address) and address != fallback_ip:
+            rewritten_line = line.replace(f" {address} ", f" {fallback_ip} ")
+            pinned.append(rewritten_line)
+            rewritten_count += 1
         else:
             removed_count += 1
     logger.info(
-        "SDP answer candidates 调整: preferred=%s kept=%d removed=%d",
+        "SDP answer candidates 调整: preferred=%s kept=%d removed=%d rewritten=%d",
         effective_preferred,
         kept_count,
         removed_count,
+        rewritten_count,
     )
     return "\r\n".join(pinned) + "\r\n"
+
+
+def _is_private_ipv4(address: str) -> bool:
+    if not re.fullmatch(r"\d+\.\d+\.\d+\.\d+", address):
+        return False
+    if address.startswith("10."):
+        return True
+    if address.startswith("192.168."):
+        return True
+    if address.startswith("172."):
+        second = int(address.split(".")[1])
+        return 16 <= second <= 31
+    return False
 
 
 def _force_setup_passive(sdp: str) -> str:
