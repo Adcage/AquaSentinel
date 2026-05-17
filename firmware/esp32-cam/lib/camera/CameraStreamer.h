@@ -13,6 +13,8 @@ class CameraStreamer {
     String statusJson() const;
     bool initialized() const;
     bool isStreaming() const;
+    camera_fb_t* captureFrame();
+    void releaseFrame(camera_fb_t* fb);
 
    private:
     bool cameraInitialized = false;

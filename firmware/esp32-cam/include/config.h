@@ -22,4 +22,10 @@ constexpr bool FLIP_HORIZONTAL = true;
 
 constexpr int HTTP_PORT = 80;
 
+constexpr const char* VIDEO_HUB_HOST = "192.168.0.221";
+constexpr uint16_t VIDEO_HUB_PORT = 5100;
+constexpr int CAMERA_ID = 5021;
+constexpr const char* PUSH_TOKEN = "";
+constexpr int PUSH_FRAME_INTERVAL_MS = 100;
+
 }  // namespace cam_config

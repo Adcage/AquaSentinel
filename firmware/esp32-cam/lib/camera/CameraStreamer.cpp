@@ -211,3 +211,14 @@ String CameraStreamer::statusJson() const {
 }
 
 bool CameraStreamer::initialized() const { return cameraInitialized; }
+
+camera_fb_t* CameraStreamer::captureFrame() {
+    if (!cameraInitialized) return nullptr;
+    return esp_camera_fb_get();
+}
+
+void CameraStreamer::releaseFrame(camera_fb_t* fb) {
+    if (fb != nullptr) {
+        esp_camera_fb_return(fb);
+    }
+}
