@@ -49,4 +49,11 @@ constexpr uint8_t BATTERY_SAMPLE_WINDOW = 8;
 // PAN 校准安全脉宽上限：超过该值时，当前机构已接近物理极限，继续推动可能导致堵转或串口异常。
 constexpr uint16_t PAN_CALIBRATION_SAFE_MAX_US = 2350;
 
+constexpr uint16_t PTZ_PWM_PERIOD_US = 20000;
+constexpr uint16_t PTZ_SMOOTH_CRUISE_US = 60;
+constexpr uint16_t PTZ_SMOOTH_ACCEL_US = 15;
+constexpr uint16_t PTZ_SMOOTH_DECEL_ZONE_US = 300;
+constexpr uint16_t PTZ_SMOOTH_DEAD_ZONE_US = 8;
+constexpr uint32_t PTZ_SMOOTH_INTERVAL_MS = 20;
+
 }  // namespace ptz_config

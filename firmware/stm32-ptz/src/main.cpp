@@ -99,5 +99,6 @@ void loop() {
     }
 
     g_oledDisplay.update(buildUiState(nowMs));
+    g_servo.update(nowMs);
     delay(2);
 }
