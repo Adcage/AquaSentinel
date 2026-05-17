@@ -2,6 +2,7 @@ package com.springboot.controller;
 
 import com.springboot.common.BaseResponse;
 import com.springboot.common.ResultUtils;
+import com.springboot.config.AppVideoHubProperties;
 import com.springboot.model.entity.CameraDevice;
 import com.springboot.security.StreamTokenAuthService;
 import com.springboot.service.CameraDeviceService;
@@ -22,6 +23,15 @@ public class VideoHubProxyController {
     @Resource private StreamTokenAuthService streamTokenAuthService;
 
     @Resource private CameraDeviceService cameraDeviceService;
+
+    @Resource private AppVideoHubProperties appVideoHubProperties;
+
+    @GetMapping("/webrtc-config")
+    public BaseResponse<java.util.Map<String, String>> getWebrtcConfig() {
+        java.util.Map<String, String> data = new java.util.HashMap<>();
+        data.put("preferredIp", appVideoHubProperties.getPreferredIp());
+        return ResultUtils.success(data);
+    }
 
     @GetMapping("/auth/verify-preview-token")
     public BaseResponse<Boolean> verifyPreviewToken(@RequestParam String token) {
