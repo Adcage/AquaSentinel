@@ -39,4 +39,23 @@ class Esp32PtzControlServiceTest {
 
         assertTrue(exception.getMessage().contains("设备 streamUrl 需为 ESP32 HTTP 地址"));
     }
+
+    @Test
+    void controlSlotShouldRejectConcurrentAcquireUntilReleased() {
+        Esp32PtzControlService service = new Esp32PtzControlService();
+
+        Boolean firstAcquire =
+                ReflectionTestUtils.invokeMethod(service, "tryAcquireControlSlot", 1001L);
+        Boolean secondAcquire =
+                ReflectionTestUtils.invokeMethod(service, "tryAcquireControlSlot", 1001L);
+
+        ReflectionTestUtils.invokeMethod(service, "releaseControlSlot", 1001L);
+
+        Boolean thirdAcquire =
+                ReflectionTestUtils.invokeMethod(service, "tryAcquireControlSlot", 1001L);
+
+        assertTrue(Boolean.TRUE.equals(firstAcquire));
+        assertTrue(Boolean.FALSE.equals(secondAcquire));
+        assertTrue(Boolean.TRUE.equals(thirdAcquire));
+    }
 }

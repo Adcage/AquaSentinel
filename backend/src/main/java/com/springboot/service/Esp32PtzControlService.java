@@ -8,6 +8,9 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 
 import com.springboot.common.ErrorCode;
 import com.springboot.exception.BusinessException;
@@ -25,12 +28,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class Esp32PtzControlService {
 
+    private final ConcurrentMap<Long, Semaphore> controlSlots = new ConcurrentHashMap<>();
+
     private final HttpClient httpClient =
             HttpClient.newBuilder().connectTimeout(Duration.ofMillis(2000)).build();
 
     @Resource private ObjectMapper objectMapper;
 
     public Map<String, Object> control(CameraDevice cameraDevice, CameraPtzControlRequest request) {
+        Long cameraId = cameraDevice.getId();
+        if (!tryAcquireControlSlot(cameraId)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "设备正在控制中，请稍后再试");
+        }
         String baseUrl = resolveDeviceBaseUrl(cameraDevice);
         String action =
                 StringUtils.defaultString(request.getAction()).trim().toUpperCase(Locale.ROOT);
@@ -80,6 +89,23 @@ public class Esp32PtzControlService {
             }
             url = baseUrl + "/api/ptz/nudge?dir=" + direction + "&step=" + step;
             method = "POST";
+        } else if ("MOVE".equals(action)) {
+            int pan = request.getPan() == null ? 90 : request.getPan();
+            int tilt = request.getTilt() == null ? 90 : request.getTilt();
+            if (pan < 0) {
+                pan = 0;
+            }
+            if (pan > 180) {
+                pan = 180;
+            }
+            if (tilt < 0) {
+                tilt = 0;
+            }
+            if (tilt > 180) {
+                tilt = 180;
+            }
+            url = baseUrl + "/api/ptz/move?pan=" + pan + "&tilt=" + tilt;
+            method = "POST";
         } else {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "action 参数非法");
         }
@@ -102,7 +128,7 @@ public class Esp32PtzControlService {
             Map<String, Object> payload =
                     objectMapper.readValue(response.body(), new TypeReference<>() {});
             Map<String, Object> result = new LinkedHashMap<>();
-            result.put("cameraId", cameraDevice.getId());
+            result.put("cameraId", cameraId);
             result.put("action", action);
             result.put("deviceUrl", baseUrl);
             result.put("deviceResponse", payload);
@@ -110,9 +136,30 @@ public class Esp32PtzControlService {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("ESP32 控制请求失败, cameraId={}", cameraDevice.getId(), e);
+            log.error("ESP32 控制请求失败, cameraId={}", cameraId, e);
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "设备控制请求失败: " + e.getMessage());
+        } finally {
+            releaseControlSlot(cameraId);
         }
+    }
+
+    private boolean tryAcquireControlSlot(Long cameraId) {
+        if (cameraId == null || cameraId <= 0) {
+            return false;
+        }
+        Semaphore slot = controlSlots.computeIfAbsent(cameraId, key -> new Semaphore(1));
+        return slot.tryAcquire();
+    }
+
+    private void releaseControlSlot(Long cameraId) {
+        if (cameraId == null || cameraId <= 0) {
+            return;
+        }
+        Semaphore slot = controlSlots.get(cameraId);
+        if (slot == null || slot.availablePermits() > 0) {
+            return;
+        }
+        slot.release();
     }
 
     private String resolveDeviceBaseUrl(CameraDevice cameraDevice) {

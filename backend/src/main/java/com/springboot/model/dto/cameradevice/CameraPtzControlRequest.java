@@ -15,5 +15,9 @@ public class CameraPtzControlRequest implements Serializable {
 
     private Integer step;
 
+    private Integer pan;
+
+    private Integer tilt;
+
     private Integer pulse;
 }
