@@ -45,6 +45,8 @@ services:
       APP_AI_ENGINE_BASE_URL: http://yolo-service:5000
       APP_AI_ENGINE_CALLBACK_URL: http://backend:8300/api/internal/ai/events
       APP_AI_ENGINE_PROXY_BASE_URL: http://backend:8300/api
+      APP_VIDEO_HUB_BASE_URL: http://video-hub:5100
+      APP_VIDEO_HUB_PREFERRED_IP: ${HOST_IP:-}
     depends_on:
       mysql:
         condition: service_healthy
@@ -55,10 +57,14 @@ services:
     build: ./video-hub-service
     ports:
       - "5100:5100"
+      - "10000-10099:10000-10099/udp"
     environment:
       VIDEO_HUB_PORT: "5100"
       VIDEO_HUB_BACKEND_BASE_URL: http://backend:8300
       VIDEO_HUB_REDIS_URL: redis://:123456@redis:6379/1
+      VIDEO_HUB_PREFERRED_IP: ${HOST_IP:-}
+      WEBRTC_MEDIA_PORT_RANGE: "10000-10099"
+      VIDEO_HUB_PUSH_TOKEN: ""
     depends_on:
       redis:
         condition: service_healthy
