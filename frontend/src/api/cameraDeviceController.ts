@@ -158,6 +158,7 @@ export async function controlCameraPtz(
     cameraId: number;
     action:
       | "NUDGE"
+      | "MOVE"
       | "HOME"
       | "STATUS"
       | "CALIB_DATA"
@@ -168,6 +169,8 @@ export async function controlCameraPtz(
       | "CALIB_TILT";
     direction?: "LEFT" | "RIGHT" | "UP" | "DOWN";
     step?: number;
+    pan?: number;
+    tilt?: number;
     pulse?: number;
   },
   options?: { [key: string]: any }

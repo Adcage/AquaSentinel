@@ -5,48 +5,15 @@
     :class="{ 'is-alarming': item.isAlarming }"
   >
     <div v-if="item.isAlarming" class="camera-banner">报警横幅 · 溺水预警</div>
-    <div ref="screenRef" class="camera-screen">
-      <WebRtcWhepPlayer
-        v-if="effectiveProtocol === 'webrtc' && effectiveStreamUrl && !paused"
-        :src="effectiveStreamUrl"
+    <div ref="screenRef" class="camera-screen" @click="emit('camera-click', props.item)">
+      <CameraStreamSurface
+        ref="previewRef"
+        :protocol="effectiveProtocol"
+        :stream-url="effectiveStreamUrl"
+        :paused="paused"
         :muted="muted"
-        :active="isVisible"
-        @playing="handleStreamPlaying"
-        @error="handleStreamError"
+        :visible="isVisible"
       />
-      <img
-        v-else-if="
-          effectiveProtocol === 'ws_jpeg' &&
-          videoFrameBlobUrl &&
-          !paused &&
-          isVisible
-        "
-        :src="videoFrameBlobUrl"
-        class="camera-stream"
-        alt="视频流"
-        @load="handleStreamPlaying"
-      />
-      <img
-        v-else-if="
-          effectiveProtocol === 'mjpeg' &&
-          effectiveStreamUrl &&
-          !paused &&
-          isVisible
-        "
-        :src="effectiveStreamUrl"
-        class="camera-stream"
-        alt="视频流"
-        @load="handleStreamPlaying"
-        @error="handleMjpegError"
-      />
-      <div v-else-if="streamError" class="camera-screen__placeholder is-error">
-        {{ streamError }}
-      </div>
-      <div v-else-if="paused" class="camera-screen__placeholder">已暂停</div>
-      <div v-else-if="!isVisible" class="camera-screen__placeholder">
-        已自动暂停（不在可视区）
-      </div>
-      <div v-else class="camera-screen__placeholder">视频流占位</div>
       <CameraOverlayLayer
         v-if="item.detections.length > 0 && !paused && isVisible"
         :detections="item.detections"
@@ -83,14 +50,14 @@
         </div>
       </div>
     </div>
-    <div class="camera-footer">点击可查看报警详情</div>
+    <div class="camera-footer">点击查看详情</div>
   </el-card>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import StatusTag from "@/components/common/StatusTag.vue";
-import WebRtcWhepPlayer from "@/components/business/WebRtcWhepPlayer.vue";
+import CameraStreamSurface from "@/components/business/CameraStreamSurface.vue";
 import CameraOverlayLayer from "./CameraOverlayLayer.vue";
 import type { CameraGridItem, RealtimeDetection } from "@/types/business";
 
@@ -100,13 +67,16 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const emit = defineEmits<{
+  (event: "camera-click", item: CameraGridItem): void;
+}>();
+
 const screenRef = ref<HTMLElement | null>(null);
+const previewRef = ref<InstanceType<typeof CameraStreamSurface> | null>(null);
 const paused = ref(false);
 const muted = ref(false);
 const isFullscreen = ref(false);
 const isVisible = ref(true);
-const streamError = ref("");
-const videoFrameBlobUrl = ref("");
 const videoDisplayWidth = ref(0);
 const videoDisplayHeight = ref(0);
 let visibilityObserver: IntersectionObserver | null = null;
@@ -184,32 +154,6 @@ const handleMute = () => {
   muted.value = !muted.value;
 };
 
-const handleStreamPlaying = () => {
-  streamError.value = "";
-};
-
-const handleStreamError = (message: string) => {
-  streamError.value = message || "视频流加载失败";
-};
-
-const handleMjpegError = () => {
-  streamError.value = "视频流加载失败";
-};
-
-watch(
-  () => [
-    effectiveProtocol.value,
-    effectiveStreamUrl.value,
-    paused.value,
-    isVisible.value,
-  ],
-  () => {
-    if (!paused.value && isVisible.value && effectiveStreamUrl.value) {
-      streamError.value = "";
-    }
-  },
-);
-
 onMounted(() => {
   if (!screenRef.value || typeof IntersectionObserver === "undefined") {
     return;
@@ -246,28 +190,16 @@ onBeforeUnmount(() => {
     resizeObserver.disconnect();
     resizeObserver = null;
   }
-  if (videoFrameBlobUrl.value) {
-    URL.revokeObjectURL(videoFrameBlobUrl.value);
-    videoFrameBlobUrl.value = "";
-  }
 });
 
 const updateVideoFrame = (blob: Blob) => {
-  if (effectiveProtocol.value !== "ws_jpeg") {
-    return;
-  }
-  if (paused.value) {
-    return;
-  }
-  if (videoFrameBlobUrl.value) {
-    URL.revokeObjectURL(videoFrameBlobUrl.value);
-  }
-  videoFrameBlobUrl.value = URL.createObjectURL(blob);
+  previewRef.value?.updateVideoFrame(blob);
 };
 
 defineExpose({
   updateVideoFrame,
   cameraId: computed(() => props.item.cameraId),
+  getPreviewElement: () => previewRef.value?.getRenderableElement?.() ?? null,
 });
 </script>
 
@@ -300,7 +232,7 @@ defineExpose({
 
 .camera-screen {
   position: relative;
-  height: 220px;
+  aspect-ratio: 16 / 9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -310,25 +242,7 @@ defineExpose({
     rgba(0, 0, 0, 0.85)
   );
   overflow: hidden;
-}
-
-.camera-stream {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.camera-screen__placeholder {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-
-.camera-screen__placeholder.is-error {
-  color: #ff7875;
+  cursor: pointer;
 }
 
 .camera-controls {
@@ -359,7 +273,7 @@ defineExpose({
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 12px 12px;
+  padding: 12px 10px 8px;
   background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
 }
 
@@ -382,9 +296,10 @@ defineExpose({
 
 .camera-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 8px 10px;
+  padding: 6px 10px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.72);
+  text-align: center;
 }
 
 @keyframes alarm-flash {

@@ -95,6 +95,7 @@
           <CameraGridCard
             :ref="(el) => setCameraCardRef(item.cameraId, el)"
             :item="item"
+            @camera-click="handleCameraClick"
           />
         </el-col>
       </el-row>
@@ -112,6 +113,13 @@
         />
       </div>
     </el-card>
+
+    <CameraDetailModal
+      ref="detailModalRef"
+      v-model:visible="detailModalVisible"
+      :item="selectedCamera"
+      :source-element="selectedPreviewElement"
+    />
   </div>
 </template>
 
@@ -126,6 +134,7 @@ import {
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import CameraGridCard from "@/components/business/CameraGridCard.vue";
+import CameraDetailModal from "@/components/business/CameraDetailModal.vue";
 import MetricCard from "@/components/business/MetricCard.vue";
 import {
   checkEngineAvailability,
@@ -141,6 +150,12 @@ import type { CameraGridItem, DashboardMetrics } from "@/types/business";
 type RealtimeSourceMode = "connecting" | "ws" | "recovering";
 
 type CameraCardInstance = InstanceType<typeof CameraGridCard> & {
+  updateVideoFrame?: (blob: Blob) => void;
+  cameraId?: number;
+  getPreviewElement?: () => HTMLImageElement | HTMLVideoElement | null;
+};
+
+type CameraDetailModalInstance = InstanceType<typeof CameraDetailModal> & {
   updateVideoFrame?: (blob: Blob) => void;
   cameraId?: number;
 };
@@ -168,6 +183,9 @@ const cameraPageCurrent = ref(1);
 const cameraPageSize = ref(9);
 const cameraTotal = ref(0);
 const layoutMode = ref<"2x2" | "3x3" | "4x3">("3x3");
+const detailModalVisible = ref(false);
+const selectedCameraId = ref(0);
+const selectedPreviewElement = ref<HTMLImageElement | HTMLVideoElement | null>(null);
 let wsWatchdogTimer: ReturnType<typeof setInterval> | null = null;
 let metricsRefreshTimer: ReturnType<typeof setInterval> | null = null;
 let metricsRefreshing = false;
@@ -184,7 +202,12 @@ const enableDevLogs = isDev && !isTest;
 
 const cameraCardRefs = ref<Map<number, CameraCardInstance>>(new Map());
 const cameraLastRenderAt = ref<Map<number, number>>(new Map());
+const detailModalRef = ref<CameraDetailModalInstance | null>(null);
 const route = useRoute();
+
+const selectedCamera = computed(() =>
+  cameraGrid.value.find((item) => item.cameraId === selectedCameraId.value) ?? null,
+);
 
 const onlineDeviceFooter = computed(() => {
   const diff = metrics.value.onlineDeviceDiff ?? 0;
@@ -286,6 +309,13 @@ const handleVideoFrame = (
   const card = cameraCardRefs.value.get(cameraId);
   if (card?.updateVideoFrame) {
     card.updateVideoFrame(blob);
+  }
+  if (
+    detailModalVisible.value &&
+    detailModalRef.value?.cameraId === cameraId &&
+    detailModalRef.value.updateVideoFrame
+  ) {
+    detailModalRef.value.updateVideoFrame(blob);
   }
   if (frameHeader) {
     mergeFrameDetections(cameraId, frameHeader);
@@ -536,6 +566,12 @@ const cameraSpan = computed(() => {
   if (layoutMode.value === "4x3") return 6;
   return 8;
 });
+
+const handleCameraClick = (item: CameraGridItem) => {
+  selectedCameraId.value = item.cameraId;
+  selectedPreviewElement.value = cameraCardRefs.value.get(item.cameraId)?.getPreviewElement?.() ?? null;
+  detailModalVisible.value = true;
+};
 
 onMounted(async () => {
   window.addEventListener(

@@ -61,6 +61,7 @@ export interface CameraGridItem {
   streamUrl: string;
   previewProtocol?: "webrtc" | "mjpeg" | "ws_jpeg";
   previewUrl?: string;
+  protocol?: string;
   detections: RealtimeDetection[];
   frameWidth?: number;
   frameHeight?: number;

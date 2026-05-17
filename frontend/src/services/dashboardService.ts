@@ -50,6 +50,7 @@ const toCameraGridItem = (item: CameraDeviceVoWithPreview): CameraGridItem => {
     streamUrl: item.streamUrl || "",
     previewProtocol: previewTarget.protocol,
     previewUrl: previewTarget.url,
+    protocol: item.protocol || "",
     detections: [],
     frameTs: undefined,
     riskPoint: undefined,
