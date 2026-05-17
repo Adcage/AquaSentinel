@@ -17,17 +17,16 @@
       </el-form>
     </el-card>
 
+<el-card shadow="never" class="admin-table-card">
+      <template #header><span>视频预览</span></template>
+      <div class="video-wrap">
+        <img v-if="previewUrl" :src="previewUrl" class="preview-image" alt="视频预览" />
+        <div v-else class="video-placeholder">当前设备未配置视频流地址</div>
+      </div>
+    </el-card>
+
     <el-row :gutter="16">
-      <el-col :xs="24" :md="16">
-        <el-card shadow="never" class="admin-table-card">
-          <template #header><span>视频预览</span></template>
-          <div class="video-wrap">
-            <img v-if="previewUrl" :src="previewUrl" class="preview-image" alt="视频预览" />
-            <div v-else class="video-placeholder">当前设备未配置视频流地址</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :md="8">
+      <el-col :xs="24" :md="12">
         <el-card shadow="never" class="admin-table-card">
           <template #header><span>云台方向控制</span></template>
           <div class="direction-pad">
@@ -78,8 +77,10 @@
             <pre>{{ lastResult }}</pre>
           </div>
         </el-card>
+      </el-col>
 
-        <el-card shadow="never" class="admin-table-card calibration-card">
+      <el-col :xs="24" :md="12">
+        <el-card shadow="never" class="admin-table-card">
           <template #header><span>校准操作</span></template>
           <div class="calibration-actions">
             <el-button :disabled="!hasDeviceIp || isCalibrationMode" @click="handleStartCalibration">
@@ -150,7 +151,7 @@
             <el-button :disabled="!hasDeviceIp || !isCalibrationMode" type="primary" @click="setAxisCalibrationValue('TILT', 'MAX', tiltMaxPulse)">确定</el-button>
           </div>
           <div class="calibration-tip">
-            校准步骤：1. 进入校准。2. 用“应用脉宽”把舵机转到目标位置。3. 点击“设为当前”带入当前脉宽，再分别保存为最小/中位/最大。4. 保存校准。5. 退出校准。PAN 中位应为正前方，TILT 中位应为平视水平。
+            校准步骤：1. 进入校准。2. 用"应用脉宽"把舵机转到目标位置。3. 点击"设为当前"带入当前脉宽，再分别保存为最小/中位/最大。4. 保存校准。5. 退出校准。PAN 中位应为正前方，TILT 中位应为平视水平。
           </div>
           <div class="calibration-data">
             <div class="calibration-data__title">当前校准参数</div>
@@ -166,7 +167,7 @@
         </el-card>
       </el-col>
     </el-row>
-  </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -423,11 +424,10 @@ onMounted(() => {
 
 <style scoped>
 .video-wrap {
-  background: #f5f7fa;
+  background: #000;
   border: 1px solid #dcdfe6;
   border-radius: 8px;
   overflow: hidden;
-  min-height: 360px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -435,19 +435,14 @@ onMounted(() => {
 
 .preview-image {
   width: 100%;
-  max-height: 540px;
+  max-height: 480px;
   object-fit: contain;
   background: #000;
 }
 
 .video-placeholder {
   color: #909399;
-}
-
-.pad-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  padding: 60px 0;
 }
 
 .status-box {
@@ -464,10 +459,6 @@ onMounted(() => {
   word-break: break-all;
   color: #303133;
   font-size: 12px;
-}
-
-.calibration-card {
-  margin-top: 16px;
 }
 
 .calibration-actions,
