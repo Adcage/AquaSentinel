@@ -16,6 +16,10 @@ import {
   shouldLogWebrtcEvent,
   summarizeStatsSnapshot,
 } from "@/utils/webrtcDebug";
+import {
+  fetchWebrtcCandidateIps,
+} from "@/services/webrtcConfigService";
+import { replaceMdnsCandidates } from "@/utils/streamPreview";
 
 interface Props {
   src: string;
@@ -226,7 +230,13 @@ const startConnection = async () => {
     throw new Error("WebRTC offer 为空");
   }
 
-  logSdpSummary("offer", pc.localDescription.sdp);
+  const candidateIps = await fetchWebrtcCandidateIps();
+  let sdpToSend = pc.localDescription.sdp;
+  if (candidateIps.length > 0) {
+    sdpToSend = replaceMdnsCandidates(sdpToSend, candidateIps);
+  }
+
+  logSdpSummary("offer", sdpToSend);
 
   const response = await fetch(src, {
     method: "POST",
@@ -237,7 +247,7 @@ const startConnection = async () => {
         ? { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
         : {}),
     },
-    body: pc.localDescription.sdp,
+    body: sdpToSend,
   });
 
   if (!response.ok) {
@@ -355,6 +365,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   void closeConnection();
+});
+
+defineExpose({
+  getVideoElement: () => videoRef.value,
 });
 </script>
 

@@ -190,15 +190,4 @@ export const replaceMdnsCandidates = (
   return replaced.join("\r\n");
 };
 
-export const resolveWebrtcCandidateIps = (): string[] => {
-  const raw = String(
-    import.meta.env.VITE_WEBRTC_CANDIDATE_IPS || "",
-  ).trim();
-  if (!raw) {
-    return [];
-  }
-  return raw
-    .split(",")
-    .map((ip) => ip.trim())
-    .filter((ip) => /^\d+\.\d+\.\d+\.\d+$/.test(ip));
-};
+export { resolveWebrtcCandidateIps } from "@/services/webrtcConfigService";

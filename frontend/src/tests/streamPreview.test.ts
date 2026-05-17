@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveCameraPreviewTarget, replaceMdnsCandidates, resolveWebrtcCandidateIps } from "@/utils/streamPreview";
+import { resolveCameraPreviewTarget, replaceMdnsCandidates } from "@/utils/streamPreview";
 
 describe("stream preview url", () => {
   it("prepends api base url and token to backend preview path", () => {
@@ -107,23 +107,3 @@ describe("replaceMdnsCandidates", () => {
   });
 });
 
-describe("resolveWebrtcCandidateIps", () => {
-  it("returns empty array when env is not set", () => {
-    const ips = resolveWebrtcCandidateIps();
-    expect(ips).toEqual([]);
-  });
-
-  it("parses comma-separated IPs", () => {
-    vi.stubEnv("VITE_WEBRTC_CANDIDATE_IPS", "192.168.0.1,10.0.0.1");
-    const ips = resolveWebrtcCandidateIps();
-    expect(ips).toEqual(["192.168.0.1", "10.0.0.1"]);
-    vi.unstubAllEnvs();
-  });
-
-  it("filters invalid entries", () => {
-    vi.stubEnv("VITE_WEBRTC_CANDIDATE_IPS", "192.168.0.1,invalid,10.0.0.1");
-    const ips = resolveWebrtcCandidateIps();
-    expect(ips).toEqual(["192.168.0.1", "10.0.0.1"]);
-    vi.unstubAllEnvs();
-  });
-});
