@@ -59,49 +59,33 @@
 
 > 图片占位：后续可将截图放到 `docs/assets/` 目录，并替换下面的占位说明。
 
-| 展示项 | 建议图片路径 | 说明 |
-|--------|--------------|------|
-| 系统架构图 | `docs/assets/aquasentinel-architecture.png` | 展示多服务协同、视频流、AI 推理和告警分发链路 |
-| 管理端总览 | `docs/assets/frontend-dashboard.png` | 展示场馆、设备、告警和统计数据 |
-| 监控预览页 | `docs/assets/frontend-monitor.png` | 展示摄像头预览、检测框、云台控制等能力 |
-| Android 告警页 | `docs/assets/android-alert.png` | 展示救生员端实时告警接收和处置 |
-| AI 检测动图 | `docs/assets/yolo-detection-demo.gif` | 展示视频流中的目标检测和告警触发过程 |
+| 展示项         | 建议图片路径                                | 说明                                          |
+| -------------- | ------------------------------------------- | --------------------------------------------- |
+| 系统架构图     | `docs/assets/aquasentinel-architecture.png` | 展示多服务协同、视频流、AI 推理和告警分发链路 |
+| 管理端总览     | `docs/assets/frontend-dashboard.png`        | 展示场馆、设备、告警和统计数据                |
+| 监控预览页     | `docs/assets/frontend-monitor.png`          | 展示摄像头预览、检测框、云台控制等能力        |
+| Android 告警页 | `docs/assets/android-alert.png`             | 展示救生员端实时告警接收和处置                |
+| AI 检测动图    | `docs/assets/yolo-detection-demo.gif`       | 展示视频流中的目标检测和告警触发过程          |
 
 ---
 
 ## 系统架构
 
-> 架构图占位：后续可替换为 `docs/assets/aquasentinel-architecture.png`。
 
-```mermaid
-flowchart LR
-    Camera[摄像头 / ESP32-CAM / RTSP 源] --> VideoHub[video-hub-service\n视频流接入与协议适配]
-    VideoHub --> FrontendPreview[Frontend\n监控预览]
-    VideoHub --> Yolo[YOLO Service\nYOLOv8 + DeepSort]
 
-    Yolo -->|检测结果 WebSocket| Backend[Backend\nSpring Boot 业务中心]
-    Backend --> MySQL[(MySQL\n业务数据)]
-    Backend --> Redis[(Redis\n会话 / 状态 / PubSub)]
 
-    Backend -->|REST API| Frontend[Frontend\nVue 管理后台]
-    Backend -->|告警 WebSocket| Frontend
-    Backend -->|REST API| Android[Android\n救生员端]
-    Backend -->|告警 WebSocket| Android
-
-    Android --> Lifeguard[救生员\n确认与处置]
-    Firmware[STM32 / 云台控制] --> Camera
-```
+![](docs/assets/aquasentinel-architecture.png)
 
 系统按职责拆分为多个可独立运行的服务：
 
-| 模块 | 技术栈 | 核心职责 |
-|------|--------|----------|
-| `backend` | Java 17 / Spring Boot / MyBatis-Plus / MySQL / Redis / WebSocket | 用户认证、权限控制、告警落库、统计聚合、实时推送、业务 API |
-| `frontend` | Vue 3 / TypeScript / Vite / Pinia / Element Plus / ECharts | 管理后台、设备监控、告警处置、数据看板、地图展示 |
-| `yolo-service` | Python / Flask / YOLOv8 / DeepSort / OpenCV / PyAV | 视频流推理、目标检测、轨迹跟踪、溺水规则判定、AI 结果推送 |
-| `video-hub-service` | Python / Flask / PyAV / aiortc / Redis Pub/Sub | 视频流统一接入、协议适配、预览分发、摄像头状态同步 |
-| `android` | Kotlin / Jetpack Compose / Retrofit / OkHttp / Media3 | 救生员移动端、实时告警接收、视频预览、巡检与处置 |
-| `firmware` | STM32 / ESP32-CAM | 摄像头采集、云台控制、设备侧交互 |
+| 模块                | 技术栈                                                           | 核心职责                                                   |
+| ------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------- |
+| `backend`           | Java 17 / Spring Boot / MyBatis-Plus / MySQL / Redis / WebSocket | 用户认证、权限控制、告警落库、统计聚合、实时推送、业务 API |
+| `frontend`          | Vue 3 / TypeScript / Vite / Pinia / Element Plus / ECharts       | 管理后台、设备监控、告警处置、数据看板、地图展示           |
+| `yolo-service`      | Python / Flask / YOLOv8 / DeepSort / OpenCV / PyAV               | 视频流推理、目标检测、轨迹跟踪、溺水规则判定、AI 结果推送  |
+| `video-hub-service` | Python / Flask / PyAV / aiortc / Redis Pub/Sub                   | 视频流统一接入、协议适配、预览分发、摄像头状态同步         |
+| `android`           | Kotlin / Jetpack Compose / Retrofit / OkHttp / Media3            | 救生员移动端、实时告警接收、视频预览、巡检与处置           |
+| `firmware`          | STM32 / ESP32-CAM                                                | 摄像头采集、云台控制、设备侧交互                           |
 
 详细架构说明见 [docs/项目现状/architecture.md](docs/项目现状/architecture.md)。
 
@@ -113,15 +97,18 @@ flowchart LR
 
 摄像头或 ESP32-CAM 输出视频流后，由 `video-hub-service` 负责统一接入和协议适配。管理端不直接关心底层流协议，而是通过后端配置和视频网关获取可预览的视频地址。
 
+
 ```text
 摄像头 / ESP32-CAM / RTSP 源
-        ↓
+  ↓
 video-hub-service
-        ↓
+  ↓
 HTTP-MJPEG / HTTP-FLV / WebRTC / 预览地址
-        ↓
+  ↓
 Frontend / Android
 ```
+
+![](docs/assets/aquasentinel-video-link.png)
 
 ### 2. AI 推理与溺水判定
 
@@ -181,29 +168,29 @@ Web 管理端更适合进行场馆、设备、地图和统计管理，Android �
 
 ## 功能模块
 
-| 模块 | 功能 |
-|------|------|
+| 模块       | 功能                                                   |
+| ---------- | ------------------------------------------------------ |
 | 用户与权限 | 登录注册、JWT 鉴权、刷新令牌、角色权限、接口级权限校验 |
-| 场馆管理 | 场馆、区域、摄像头、救生员等基础数据维护 |
-| 视频监控 | 摄像头列表、实时预览、视频流路由、云台控制入口 |
-| AI 检测 | 推理任务管理、检测结果上报、溺水规则判定 |
-| 告警中心 | 告警生成、实时推送、确认、处置、记录追踪 |
-| 数据看板 | 告警统计、设备状态、场馆态势、图表展示 |
-| 移动端 | 救生员登录、告警接收、视频查看、现场处置 |
-| 硬件联动 | ESP32-CAM 视频采集、STM32 云台控制、OLED 信息显示 |
+| 场馆管理   | 场馆、区域、摄像头、救生员等基础数据维护               |
+| 视频监控   | 摄像头列表、实时预览、视频流路由、云台控制入口         |
+| AI 检测    | 推理任务管理、检测结果上报、溺水规则判定               |
+| 告警中心   | 告警生成、实时推送、确认、处置、记录追踪               |
+| 数据看板   | 告警统计、设备状态、场馆态势、图表展示                 |
+| 移动端     | 救生员登录、告警接收、视频查看、现场处置               |
+| 硬件联动   | ESP32-CAM 视频采集、STM32 云台控制、OLED 信息显示      |
 
 ---
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| Backend | Java 17 / Spring Boot 3.2.3 / MyBatis-Plus 3.5.5 / MySQL / Redis / JWT / WebSocket / Knife4j |
-| Frontend | Vue 3 / TypeScript / Vite 7 / Pinia / Element Plus / ECharts / 高德地图 |
-| YOLO Service | Python / Flask / Flask-Smorest / SQLAlchemy / YOLOv8 / DeepSort / OpenCV / PyAV |
-| Video Hub | Python / Flask / PyAV / aiortc / Redis Pub/Sub |
-| Android | Kotlin / Jetpack Compose / Retrofit / OkHttp / Media3 ExoPlayer / 高德 3D Map SDK |
-| Firmware | STM32 / ESP32-CAM / OLED / 云台控制 |
+| 层级         | 技术                                                                                         |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| Backend      | Java 17 / Spring Boot 3.2.3 / MyBatis-Plus 3.5.5 / MySQL / Redis / JWT / WebSocket / Knife4j |
+| Frontend     | Vue 3 / TypeScript / Vite 7 / Pinia / Element Plus / ECharts / 高德地图                      |
+| YOLO Service | Python / Flask / Flask-Smorest / SQLAlchemy / YOLOv8 / DeepSort / OpenCV / PyAV              |
+| Video Hub    | Python / Flask / PyAV / aiortc / Redis Pub/Sub                                               |
+| Android      | Kotlin / Jetpack Compose / Retrofit / OkHttp / Media3 ExoPlayer / 高德 3D Map SDK            |
+| Firmware     | STM32 / ESP32-CAM / OLED / 云台控制                                                          |
 
 完整技术栈说明见 [docs/项目现状/tech-stack.md](docs/项目现状/tech-stack.md)。
 
@@ -284,14 +271,14 @@ AquaSentinel/
 
 ## 文档导航
 
-| 文档 | 说明 |
-|------|------|
-| [docs/项目现状/architecture.md](docs/项目现状/architecture.md) | 系统架构、服务职责、数据流和分层说明 |
-| [docs/项目现状/tech-stack.md](docs/项目现状/tech-stack.md) | 技术栈依赖矩阵与选型说明 |
-| [docs/项目现状/issues-and-optimization.md](docs/项目现状/issues-and-optimization.md) | 当前问题分析与优化方向 |
-| [docs/运行部署/core-stack-quickstart.md](docs/运行部署/core-stack-quickstart.md) | 核心链路快速启动与验证 |
-| [docs/规划文档/video-hub-service-decoupling-plan.md](docs/规划文档/video-hub-service-decoupling-plan.md) | 视频网关解耦设计与实施计划 |
-| [docs/firmware/stm32-ptz-guide.md](docs/firmware/stm32-ptz-guide.md) | STM32 云台控制说明 |
+| 文档                                                                                                     | 说明                                 |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| [docs/项目现状/architecture.md](docs/项目现状/architecture.md)                                           | 系统架构、服务职责、数据流和分层说明 |
+| [docs/项目现状/tech-stack.md](docs/项目现状/tech-stack.md)                                               | 技术栈依赖矩阵与选型说明             |
+| [docs/项目现状/issues-and-optimization.md](docs/项目现状/issues-and-optimization.md)                     | 当前问题分析与优化方向               |
+| [docs/运行部署/core-stack-quickstart.md](docs/运行部署/core-stack-quickstart.md)                         | 核心链路快速启动与验证               |
+| [docs/规划文档/video-hub-service-decoupling-plan.md](docs/规划文档/video-hub-service-decoupling-plan.md) | 视频网关解耦设计与实施计划           |
+| [docs/firmware/stm32-ptz-guide.md](docs/firmware/stm32-ptz-guide.md)                                     | STM32 云台控制说明                   |
 
 ---
 
