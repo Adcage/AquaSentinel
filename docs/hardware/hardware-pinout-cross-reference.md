@@ -2,7 +2,7 @@
 
 > 本文档用于交叉核对 `hardware-design-spec.md`、当前 KiCad 原理图、当前 PCB 丝印与外设连接器的最终映射。
 > 基准文件：
-> - `docs/规划文档/hardware-design-spec.md`
+> - `docs/hardware/hardware-design-spec.md`
 > - `firmware/hardware/aquasentinel-hardware.kicad_sch`
 > - `firmware/hardware/aquasentinel-hardware.kicad_pcb`
 

@@ -1,6 +1,6 @@
 # 阶段二设计：WebRTC 输出 + 叠框组件 + 拉流健壮性
 
-> 对应规划文档 `docs/规划文档/esp32-cam-video-hub-staged-plan.md` 阶段二（5.7 + 5.8 + WebRTC）
+> 对应规划文档 `docs/archive/plans/esp32-cam-video-hub-staged-plan.md` 阶段二（5.7 + 5.8 + WebRTC）
 
 ## 1. 目标与范围
 

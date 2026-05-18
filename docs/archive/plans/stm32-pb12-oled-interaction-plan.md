@@ -477,7 +477,7 @@ git commit -m "feat(firmware): 为 OLED 接入 PB12 切页与长按回中"
 ### Task 4: 板级联调与交互验收
 
 **Files:**
-- Modify: `docs/规划文档/stm32-pb12-oled-interaction-plan.md`
+- Modify: `docs/archive/plans/stm32-pb12-oled-interaction-plan.md`
 
 - [ ] **Step 1: 进行板级手动验证，按顺序记录结果**
 
@@ -527,7 +527,7 @@ Expected:
 - [ ] **Step 4: Commit**
 
 ```bash
-git add "docs/规划文档/stm32-pb12-oled-interaction-plan.md"
+git add "docs/archive/plans/stm32-pb12-oled-interaction-plan.md"
 git commit -m "docs(firmware): 补充 PB12 与 OLED 交互验收记录"
 ```
 

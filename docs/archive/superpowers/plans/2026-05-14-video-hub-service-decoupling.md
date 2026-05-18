@@ -8,7 +8,7 @@
 
 **Tech Stack:** Flask / aiortc / requests / Spring Boot / Vue 3 / HTTP API / pytest / Maven
 
-**Spec:** `docs/规划文档/video-hub-service-decoupling-plan.md`
+**Spec:** `docs/archive/plans/video-hub-service-decoupling-plan.md`
 
 ---
 
@@ -600,8 +600,8 @@ Expected: PASS
 更新：
 
 ```text
-docs/规划文档/video-hub-service-decoupling-plan.md
-docs/规划文档/esp32-cam-video-hub-staged-plan.md
+docs/archive/plans/video-hub-service-decoupling-plan.md
+docs/archive/plans/esp32-cam-video-hub-staged-plan.md
 ```
 
 把独立解耦相关步骤标记为已完成。
@@ -609,5 +609,5 @@ docs/规划文档/esp32-cam-video-hub-staged-plan.md
 - [ ] **Step 6: 提交**
 
 ```bash
-git add docs/规划文档/video-hub-service-decoupling-plan.md docs/规划文档/esp32-cam-video-hub-staged-plan.md
+git add docs/archive/plans/video-hub-service-decoupling-plan.md docs/archive/plans/esp32-cam-video-hub-staged-plan.md
 ```

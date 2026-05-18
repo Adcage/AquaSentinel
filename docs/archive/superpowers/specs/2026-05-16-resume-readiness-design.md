@@ -51,7 +51,7 @@ README 需要覆盖这些内容：
 
 推荐交付形式：
 
-- 根目录新增运行文档，例如 `docs/运行部署/core-stack-quickstart.md`。
+- 根目录新增运行文档，例如 `docs/deployment/core-stack-quickstart.md`。
 - 若当前条件允许，再补 `docker-compose.yml` 或等价脚本，覆盖核心依赖：MySQL、Redis、Backend、YOLO Service、video-hub-service，Frontend 视复杂度决定是否纳入。
 
 运行方案的边界要明确：
@@ -91,7 +91,7 @@ README 需要覆盖这些内容：
 
 - 新增：`README.md`
   - 项目首页介绍、亮点、架构摘要、技术栈、快速启动、指标摘要、文档导航。
-- 新增：`docs/运行部署/core-stack-quickstart.md`
+- 新增：`docs/deployment/core-stack-quickstart.md`
   - 核心链路运行说明、依赖说明、启动顺序、验证步骤、已知限制。
 - 视情况新增：`docker-compose.yml`
   - 如果现有服务启动边界清晰，补一个最小可运行栈；如果当前硬件/模型依赖过强，则先不强做 compose，而在文档中明确手动启动方案。

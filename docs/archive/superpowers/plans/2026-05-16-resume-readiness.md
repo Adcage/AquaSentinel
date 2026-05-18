@@ -14,7 +14,7 @@
 
 - Create: `README.md`
   - 仓库首页总览，承担项目定位、亮点、架构摘要、技术栈、快速启动、指标摘要、文档导航。
-- Create: `docs/运行部署/core-stack-quickstart.md`
+- Create: `docs/deployment/core-stack-quickstart.md`
   - 核心链路的运行说明、依赖、启动顺序、验证步骤、边界说明。
 - Create or Modify: `docker-compose.yml`
   - 若当前环境适合，提供核心服务的最小运行栈；若不适合，则在计划执行中明确跳过并在运行文档中说明原因。
@@ -29,8 +29,8 @@
 
 **Files:**
 - Create: `README.md`
-- Reference: `docs/项目现状/architecture.md`
-- Reference: `docs/项目现状/tech-stack.md`
+- Reference: `docs/architecture/system-architecture.md`
+- Reference: `docs/architecture/tech-stack.md`
 - Reference: `docs/项目现状/baseline-metrics.md`
 - Reference: `yolo-service/README.md`
 
@@ -61,7 +61,7 @@ Frontend / Android
    Camera / Stream Source
 ```
 
-详细架构见：`docs/项目现状/architecture.md`
+详细架构见：`docs/architecture/system-architecture.md`
 
 ## 技术栈
 
@@ -81,7 +81,7 @@ Frontend / Android
 
 ## 快速开始
 
-1. 阅读 `docs/运行部署/core-stack-quickstart.md`
+1. 阅读 `docs/deployment/core-stack-quickstart.md`
 2. 准备 MySQL、Redis、模型文件与基础环境
 3. 启动 Backend、video-hub-service、YOLO Service
 4. 使用验证脚本检查核心链路
@@ -98,10 +98,10 @@ Frontend / Android
 
 ## 文档导航
 
-- 架构总览：`docs/项目现状/architecture.md`
-- 技术栈：`docs/项目现状/tech-stack.md`
+- 架构总览：`docs/architecture/system-architecture.md`
+- 技术栈：`docs/architecture/tech-stack.md`
 - 指标摘要：`docs/项目现状/resume-ready-metrics.md`
-- 核心运行：`docs/运行部署/core-stack-quickstart.md`
+- 核心运行：`docs/deployment/core-stack-quickstart.md`
 ```
 
 - [ ] **Step 2: 检查 README 是否与现有事实一致**
@@ -132,7 +132,7 @@ git commit -m "docs: 新增项目首页 README，补齐简历展示入口"
 ## Task 2: 补核心链路运行文档
 
 **Files:**
-- Create: `docs/运行部署/core-stack-quickstart.md`
+- Create: `docs/deployment/core-stack-quickstart.md`
 - Reference: `backend/pom.xml`
 - Reference: `yolo-service/requirements.txt`
 - Reference: `video-hub-service/requirements.txt`
@@ -227,7 +227,7 @@ git commit -m "docs: 新增项目首页 README，补齐简历展示入口"
 - [ ] **Step 6: Commit**
 
 ```bash
-git add docs/运行部署/core-stack-quickstart.md
+git add docs/deployment/core-stack-quickstart.md
 git commit -m "docs: 新增核心链路快速启动文档"
 ```
 
@@ -235,7 +235,7 @@ git commit -m "docs: 新增核心链路快速启动文档"
 
 **Files:**
 - Create: `scripts/verify_core_stack.ps1`
-- Reference: `docs/运行部署/core-stack-quickstart.md`
+- Reference: `docs/deployment/core-stack-quickstart.md`
 
 - [ ] **Step 1: 编写 PowerShell 验证脚本**
 
@@ -281,7 +281,7 @@ Expected: 输出清晰标识每个服务的成功/失败状态
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/verify_core_stack.ps1 docs/运行部署/core-stack-quickstart.md
+git add scripts/verify_core_stack.ps1 docs/deployment/core-stack-quickstart.md
 git commit -m "chore: 新增核心服务健康检查脚本"
 ```
 
@@ -292,7 +292,7 @@ git commit -m "chore: 新增核心服务健康检查脚本"
 - Reference: `backend/Dockerfile`（若不存在则先确认）
 - Reference: `yolo-service/Dockerfile`（若不存在则先确认）
 - Reference: `video-hub-service/Dockerfile`（若不存在则先确认）
-- Reference: `docs/运行部署/core-stack-quickstart.md`
+- Reference: `docs/deployment/core-stack-quickstart.md`
 
 - [ ] **Step 1: 检查是否已有 Dockerfile 与可复用镜像边界**
 
@@ -320,7 +320,7 @@ services:
 
 ```md
 若缺少 Dockerfile、模型文件挂载策略不清、服务启动参数不稳定，则不创建 compose，
-改为在 `docs/运行部署/core-stack-quickstart.md` 中明确“当前采用手动启动方案”的原因与后续补全点。
+改为在 `docs/deployment/core-stack-quickstart.md` 中明确“当前采用手动启动方案”的原因与后续补全点。
 ```
 
 - [ ] **Step 4: 只保留核心依赖，不把 Android/Frontend 硬塞进最小栈**
@@ -331,7 +331,7 @@ Expected: 运行方案聚焦 Backend + Redis + MySQL + video-hub + YOLO，不扩
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docker-compose.yml docs/运行部署/core-stack-quickstart.md
+git add docker-compose.yml docs/deployment/core-stack-quickstart.md
 git commit -m "build: 补充核心服务最小运行栈说明"
 ```
 
@@ -395,7 +395,7 @@ git commit -m "docs: 新增简历可引用指标摘要"
 
 **Files:**
 - Modify: `README.md`
-- Reference: `docs/运行部署/core-stack-quickstart.md`
+- Reference: `docs/deployment/core-stack-quickstart.md`
 - Reference: `docs/项目现状/resume-ready-metrics.md`
 
 - [ ] **Step 1: 将运行入口链接补回 README**
@@ -403,7 +403,7 @@ git commit -m "docs: 新增简历可引用指标摘要"
 ```md
 ## 快速开始
 
-详细步骤见：`docs/运行部署/core-stack-quickstart.md`
+详细步骤见：`docs/deployment/core-stack-quickstart.md`
 ```
 
 - [ ] **Step 2: 将最终确认过的指标摘要补回 README**
@@ -425,7 +425,7 @@ Expected: README 中的每个指标都能在指标文档找到来源
 - [ ] **Step 4: Commit**
 
 ```bash
-git add README.md docs/运行部署/core-stack-quickstart.md docs/项目现状/resume-ready-metrics.md
+git add README.md docs/deployment/core-stack-quickstart.md docs/项目现状/resume-ready-metrics.md
 git commit -m "docs: 回填首页运行入口与指标摘要"
 ```
 
@@ -433,7 +433,7 @@ git commit -m "docs: 回填首页运行入口与指标摘要"
 
 **Files:**
 - Modify: `README.md`
-- Modify: `docs/运行部署/core-stack-quickstart.md`
+- Modify: `docs/deployment/core-stack-quickstart.md`
 - Modify: `docs/项目现状/resume-ready-metrics.md`
 
 - [ ] **Step 1: 验证文档链接与路径**
@@ -466,7 +466,7 @@ Expected: 命令格式正确，失败时有明确前置条件说明
 - [ ] **Step 5: Commit**
 
 ```bash
-git add README.md docs/运行部署/core-stack-quickstart.md docs/项目现状/resume-ready-metrics.md scripts/verify_core_stack.ps1 docker-compose.yml
+git add README.md docs/deployment/core-stack-quickstart.md docs/项目现状/resume-ready-metrics.md scripts/verify_core_stack.ps1 docker-compose.yml
 git commit -m "docs: 完成项目简历展示化补强收尾验证"
 ```
 

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Java 17 / Spring Boot 3 / Vue 3 / TypeScript / Docker Compose
 
-**设计文档:** `docs/superpowers/specs/2026-05-17-webrtc-candidate-ip-runtime-config-design.md`
+**设计文档:** `docs/archive/superpowers/specs/2026-05-17-webrtc-candidate-ip-runtime-config-design.md`
 
 ---
 

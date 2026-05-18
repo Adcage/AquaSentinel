@@ -2,7 +2,7 @@
 
 > 实施日期：2026-04-24
 >
-> 对应规划文档：`docs/规划文档/backend-tech-upgrade-plan.md` 第 2 节
+> 对应规划文档：`docs/archive/plans/backend-tech-upgrade-plan.md` 第 2 节
 
 ---
 

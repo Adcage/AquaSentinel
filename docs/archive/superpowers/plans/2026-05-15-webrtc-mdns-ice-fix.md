@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vue 3 / TypeScript（前端）、Flask / aiortc（video-hub-service）、Spring Boot（backend）
 
-**设计文档:** `docs/superpowers/specs/2026-05-15-webrtc-mdns-ice-fix-design.md`
+**设计文档:** `docs/archive/superpowers/specs/2026-05-15-webrtc-mdns-ice-fix-design.md`
 
 ---
 

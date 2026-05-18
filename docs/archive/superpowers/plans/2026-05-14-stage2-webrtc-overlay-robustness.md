@@ -8,7 +8,7 @@
 
 **Tech Stack:** aiortc / PyAV / Flask / Spring Boot / Vue 3 + TypeScript / Vitest / pytest
 
-**Spec:** `docs/superpowers/specs/2026-05-14-stage2-webrtc-overlay-robustness-design.md`
+**Spec:** `docs/archive/superpowers/specs/2026-05-14-stage2-webrtc-overlay-robustness-design.md`
 
 ---
 
@@ -893,11 +893,11 @@ Expected: ALL PASS
 
 - [ ] **Step 4: 更新规划文档**
 
-在 `docs/规划文档/esp32-cam-video-hub-staged-plan.md` 中将阶段二相关步骤标记为 `[x]`。
+在 `docs/archive/plans/esp32-cam-video-hub-staged-plan.md` 中将阶段二相关步骤标记为 `[x]`。
 
 - [ ] **Step 5: 提交**
 
 ```bash
-git add docs/规划文档/esp32-cam-video-hub-staged-plan.md
+git add docs/archive/plans/esp32-cam-video-hub-staged-plan.md
 git commit -m "docs: 阶段二完成，更新规划文档步骤状态"
 ```
