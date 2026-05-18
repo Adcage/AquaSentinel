@@ -80,6 +80,7 @@ nul
 /.worktrees/
 **/.history/
 /docs/plans/
+/docs/my/
 firmware/hardware/.history/
 firmware/hardware/*.tmp
 firmware/hardware/~*.lck
