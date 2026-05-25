@@ -81,6 +81,10 @@ nul
 **/.history/
 /docs/plans/
 /docs/my/
+/docs/archive/superpowers/plans/
+/docs/archive/superpowers/specs/
+/docs/archive/plans/
+/docs/archive/summaries/
 firmware/hardware/.history/
 firmware/hardware/*.tmp
 firmware/hardware/~*.lck
