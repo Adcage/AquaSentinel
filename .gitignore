@@ -85,6 +85,10 @@ nul
 /docs/archive/superpowers/specs/
 /docs/archive/plans/
 /docs/archive/summaries/
+/docs/architecture/
+/docs/hardware/
+/docs/troubleshooting/
+/docs/interview/
 firmware/hardware/.history/
 firmware/hardware/*.tmp
 firmware/hardware/~*.lck
